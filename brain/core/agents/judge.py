@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from brain.schemas import BrainState, Verdict
-from brain.llm import llm
+from core.schemas import BrainState, Verdict
+from core.llm import llm
 
 
 def run(state: BrainState) -> BrainState:

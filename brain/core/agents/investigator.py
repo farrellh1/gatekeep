@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from brain.schemas import BrainState
-from brain.config import RepoConfig
-from brain import checks
+from core.schemas import BrainState
+from core.config import RepoConfig
+from core import checks
 
 PR_CHECKS = [
     checks.cited_symbols_exist,

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
-from brain.schemas import BrainState, IntakeResult
-from brain.llm import llm
+from core.schemas import BrainState, IntakeResult
+from core.llm import llm
 
 _ACTIONABLE = {"opened", "edited", "reopened"}
 

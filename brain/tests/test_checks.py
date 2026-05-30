@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from brain.schemas import NormalizedEvent
-from brain import checks
+from core.schemas import NormalizedEvent
+from core import checks
 
 CLONE = str(Path(__file__).parent / "fixtures" / "clone")
 

@@ -36,5 +36,5 @@ threshold: 0.85         # min confidence for auto-gate to close
 
 ## Model
 
-LLM access goes through `brain/llm.py` over OpenRouter — model-agnostic, set
+LLM access goes through `core/llm.py` over OpenRouter — model-agnostic, set
 `GATEKEEP_MODEL` and `OPENROUTER_API_KEY`.

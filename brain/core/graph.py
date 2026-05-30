@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from langgraph.graph import StateGraph, END
 
-from brain.schemas import BrainState, NormalizedEvent
-from brain.config import load_config, RepoConfig
-from brain.agents import intake, investigator, judge, responder
+from core.schemas import BrainState, NormalizedEvent
+from core.config import load_config, RepoConfig
+from core.agents import intake, investigator, judge, responder
 
 
 def _route(state: BrainState) -> str:

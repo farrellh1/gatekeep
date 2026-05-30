@@ -1,4 +1,4 @@
-from brain.schemas import NormalizedEvent, BrainState, Finding, Verdict, Action
+from core.schemas import NormalizedEvent, BrainState, Finding, Verdict, Action
 
 
 def test_normalized_event_minimal_issue():

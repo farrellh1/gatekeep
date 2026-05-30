@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from brain.schemas import NormalizedEvent, BrainState, Verdict
-from brain.config import RepoConfig
-from brain.agents import responder as resp_mod
+from core.schemas import NormalizedEvent, BrainState, Verdict
+from core.config import RepoConfig
+from core.agents import responder as resp_mod
 
 CLONE = str(Path(__file__).parent / "fixtures" / "clone")
 

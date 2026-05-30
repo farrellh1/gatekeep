@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from brain import graph
-from brain.agents import intake, judge, responder
-from brain.schemas import Verdict
-import brain.checks as checks
+from core import graph
+from core.agents import intake, judge, responder
+from core.schemas import Verdict
+import core.checks as checks
 
 CLONE = str(Path(__file__).parent / "fixtures" / "clone")
 

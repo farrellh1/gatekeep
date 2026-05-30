@@ -5,7 +5,7 @@ import pathlib
 
 import pytest
 
-from brain import graph
+from core import graph
 
 CLONE = str(pathlib.Path(__file__).parent / "fixtures" / "clone")
 CASES = sorted(glob.glob(str(pathlib.Path(__file__).parent / "golden" / "*" / "*.json")))

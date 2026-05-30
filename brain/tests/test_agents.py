@@ -1,10 +1,10 @@
 from pathlib import Path
 
-from brain.schemas import NormalizedEvent, BrainState, Finding
-from brain.config import RepoConfig
-from brain.agents import intake as intake_mod
-from brain.agents import investigator as inv_mod
-from brain.agents import judge as judge_mod
+from core.schemas import NormalizedEvent, BrainState, Finding
+from core.config import RepoConfig
+from core.agents import intake as intake_mod
+from core.agents import investigator as inv_mod
+from core.agents import judge as judge_mod
 
 CLONE = str(Path(__file__).parent / "fixtures" / "clone")
 

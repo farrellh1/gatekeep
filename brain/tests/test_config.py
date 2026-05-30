@@ -1,4 +1,4 @@
-from brain.config import RepoConfig, load_config
+from core.config import RepoConfig, load_config
 
 
 def test_defaults_are_read_only():

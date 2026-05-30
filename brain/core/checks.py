@@ -5,9 +5,9 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from brain.schemas import NormalizedEvent, Finding
-from brain.repo_reader import RepoReader
-from brain.llm import llm
+from core.schemas import NormalizedEvent, Finding
+from core.repo_reader import RepoReader
+from core.llm import llm
 
 _CODE_SPAN_RE = re.compile(r"`+([^`]+?)`+")
 _CALL_REF_RE = re.compile(r"([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*)\(")

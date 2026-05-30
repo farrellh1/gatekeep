@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from brain.repo_reader import RepoReader
+from core.repo_reader import RepoReader
 
 CLONE = str(Path(__file__).parent / "fixtures" / "clone")
 

@@ -1,5 +1,5 @@
-from brain.schemas import Verdict
-from brain import llm as llm_mod
+from core.schemas import Verdict
+from core import llm as llm_mod
 
 
 def test_structured_call_returns_schema(monkeypatch):
