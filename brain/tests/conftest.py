@@ -1,5 +1,5 @@
-"""Shared pytest fixtures for the Brain test suite.
+from pathlib import Path
 
-Most tests run fully offline — the llm() seam is monkeypatched per-test.
-Only the golden set (marker: golden) hits the real model.
-"""
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).parent.parent / ".env")
