@@ -1,0 +1,16 @@
+{
+  "config_yaml": null,
+  "event": {
+    "delivery_id": "g-legit-02",
+    "kind": "issue",
+    "action": "opened",
+    "repo": {"owner": "acme", "name": "widget", "default_branch": "main", "clone_path": "FIXTURE_CLONE"},
+    "number": 202,
+    "title": "login() returns True for empty password",
+    "body": "Steps to reproduce:\n1. Call login(\"alice\", \"\") with an empty password\n2. Observe it returns True\n\nExpected: it should reject empty passwords and return False. Running on v1.2.0.",
+    "author": {"login": "careful-reporter", "account_age_days": 600, "is_first_time_contributor": false},
+    "existing_issues": [
+      {"number": 50, "title": "Add dark mode", "body": "would be nice to have a dark theme"}
+    ]
+  }
+}

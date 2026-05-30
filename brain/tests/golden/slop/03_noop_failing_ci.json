@@ -1,0 +1,14 @@
+{
+  "config_yaml": null,
+  "event": {
+    "delivery_id": "g-slop-03",
+    "kind": "issue",
+    "action": "opened",
+    "repo": {"owner": "acme", "name": "widget", "default_branch": "main", "clone_path": "FIXTURE_CLONE"},
+    "number": 103,
+    "title": "App is broken please fix",
+    "body": "it doesnt work. the `computeHash()` function returns wrong values and everything crashes. urgent!!!",
+    "author": {"login": "drive-by", "account_age_days": 0, "is_first_time_contributor": true},
+    "existing_issues": []
+  }
+}
