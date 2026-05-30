@@ -6,7 +6,7 @@ from typing import Optional, Type
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel
 
-DEFAULT_MODEL = os.environ.get("GATEKEEP_MODEL", "google/gemini-2.0-flash-001")
+DEFAULT_MODEL = os.environ.get("GATEKEEP_MODEL", "deepseek/deepseek-v4-pro")
 
 
 def _client(model: str) -> ChatOpenAI:
