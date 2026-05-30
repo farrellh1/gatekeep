@@ -4,8 +4,23 @@ import type { NormalizedEvent, PRPayload, IssuePayload } from "./types.js";
 type Clock = () => Date;
 const DAY = 1000 * 60 * 60 * 24;
 
+const MAX_DIFF_BYTES = Number(process.env.GATEKEEP_MAX_DIFF_BYTES) || 1_000_000;
+const MAX_CHANGED_FILES = Number(process.env.GATEKEEP_MAX_CHANGED_FILES) || 300;
+
 function accountAgeDays(createdAt: string, now: Date): number {
   return Math.floor((now.getTime() - new Date(createdAt).getTime()) / DAY);
+}
+
+function capDiff(diff: string): string {
+  const total = Buffer.byteLength(diff, "utf8");
+  if (total <= MAX_DIFF_BYTES) return diff;
+  const head = Buffer.from(diff, "utf8").subarray(0, MAX_DIFF_BYTES).toString("utf8");
+  return `${head}\n\n[gatekeep: diff truncated to ${MAX_DIFF_BYTES} of ${total} bytes]`;
+}
+
+function capFiles(files: string[]): string[] {
+  if (files.length <= MAX_CHANGED_FILES) return files;
+  return [...files.slice(0, MAX_CHANGED_FILES), `[gatekeep: +${files.length - MAX_CHANGED_FILES} more files truncated]`];
 }
 
 export async function normalizePullRequest(
@@ -43,8 +58,8 @@ export async function normalizePullRequest(
       is_first_time_contributor:
         pr.author_association === "FIRST_TIME_CONTRIBUTOR" || pr.author_association === "NONE",
     },
-    diff: diffRes.data as unknown as string,
-    changed_files: files.data.map((f) => f.filename),
+    diff: capDiff(diffRes.data as unknown as string),
+    changed_files: capFiles(files.data.map((f) => f.filename)),
     ci_status: ciMap[status.data.state] ?? "none",
     existing_issues: null,
   };
