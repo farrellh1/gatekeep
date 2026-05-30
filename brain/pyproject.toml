@@ -3,16 +3,18 @@ name = "gatekeep-brain"
 version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
-  "langgraph>=1.0",
-  "langchain-openai>=1.0",
-  "langchain-core>=1.0",
-  "pydantic>=2.7",
+  "langgraph>=1.2",
+  "langchain-openai>=1.2",
+  "langchain-core>=1.4",
+  "pydantic>=2.13",
   "pyyaml>=6.0",
-  "python-dotenv>=1.0",
+  "python-dotenv>=1.2",
+  "fastapi>=0.136",
+  "uvicorn[standard]>=0.48",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "pytest-mock>=3.14"]
+dev = ["pytest>=9", "pytest-mock>=3.15", "httpx>=0.28"]
 
 [build-system]
 requires = ["setuptools>=68"]
