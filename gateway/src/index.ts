@@ -5,9 +5,15 @@ import { createNodeMiddleware } from "@octokit/webhooks";
 import { handleEvent, defaultDeps, type EventCtx } from "./pipeline.js";
 import type { WebhookPayload } from "./types.js";
 
-const appId = process.env.GITHUB_APP_ID!;
-const privateKey = process.env.GITHUB_PRIVATE_KEY!.replace(/\\n/g, "\n");
-const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET!;
+const appId = process.env.GITHUB_APP_ID;
+const rawPrivateKey = process.env.GITHUB_PRIVATE_KEY;
+const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
+if (!appId || !rawPrivateKey || !webhookSecret) {
+  throw new Error(
+    "Missing required env: GITHUB_APP_ID, GITHUB_PRIVATE_KEY, GITHUB_WEBHOOK_SECRET",
+  );
+}
+const privateKey = rawPrivateKey.replace(/\\n/g, "\n");
 const brainUrl = process.env.BRAIN_URL ?? "http://localhost:8000";
 const port = Number(process.env.PORT ?? 3000);
 

@@ -36,7 +36,7 @@ export async function handleEvent(ctx: EventCtx, deps: Deps): Promise<void> {
   if (result.intake?.route === "skip") return;
   await deps.execute(octokit,
     { owner: ctx.repo.owner, repo: ctx.repo.name, issue_number: event.number },
-    result.actions);
+    result.actions ?? []);
 }
 
 export function defaultDeps(): Deps {
