@@ -96,3 +96,51 @@ def test_ci_status_failure():
 def test_ci_status_unknown_when_absent():
     ev = _pr(ci_status="none")
     assert checks.ci_status_check(ev).result == "unknown"
+
+
+# --- llm-backed checks (Task 6); llm() is mocked ---
+
+def test_diff_matches_description_flags_mismatch(monkeypatch):
+    monkeypatch.setattr(
+        checks, "llm",
+        lambda messages, schema: schema(mismatch=True, reason="body claims fix, diff is noop"),
+    )
+    ev = _pr(body="Fixes the auth bug", diff="--- a/r\n+++ b/r\n+# comment\n")
+    f = checks.diff_matches_description(ev)
+    assert f.result == "fail" and "noop" in f.evidence
+
+
+def test_diff_matches_description_passes(monkeypatch):
+    monkeypatch.setattr(
+        checks, "llm",
+        lambda messages, schema: schema(mismatch=False, reason="diff matches"),
+    )
+    ev = _pr(body="bump", diff="--- a/r\n+++ b/r\n+x=2\n")
+    assert checks.diff_matches_description(ev).result == "pass"
+
+
+def test_has_repro_flags_missing(monkeypatch):
+    monkeypatch.setattr(
+        checks, "llm",
+        lambda messages, schema: schema(has_repro=False, reason="no steps"),
+    )
+    ev = _pr(kind="issue", body="it doesn't work pls fix")
+    assert checks.has_repro(ev).result == "fail"
+
+
+def test_is_duplicate_flags_match(monkeypatch):
+    monkeypatch.setattr(
+        checks, "llm",
+        lambda messages, schema: schema(duplicate_of=7, reason="same crash"),
+    )
+    ev = _pr(
+        kind="issue", body="crash on save",
+        existing_issues=[{"number": 7, "title": "crash on save", "body": "..."}],
+    )
+    f = checks.is_duplicate(ev)
+    assert f.result == "fail" and "#7" in f.evidence
+
+
+def test_is_duplicate_unknown_without_candidates():
+    ev = _pr(kind="issue", existing_issues=None)
+    assert checks.is_duplicate(ev).result == "unknown"

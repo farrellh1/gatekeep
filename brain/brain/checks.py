@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 import re
+from typing import Optional
+
+from pydantic import BaseModel
 
 from brain.schemas import NormalizedEvent, Finding
 from brain.repo_reader import RepoReader
+from brain.llm import llm
 
 _CODE_SPAN_RE = re.compile(r"`+([^`]+?)`+")
 _CALL_REF_RE = re.compile(r"([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*)\(")
@@ -81,3 +85,71 @@ def ci_status_check(event: NormalizedEvent) -> Finding:
     if event.ci_status == "failure":
         return Finding(check="ci_status", result="fail", evidence="existing CI is failing")
     return Finding(check="ci_status", result="pass", evidence="existing CI passing")
+
+
+class _DiffMatch(BaseModel):
+    mismatch: bool
+    reason: str
+
+
+def diff_matches_description(event: NormalizedEvent) -> Finding:
+    if not event.diff:
+        return Finding(check="diff_matches_description", result="unknown", evidence="no diff")
+    msg = [
+        {"role": "system", "content":
+            "You compare a PR description to its actual diff. Set mismatch=true ONLY if the "
+            "diff plainly does not do what the description claims (e.g. claims a fix but is a "
+            "no-op/comment/unrelated change). Be conservative."},
+        {"role": "user", "content":
+            f"DESCRIPTION:\n{event.title}\n{event.body}\n\nDIFF:\n{event.diff}"},
+    ]
+    out = llm(msg, schema=_DiffMatch)
+    return Finding(
+        check="diff_matches_description",
+        result="fail" if out.mismatch else "pass", evidence=out.reason,
+    )
+
+
+class _Repro(BaseModel):
+    has_repro: bool
+    reason: str
+
+
+def has_repro(event: NormalizedEvent) -> Finding:
+    msg = [
+        {"role": "system", "content":
+            "Does this bug report contain a concrete reproduction (steps, code, or a stack "
+            "trace)? has_repro=false only if it is vague with no way to reproduce."},
+        {"role": "user", "content": f"{event.title}\n{event.body}"},
+    ]
+    out = llm(msg, schema=_Repro)
+    return Finding(
+        check="has_repro",
+        result="pass" if out.has_repro else "fail", evidence=out.reason,
+    )
+
+
+class _Dupe(BaseModel):
+    duplicate_of: Optional[int]
+    reason: str
+
+
+def is_duplicate(event: NormalizedEvent) -> Finding:
+    candidates = event.existing_issues or []
+    if not candidates:
+        return Finding(check="is_duplicate", result="unknown", evidence="no candidates provided")
+    listing = "\n".join(f"#{c.number}: {c.title}" for c in candidates)
+    msg = [
+        {"role": "system", "content":
+            "Is the NEW issue a semantic duplicate of one of the EXISTING issues? "
+            "Return the duplicate issue number or null. Be conservative."},
+        {"role": "user", "content":
+            f"NEW:\n{event.title}\n{event.body}\n\nEXISTING:\n{listing}"},
+    ]
+    out = llm(msg, schema=_Dupe)
+    if out.duplicate_of is not None:
+        return Finding(
+            check="is_duplicate", result="fail",
+            evidence=f"appears to duplicate #{out.duplicate_of}: {out.reason}",
+        )
+    return Finding(check="is_duplicate", result="pass", evidence="no duplicate found")
