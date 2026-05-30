@@ -7,13 +7,16 @@ from core.llm import llm
 
 def draft_comment(state: BrainState) -> str:
     reasons = "\n".join(f"- {r}" for r in state.verdict.reasons)
+    author = state.event.author.login
     msg = [
         {
             "role": "system",
-            "content": "Write a short, polite, specific GitHub comment explaining the concern. "
-            "Reference the concrete evidence. No accusations of being AI-generated.",
+            "content": "Write the final body of a short, polite, specific GitHub comment "
+            "explaining the concern. Open by greeting the author as @<their handle>. Reference "
+            "the concrete evidence. Output only the comment text — no markdown code fences and no "
+            "placeholder brackets. Never accuse the author of using AI.",
         },
-        {"role": "user", "content": f"Concerns:\n{reasons}"},
+        {"role": "user", "content": f"Author handle: {author}\nConcerns:\n{reasons}"},
     ]
     return llm(msg)
 
