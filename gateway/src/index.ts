@@ -51,6 +51,6 @@ app.webhooks.on(
   },
 );
 
-createServer(createNodeMiddleware(app.webhooks)).listen(port, () => {
+createServer(createNodeMiddleware(app.webhooks, { path: "/" })).listen(port, () => {
   console.log(`gatekeep gateway listening on :${port} (brain at ${brainUrl})`);
 });
