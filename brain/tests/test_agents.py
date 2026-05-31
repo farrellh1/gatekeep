@@ -31,6 +31,18 @@ def test_intake_routes_opened_pr_to_firewall(monkeypatch):
     assert out.intake.route == "firewall"
 
 
+def test_intake_survives_model_omitting_fields(monkeypatch):
+    # the real failure mode: the model returned {route, reason} with no `relevant`.
+    # _IntakeOut no longer requires it, so the run must not crash and derives relevant.
+    monkeypatch.setattr(
+        intake_mod, "llm",
+        lambda messages, schema: schema(route="firewall"),
+    )
+    out = intake_mod.run(BrainState(event=_ev()))
+    assert out.intake.route == "firewall"
+    assert out.intake.relevant is True
+
+
 def test_intake_skips_irrelevant_action():
     # 'labeled' is not actionable -> skip without spending an llm call
     out = intake_mod.run(BrainState(event=_ev(action="labeled")))

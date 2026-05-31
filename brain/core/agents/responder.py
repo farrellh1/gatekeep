@@ -40,7 +40,11 @@ def _draft(state: BrainState, config: RepoConfig) -> list[Action]:
 
 
 def run(state: BrainState, config: RepoConfig) -> BrainState:
-    allow_close = config.mode == "auto-gate" and state.verdict.confidence >= config.threshold
+    # closing is irreversible: require a HIGH-confidence finding to back it, not
+    # just a confident verdict
+    confident = state.verdict.confidence >= config.threshold
+    high_conf_fail = any(f.result == "fail" and f.confidence == "HIGH" for f in state.findings)
+    allow_close = config.mode == "auto-gate" and confident and high_conf_fail
 
     kept, gated = [], []
     for action in _draft(state, config):
@@ -50,9 +54,8 @@ def run(state: BrainState, config: RepoConfig) -> BrainState:
             kept.append(action)
 
     state.actions = kept
-    state.gate = GateInfo(
-        policy=config.mode,
-        gated=gated,
-        reason=f"{state.verdict.label} @ {state.verdict.confidence:.2f}",
-    )
+    reason = f"{state.verdict.label} @ {state.verdict.confidence:.2f}"
+    if "close" in gated and config.mode == "auto-gate" and confident and not high_conf_fail:
+        reason += " (no HIGH-confidence evidence; close withheld for human review)"
+    state.gate = GateInfo(policy=config.mode, gated=gated, reason=reason)
     return state

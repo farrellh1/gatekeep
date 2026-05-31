@@ -9,9 +9,9 @@ _ACTIONABLE = {"opened", "edited", "reopened"}
 
 
 class _IntakeOut(BaseModel):
-    relevant: bool
+    # only `route` drives the graph; keep the schema minimal
     route: str  # "firewall" | "skip"
-    reason: str
+    reason: str = ""
 
 
 def run(state: BrainState) -> BrainState:
@@ -24,13 +24,17 @@ def run(state: BrainState) -> BrainState:
         return state
     msg = [
         {"role": "system", "content":
-            "You triage a GitHub event for a slop-firewall. route='firewall' for a genuine "
-            "new issue/PR worth checking; route='skip' for bot noise, chores, or off-topic."},
+            "You triage a GitHub event for a slop-firewall. The firewall's whole JOB is to "
+            "evaluate low-quality, vague, terse, or suspicious issues and PRs, so do NOT skip "
+            "something merely because it looks low-effort, vague, or bad -- that is exactly what "
+            "the firewall must inspect. route='firewall' for any genuine human-authored issue or "
+            "PR. route='skip' ONLY for non-content: automated bot comments, dependency-bump or CI "
+            "chores, or clearly off-topic spam. When in doubt, choose 'firewall'."},
         {"role": "user", "content": f"kind={ev.kind} title={ev.title}\n{ev.body}"},
     ]
     out = llm(msg, schema=_IntakeOut)
+    route = "firewall" if out.route == "firewall" else "skip"
     state.intake = IntakeResult(
-        kind=ev.kind, relevant=out.relevant,
-        route="firewall" if out.route == "firewall" else "skip", reason=out.reason,
+        kind=ev.kind, relevant=route == "firewall", route=route, reason=out.reason,
     )
     return state

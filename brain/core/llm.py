@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 from typing import Optional, Type
 
@@ -7,6 +8,8 @@ from langchain_openai import ChatOpenAI
 from pydantic import BaseModel
 
 DEFAULT_MODEL = os.environ.get("GATEKEEP_MODEL", "deepseek/deepseek-v4-pro")
+
+logger = logging.getLogger("gatekeep.llm")
 
 
 def _client(model: str) -> ChatOpenAI:
@@ -34,6 +37,19 @@ def llm(
     `model` overrides the default per-agent (e.g. a stronger model for Judge).
     """
     client = _client(model or DEFAULT_MODEL)
-    if schema is not None:
-        return client.with_structured_output(schema).invoke(messages)
-    return client.invoke(messages).content
+    if schema is None:
+        return client.invoke(messages).content
+    # function_calling yields stricter JSON than json-schema mode on some OpenRouter
+    # providers; include_raw surfaces the model's actual output when parsing fails
+    # instead of discarding it.
+    result = client.with_structured_output(
+        schema, method="function_calling", include_raw=True
+    ).invoke(messages)
+    if result["parsing_error"]:
+        logger.error(
+            "structured-output parse failed for %s: %s | raw=%s",
+            getattr(schema, "__name__", schema), result["parsing_error"],
+            repr(result["raw"])[:800],
+        )
+        raise result["parsing_error"]
+    return result["parsed"]
