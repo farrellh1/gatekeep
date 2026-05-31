@@ -6,8 +6,15 @@ const target = { owner: "o", repo: "r" };
 describe("fetchConfig", () => {
   it("returns the decoded yaml text when .gatekeep.yml exists", async () => {
     const yaml = "mode: suggest-only\n";
-    const ok = { rest: { repos: { getContent: vi.fn().mockResolvedValue({
-      data: { content: Buffer.from(yaml).toString("base64"), encoding: "base64" } }) } } };
+    const ok = {
+      rest: {
+        repos: {
+          getContent: vi.fn().mockResolvedValue({
+            data: { content: Buffer.from(yaml).toString("base64"), encoding: "base64" },
+          }),
+        },
+      },
+    };
     expect(await fetchConfig(ok as any, target)).toBe(yaml);
   });
 

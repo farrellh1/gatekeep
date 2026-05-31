@@ -1,11 +1,13 @@
 import type { Octokit } from "octokit";
 import type { Action } from "./types.js";
 
-export interface Target { owner: string; repo: string; issue_number: number; }
+export interface Target {
+  owner: string;
+  repo: string;
+  issue_number: number;
+}
 
-export async function execute(
-  octokit: Octokit, target: Target, actions: Action[],
-): Promise<void> {
+export async function execute(octokit: Octokit, target: Target, actions: Action[]): Promise<void> {
   for (const action of actions) {
     switch (action.action) {
       case "comment":

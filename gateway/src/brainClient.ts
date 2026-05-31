@@ -1,7 +1,9 @@
 import type { NormalizedEvent, BrainResult } from "./types.js";
 
 export async function callBrain(
-  event: NormalizedEvent, configYaml: string | null, brainUrl: string,
+  event: NormalizedEvent,
+  configYaml: string | null,
+  brainUrl: string,
 ): Promise<BrainResult> {
   const res = await fetch(`${brainUrl}/process`, {
     method: "POST",

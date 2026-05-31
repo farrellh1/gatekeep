@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from core.schemas import BrainState, Verdict
 from core.llm import llm
+from core.schemas import BrainState, Verdict
 
 
 def run(state: BrainState) -> BrainState:
@@ -15,8 +15,10 @@ def run(state: BrainState) -> BrainState:
         for f in state.findings
     )
     msg = [
-        {"role": "system", "content":
-            "You are the Judge. Given ONLY these check findings, decide: label is 'slop' "
+        {
+            "role": "system",
+            "content": "You are the Judge. Given ONLY these check findings, decide: "
+            "label is 'slop' "
             "(clear invalidity/hallucination/no-op), 'needs-info' (likely real but missing "
             "repro/detail), or 'legit' (passes). Be conservative: prefer 'legit' or "
             "'needs-info' unless evidence of slop is strong. confidence in [0,1]. "
@@ -27,16 +29,20 @@ def run(state: BrainState) -> BrainState:
             "in the repo (the index covers references, not just definitions, so a real but "
             "imported/used symbol would pass) -- treat this as a hallucinated reference and label "
             "'slop', for issues and PRs alike. Do not soften it to 'needs-info' on the theory it "
-            "might be a missing dependency or stale name; a HIGH-confidence miss has ruled that out.\n"
+            "might be a missing dependency or stale name; a HIGH-confidence miss has "
+            "ruled that out.\n"
             "Do No Harm applies to weak evidence: a 'fail' with LOW confidence (engine=HEURISTIC) "
             "comes from a degraded language path we could not fully parse -- it MAY be a coverage "
             "gap, not real slop. A LOW-confidence fail MUST NOT by itself justify a 'slop' label; "
-            "treat it as at most 'needs-info' unless an independent HIGH-confidence finding confirms "
+            "treat it as at most 'needs-info' unless an independent HIGH-confidence "
+            "finding confirms "
             "the problem.\n"
             "Anchor on the findings, not intuition: deterministic and AST checks (engine="
             "DETERMINISTIC/AST_TREE_SITTER) are authoritative. If every check passed, the label is "
-            "'legit' -- do not invent slop from a clean findings list. If a check failed, your label "
-            "must follow from that specific failure."},
+            "'legit' -- do not invent slop from a clean findings list. If a check "
+            "failed, your label "
+            "must follow from that specific failure.",
+        },
         {"role": "user", "content": f"FINDINGS:\n{findings or '(none)'}"},
     ]
     state.verdict = llm(msg, schema=Verdict)

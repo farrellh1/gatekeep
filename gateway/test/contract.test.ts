@@ -26,21 +26,38 @@ describe("contract fixture", () => {
           get: vi.fn().mockResolvedValue({ data: sample.diff }),
           listFiles: vi.fn().mockResolvedValue({ data: [{ filename: "src/auth.py" }] }),
         },
-        repos: { getCombinedStatusForRef: vi.fn().mockResolvedValue({ data: { state: "failure" } }) },
-        users: { getByUsername: vi.fn().mockResolvedValue({ data: { created_at: "2020-01-01T00:00:00Z" } }) },
+        repos: {
+          getCombinedStatusForRef: vi.fn().mockResolvedValue({ data: { state: "failure" } }),
+        },
+        users: {
+          getByUsername: vi
+            .fn()
+            .mockResolvedValue({ data: { created_at: "2020-01-01T00:00:00Z" } }),
+        },
       },
     };
     const payload = {
-      action: "opened", number: 7,
+      action: "opened",
+      number: 7,
       pull_request: {
-        number: 7, title: sample.title, body: sample.body,
-        user: { login: "octocat" }, author_association: "FIRST_TIME_CONTRIBUTOR",
+        number: 7,
+        title: sample.title,
+        body: sample.body,
+        user: { login: "octocat" },
+        author_association: "FIRST_TIME_CONTRIBUTOR",
         head: { sha: "abc" },
-        base: { repo: { owner: { login: "gatekeep-dogfood" }, name: "sample", default_branch: "main" } },
+        base: {
+          repo: { owner: { login: "gatekeep-dogfood" }, name: "sample", default_branch: "main" },
+        },
       },
     };
-    const ev = await normalizePullRequest(ok as any, payload as any, sample.delivery_id,
-      sample.repo.clone_path, () => new Date("2020-01-13T00:00:00Z"));
+    const ev = await normalizePullRequest(
+      ok as any,
+      payload as any,
+      sample.delivery_id,
+      sample.repo.clone_path,
+      () => new Date("2020-01-13T00:00:00Z"),
+    );
     expect(Object.keys(ev).sort()).toEqual(Object.keys(sample).sort());
   });
 });

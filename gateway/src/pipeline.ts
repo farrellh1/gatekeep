@@ -21,7 +21,12 @@ export interface Deps {
   installationOctokit: typeof realAuth;
   ensureClone: typeof realClone;
   fetchConfig: typeof realConfig;
-  normalize: (octokit: Octokit, payload: WebhookPayload, deliveryId: string, clonePath: string) => Promise<NormalizedEvent>;
+  normalize: (
+    octokit: Octokit,
+    payload: WebhookPayload,
+    deliveryId: string,
+    clonePath: string,
+  ) => Promise<NormalizedEvent>;
   callBrain: typeof realBrain;
   execute: typeof realExecute;
 }
@@ -29,14 +34,19 @@ export interface Deps {
 export async function handleEvent(ctx: EventCtx, deps: Deps): Promise<void> {
   const octokit = await deps.installationOctokit(ctx.app, ctx.installationId);
   const clonePath = await deps.ensureClone(ctx.repo);
-  const configYaml = await deps.fetchConfig(octokit, { owner: ctx.repo.owner, repo: ctx.repo.name });
+  const configYaml = await deps.fetchConfig(octokit, {
+    owner: ctx.repo.owner,
+    repo: ctx.repo.name,
+  });
   const event = await deps.normalize(octokit, ctx.payload, ctx.deliveryId, clonePath);
   const result = await deps.callBrain(event, configYaml, ctx.brainUrl);
 
   if (result.intake?.route === "skip") return;
-  await deps.execute(octokit,
+  await deps.execute(
+    octokit,
     { owner: ctx.repo.owner, repo: ctx.repo.name, issue_number: event.number },
-    result.actions ?? []);
+    result.actions ?? [],
+  );
 }
 
 export function defaultDeps(): Deps {

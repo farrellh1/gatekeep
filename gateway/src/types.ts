@@ -60,7 +60,12 @@ export interface BrainResult {
     confidence?: "HIGH" | "LOW";
     engine?: "AST_TREE_SITTER" | "HEURISTIC" | "DETERMINISTIC" | "LLM";
   }[];
-  verdict?: { label: "slop" | "needs-info" | "legit"; confidence: number; reasons: string[]; primary_evidence: string } | null;
+  verdict?: {
+    label: "slop" | "needs-info" | "legit";
+    confidence: number;
+    reasons: string[];
+    primary_evidence: string;
+  } | null;
   actions: Action[];
   gate?: { policy: string; gated: string[]; reason: string } | null;
   trace?: {

@@ -20,11 +20,17 @@ function capDiff(diff: string): string {
 
 function capFiles(files: string[]): string[] {
   if (files.length <= MAX_CHANGED_FILES) return files;
-  return [...files.slice(0, MAX_CHANGED_FILES), `[gatekeep: +${files.length - MAX_CHANGED_FILES} more files truncated]`];
+  return [
+    ...files.slice(0, MAX_CHANGED_FILES),
+    `[gatekeep: +${files.length - MAX_CHANGED_FILES} more files truncated]`,
+  ];
 }
 
 export async function normalizePullRequest(
-  octokit: Octokit, payload: PRPayload, deliveryId: string, clonePath: string,
+  octokit: Octokit,
+  payload: PRPayload,
+  deliveryId: string,
+  clonePath: string,
   clock: Clock = () => new Date(),
 ): Promise<NormalizedEvent> {
   const pr = payload.pull_request;
@@ -32,16 +38,23 @@ export async function normalizePullRequest(
   const name = pr.base.repo.name;
 
   const diffRes = await octokit.rest.pulls.get({
-    owner, repo: name, pull_number: pr.number, mediaType: { format: "diff" },
+    owner,
+    repo: name,
+    pull_number: pr.number,
+    mediaType: { format: "diff" },
   });
   const files = await octokit.rest.pulls.listFiles({ owner, repo: name, pull_number: pr.number });
   const status = await octokit.rest.repos.getCombinedStatusForRef({
-    owner, repo: name, ref: pr.head.sha,
+    owner,
+    repo: name,
+    ref: pr.head.sha,
   });
   const user = await octokit.rest.users.getByUsername({ username: pr.user!.login });
 
   const ciMap: Record<string, NormalizedEvent["ci_status"]> = {
-    success: "success", failure: "failure", pending: "pending",
+    success: "success",
+    failure: "failure",
+    pending: "pending",
   };
 
   return {
@@ -66,7 +79,10 @@ export async function normalizePullRequest(
 }
 
 export async function normalizeIssue(
-  octokit: Octokit, payload: IssuePayload, deliveryId: string, clonePath: string,
+  octokit: Octokit,
+  payload: IssuePayload,
+  deliveryId: string,
+  clonePath: string,
   clock: Clock = () => new Date(),
 ): Promise<NormalizedEvent> {
   const issue = payload.issue;
@@ -74,7 +90,10 @@ export async function normalizeIssue(
   const name = payload.repository.name;
 
   const open = await octokit.rest.issues.listForRepo({
-    owner, repo: name, state: "open", per_page: 30,
+    owner,
+    repo: name,
+    state: "open",
+    per_page: 30,
   });
   const user = await octokit.rest.users.getByUsername({ username: issue.user!.login });
 
@@ -90,7 +109,8 @@ export async function normalizeIssue(
       login: issue.user!.login,
       account_age_days: accountAgeDays(user.data.created_at, clock()),
       is_first_time_contributor:
-        issue.author_association === "FIRST_TIME_CONTRIBUTOR" || issue.author_association === "NONE",
+        issue.author_association === "FIRST_TIME_CONTRIBUTOR" ||
+        issue.author_association === "NONE",
     },
     diff: null,
     changed_files: null,

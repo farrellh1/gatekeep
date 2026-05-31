@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Optional, Type
 
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel
@@ -28,8 +27,8 @@ def _client(model: str) -> ChatOpenAI:
 
 def llm(
     messages: list[dict],
-    schema: Optional[Type[BaseModel]] = None,
-    model: Optional[str] = None,
+    schema: type[BaseModel] | None = None,
+    model: str | None = None,
 ) -> object:
     """The ONLY place the app talks to a model. No agent imports a provider SDK.
 
@@ -48,7 +47,8 @@ def llm(
     if result["parsing_error"]:
         logger.error(
             "structured-output parse failed for %s: %s | raw=%s",
-            getattr(schema, "__name__", schema), result["parsing_error"],
+            getattr(schema, "__name__", schema),
+            result["parsing_error"],
             repr(result["raw"])[:800],
         )
         raise result["parsing_error"]

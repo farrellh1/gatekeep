@@ -1,16 +1,20 @@
 from pathlib import Path
 
-from core.schemas import NormalizedEvent
 from core import checks
+from core.schemas import NormalizedEvent
 
 CLONE = str(Path(__file__).parent / "fixtures" / "clone")
 
 
 def _pr(**kw):
     base = dict(
-        delivery_id="d", kind="pull_request", action="opened",
+        delivery_id="d",
+        kind="pull_request",
+        action="opened",
         repo={"owner": "o", "name": "r", "default_branch": "main", "clone_path": CLONE},
-        number=1, title="t", body="b",
+        number=1,
+        title="t",
+        body="b",
         author={"login": "a", "account_age_days": 10, "is_first_time_contributor": True},
     )
     base.update(kw)
@@ -18,6 +22,7 @@ def _pr(**kw):
 
 
 # --- deterministic checks (Task 5) ---
+
 
 def test_cited_symbols_flags_hallucinated():
     ev = _pr(body="This calls `validateToken()` to fix it")
@@ -72,7 +77,13 @@ def test_cited_symbols_passes_symbol_added_in_diff():
     # absent from the clone -- it must not be read as a hallucination
     ev = _pr(
         body="This adds `calculateRewards()` to the rewards path.",
-        diff="--- a/src/rewards.py\n+++ b/src/rewards.py\n@@\n+def calculateRewards(user):\n+    return 0\n",
+        diff=(
+            "--- a/src/rewards.py\n"
+            "+++ b/src/rewards.py\n"
+            "@@\n"
+            "+def calculateRewards(user):\n"
+            "+    return 0\n"
+        ),
     )
     assert checks.cited_symbols_exist(ev).result == "pass"
 
@@ -81,7 +92,13 @@ def test_cited_symbols_flags_symbol_absent_from_repo_and_diff():
     # genuine hallucination: cited as part of the fix but nowhere in repo or diff
     ev = _pr(
         body="This wires up `validateToken()` before login.",
-        diff="--- a/src/auth.py\n+++ b/src/auth.py\n@@\n-    return True\n+    return True  # patched\n",
+        diff=(
+            "--- a/src/auth.py\n"
+            "+++ b/src/auth.py\n"
+            "@@\n"
+            "-    return True\n"
+            "+    return True  # patched\n"
+        ),
     )
     f = checks.cited_symbols_exist(ev)
     assert f.result == "fail" and "validateToken" in f.evidence
@@ -120,9 +137,11 @@ def test_ci_status_unknown_when_absent():
 
 # --- llm-backed checks (Task 6); llm() is mocked ---
 
+
 def test_diff_matches_description_flags_mismatch(monkeypatch):
     monkeypatch.setattr(
-        checks, "llm",
+        checks,
+        "llm",
         lambda messages, schema: schema(mismatch=True, reason="body claims fix, diff is noop"),
     )
     ev = _pr(body="Fixes the auth bug", diff="--- a/r\n+++ b/r\n+# comment\n")
@@ -132,7 +151,8 @@ def test_diff_matches_description_flags_mismatch(monkeypatch):
 
 def test_diff_matches_description_passes(monkeypatch):
     monkeypatch.setattr(
-        checks, "llm",
+        checks,
+        "llm",
         lambda messages, schema: schema(mismatch=False, reason="diff matches"),
     )
     ev = _pr(body="bump", diff="--- a/r\n+++ b/r\n+x=2\n")
@@ -141,7 +161,8 @@ def test_diff_matches_description_passes(monkeypatch):
 
 def test_has_repro_flags_missing(monkeypatch):
     monkeypatch.setattr(
-        checks, "llm",
+        checks,
+        "llm",
         lambda messages, schema: schema(has_repro=False, reason="no steps"),
     )
     ev = _pr(kind="issue", body="it doesn't work pls fix")
@@ -150,11 +171,13 @@ def test_has_repro_flags_missing(monkeypatch):
 
 def test_is_duplicate_flags_match(monkeypatch):
     monkeypatch.setattr(
-        checks, "llm",
+        checks,
+        "llm",
         lambda messages, schema: schema(duplicate_of=7, reason="same crash"),
     )
     ev = _pr(
-        kind="issue", body="crash on save",
+        kind="issue",
+        body="crash on save",
         existing_issues=[{"number": 7, "title": "crash on save", "body": "..."}],
     )
     f = checks.is_duplicate(ev)

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -40,11 +40,11 @@ class NormalizedEvent(BaseModel):
     body: str
     author: AuthorInfo
     # PR-only
-    diff: Optional[str] = None
-    changed_files: Optional[list[str]] = None
-    ci_status: Optional[Literal["success", "failure", "pending", "none"]] = None
+    diff: str | None = None
+    changed_files: list[str] | None = None
+    ci_status: Literal["success", "failure", "pending", "none"] | None = None
     # issue-only (Gateway supplies open-issue candidates for dupe detection)
-    existing_issues: Optional[list[IssueRef]] = None
+    existing_issues: list[IssueRef] | None = None
 
 
 class Finding(BaseModel):
@@ -71,7 +71,7 @@ class Verdict(BaseModel):
 
 class Action(BaseModel):
     action: Literal["comment", "label", "close"]
-    body: Optional[str] = None
+    body: str | None = None
 
 
 class GateInfo(BaseModel):
@@ -82,8 +82,8 @@ class GateInfo(BaseModel):
 
 class BrainState(BaseModel):
     event: NormalizedEvent
-    intake: Optional[IntakeResult] = None
+    intake: IntakeResult | None = None
     findings: list[Finding] = []
-    verdict: Optional[Verdict] = None
+    verdict: Verdict | None = None
     actions: list[Action] = []
-    gate: Optional[GateInfo] = None
+    gate: GateInfo | None = None

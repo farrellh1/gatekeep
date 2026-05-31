@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal, Optional
+from typing import Literal
 
 import yaml
 from pydantic import BaseModel
@@ -16,7 +16,7 @@ class RepoConfig(BaseModel):
         return self.checks.get(name, True)
 
 
-def load_config(yaml_text: Optional[str]) -> RepoConfig:
+def load_config(yaml_text: str | None) -> RepoConfig:
     """Parse a .gatekeep.yml string. None/empty -> defaults (read-only)."""
     if not yaml_text:
         return RepoConfig()

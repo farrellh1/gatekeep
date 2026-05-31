@@ -16,7 +16,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=9", "pytest-mock>=3.15", "httpx>=0.28"]
+dev = ["pytest>=9", "pytest-mock>=3.15", "httpx>=0.28", "ruff>=0.15.15", "pre-commit>=4.6"]
 
 [build-system]
 requires = ["setuptools>=68"]
@@ -24,3 +24,18 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 include = ["core*"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+# Fixtures are deliberately-broken sample repos (hallucinated symbols, no-op diffs)
+# used as check inputs -- they must not be held to lint standards.
+extend-exclude = ["tests/fixtures"]
+
+[tool.ruff.lint]
+# E/W pycodestyle, F pyflakes, I isort, UP pyupgrade, B bugbear, SIM simplify.
+select = ["E", "W", "F", "I", "UP", "B", "SIM"]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests use assert-heavy, fixture-driven style; bugbear's B011/B017 add noise.
+"tests/**" = ["B011", "B017"]
