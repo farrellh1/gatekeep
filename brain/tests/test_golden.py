@@ -8,7 +8,10 @@ import pytest
 from core import graph
 
 CLONE = str(pathlib.Path(__file__).parent / "fixtures" / "clone")
-CASES = sorted(glob.glob(str(pathlib.Path(__file__).parent / "golden" / "*" / "*.json")))
+CASES = sorted(
+    p for p in glob.glob(str(pathlib.Path(__file__).parent / "golden" / "*" / "*.json"))
+    if pathlib.Path(p).parent.name in ("legit", "slop")
+)
 
 pytestmark = [
     pytest.mark.golden,

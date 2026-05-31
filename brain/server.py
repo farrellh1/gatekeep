@@ -8,8 +8,10 @@ from pydantic import BaseModel
 
 from core.graph import process
 from core.schemas import NormalizedEvent
+from core.trace import configure_logging
 
 load_dotenv()
+configure_logging()
 
 app = FastAPI(title="Gatekeep Brain")
 

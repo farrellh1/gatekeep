@@ -9,8 +9,8 @@
     "title": "Reject empty passwords in login()",
     "body": "`login()` currently accepts empty passwords. This adds a guard that returns False when the password is blank, plus a regression test.",
     "author": {"login": "maintainer-friend", "account_age_days": 900, "is_first_time_contributor": false},
-    "diff": "--- a/src/auth.py\n+++ b/src/auth.py\n@@\n def login(user, pw):\n+    if not pw:\n+        return False\n     return True\n",
-    "changed_files": ["src/auth.py"],
+    "diff": "--- a/src/auth.py\n+++ b/src/auth.py\n@@\n def login(user, pw):\n+    if not pw:\n+        return False\n     return True\n--- /dev/null\n+++ b/tests/test_auth.py\n@@\n+def test_login_rejects_empty_password():\n+    assert login(\"alice\", \"\") is False\n",
+    "changed_files": ["src/auth.py", "tests/test_auth.py"],
     "ci_status": "success"
   }
 }
