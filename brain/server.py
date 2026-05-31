@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -18,7 +16,7 @@ app = FastAPI(title="Gatekeep Brain")
 
 class ProcessRequest(BaseModel):
     event: NormalizedEvent
-    config_yaml: Optional[str] = None
+    config_yaml: str | None = None
 
 
 @app.post("/process")

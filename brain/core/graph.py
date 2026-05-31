@@ -3,11 +3,11 @@ from __future__ import annotations
 import os
 import time
 
-from langgraph.graph import StateGraph, END
+from langgraph.graph import END, StateGraph
 
-from core.schemas import BrainState, NormalizedEvent
-from core.config import load_config, RepoConfig
 from core.agents import intake, investigator, judge, responder
+from core.config import RepoConfig, load_config
+from core.schemas import BrainState, NormalizedEvent
 from core.trace import Tracer
 
 
@@ -25,13 +25,16 @@ def _traced(name, fn, tracer: Tracer):
             raise
         tracer.record(name, out, (time.perf_counter() - t0) * 1000)
         return out
+
     return wrapper
 
 
 def _build(config: RepoConfig, tracer: Tracer):
     g = StateGraph(BrainState)
     g.add_node("intake", _traced("intake", intake.run, tracer))
-    g.add_node("investigator", _traced("investigator", lambda s: investigator.run(s, config), tracer))
+    g.add_node(
+        "investigator", _traced("investigator", lambda s: investigator.run(s, config), tracer)
+    )
     g.add_node("judge", _traced("judge", judge.run, tracer))
     g.add_node("responder", _traced("responder", lambda s: responder.run(s, config), tracer))
 

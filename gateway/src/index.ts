@@ -9,9 +9,7 @@ const appId = process.env.GITHUB_APP_ID;
 const rawPrivateKey = process.env.GITHUB_PRIVATE_KEY;
 const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
 if (!appId || !rawPrivateKey || !webhookSecret) {
-  throw new Error(
-    "Missing required env: GITHUB_APP_ID, GITHUB_PRIVATE_KEY, GITHUB_WEBHOOK_SECRET",
-  );
+  throw new Error("Missing required env: GITHUB_APP_ID, GITHUB_PRIVATE_KEY, GITHUB_WEBHOOK_SECRET");
 }
 const privateKey = rawPrivateKey.replace(/\\n/g, "\n");
 const brainUrl = process.env.BRAIN_URL ?? "http://localhost:8000";
@@ -22,27 +20,34 @@ const deps = defaultDeps();
 
 const ACTIONS = new Set(["opened", "edited", "reopened"]);
 
-function ctxFrom(kind: "issue" | "pull_request", payload: WebhookPayload, deliveryId: string): EventCtx | null {
+function ctxFrom(
+  kind: "issue" | "pull_request",
+  payload: WebhookPayload,
+  deliveryId: string,
+): EventCtx | null {
   if (!ACTIONS.has(payload.action)) return null;
   if (!payload.installation?.id) return null;
   const r = payload.repository;
   return {
-    app, installationId: payload.installation.id,
+    app,
+    installationId: payload.installation.id,
     repo: {
-      owner: r.owner.login, name: r.name, default_branch: r.default_branch,
+      owner: r.owner.login,
+      name: r.name,
+      default_branch: r.default_branch,
       clone_url: r.clone_url ?? `https://github.com/${r.owner.login}/${r.name}.git`,
     },
-    payload, kind, deliveryId, brainUrl,
+    payload,
+    kind,
+    deliveryId,
+    brainUrl,
   };
 }
 
-app.webhooks.on(
-  ["issues.opened", "issues.edited", "issues.reopened"],
-  async ({ payload, id }) => {
-    const ctx = ctxFrom("issue", payload, id);
-    if (ctx) await handleEvent(ctx, deps).catch((e) => console.error("issue handler:", e));
-  },
-);
+app.webhooks.on(["issues.opened", "issues.edited", "issues.reopened"], async ({ payload, id }) => {
+  const ctx = ctxFrom("issue", payload, id);
+  if (ctx) await handleEvent(ctx, deps).catch((e) => console.error("issue handler:", e));
+});
 app.webhooks.on(
   ["pull_request.opened", "pull_request.edited", "pull_request.reopened"],
   async ({ payload, id }) => {

@@ -22,7 +22,9 @@ const prPayload = {
   action: "opened",
   number: 7,
   pull_request: {
-    number: 7, title: "Fix auth", body: "calls validateToken()",
+    number: 7,
+    title: "Fix auth",
+    body: "calls validateToken()",
     user: { login: "octocat" },
     author_association: "FIRST_TIME_CONTRIBUTOR",
     head: { sha: "abc123" },
@@ -33,8 +35,13 @@ const prPayload = {
 describe("normalizePullRequest", () => {
   it("assembles a NormalizedEvent from payload + octokit reads", async () => {
     const ok = fakeOctokit();
-    const ev = await normalizePullRequest(ok as any, prPayload as any, "dlv-1",
-      "/tmp/gatekeep/clones/o-r", () => new Date("2021-01-01T00:00:00Z"));
+    const ev = await normalizePullRequest(
+      ok as any,
+      prPayload as any,
+      "dlv-1",
+      "/tmp/gatekeep/clones/o-r",
+      () => new Date("2021-01-01T00:00:00Z"),
+    );
     expect(ev.kind).toBe("pull_request");
     expect(ev.number).toBe(7);
     expect(ev.diff).toContain("# noop");
@@ -57,8 +64,13 @@ describe("normalizePullRequest", () => {
       data: [{ filename: "a" }, { filename: "b" }, { filename: "c" }, { filename: "d" }],
     });
 
-    const ev = await fresh(ok as any, prPayload as any, "dlv-2",
-      "/tmp/gatekeep/clones/o-r", () => new Date("2021-01-01T00:00:00Z"));
+    const ev = await fresh(
+      ok as any,
+      prPayload as any,
+      "dlv-2",
+      "/tmp/gatekeep/clones/o-r",
+      () => new Date("2021-01-01T00:00:00Z"),
+    );
     expect(ev.diff).toContain("[gatekeep: diff truncated to 100 of 5000 bytes]");
     expect(ev.diff!.length).toBeLessThan(5000);
     expect(ev.changed_files).toEqual(["a", "b", "[gatekeep: +2 more files truncated]"]);

@@ -22,7 +22,10 @@ describe("callBrain", () => {
   });
 
   it("throws on a non-200 response", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 422, text: async () => "bad" }));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: false, status: 422, text: async () => "bad" }),
+    );
     await expect(callBrain(event, null, "http://brain")).rejects.toThrow(/422/);
   });
 });

@@ -1,19 +1,23 @@
 from pathlib import Path
 
-from core.schemas import NormalizedEvent, BrainState, Finding
-from core.config import RepoConfig
 from core.agents import intake as intake_mod
 from core.agents import investigator as inv_mod
 from core.agents import judge as judge_mod
+from core.config import RepoConfig
+from core.schemas import BrainState, Finding, NormalizedEvent
 
 CLONE = str(Path(__file__).parent / "fixtures" / "clone")
 
 
 def _ev(**kw):
     base = dict(
-        delivery_id="d", kind="pull_request", action="opened",
+        delivery_id="d",
+        kind="pull_request",
+        action="opened",
         repo={"owner": "o", "name": "r", "default_branch": "main", "clone_path": CLONE},
-        number=1, title="t", body="b",
+        number=1,
+        title="t",
+        body="b",
         author={"login": "a", "account_age_days": 10, "is_first_time_contributor": True},
     )
     base.update(kw)
@@ -22,9 +26,11 @@ def _ev(**kw):
 
 # --- Intake (Task 7) ---
 
+
 def test_intake_routes_opened_pr_to_firewall(monkeypatch):
     monkeypatch.setattr(
-        intake_mod, "llm",
+        intake_mod,
+        "llm",
         lambda messages, schema: schema(relevant=True, route="firewall", reason="new PR"),
     )
     out = intake_mod.run(BrainState(event=_ev()))
@@ -35,7 +41,8 @@ def test_intake_survives_model_omitting_fields(monkeypatch):
     # the real failure mode: the model returned {route, reason} with no `relevant`.
     # _IntakeOut no longer requires it, so the run must not crash and derives relevant.
     monkeypatch.setattr(
-        intake_mod, "llm",
+        intake_mod,
+        "llm",
         lambda messages, schema: schema(route="firewall"),
     )
     out = intake_mod.run(BrainState(event=_ev()))
@@ -51,10 +58,17 @@ def test_intake_skips_irrelevant_action():
 
 # --- Investigator (Task 8) ---
 
+
 def test_investigator_runs_pr_checks(monkeypatch):
-    monkeypatch.setattr(inv_mod, "PR_CHECKS", [
-        lambda ev: Finding(check="cited_symbols_exist", result="fail", evidence="missing foo()"),
-    ])
+    monkeypatch.setattr(
+        inv_mod,
+        "PR_CHECKS",
+        [
+            lambda ev: Finding(
+                check="cited_symbols_exist", result="fail", evidence="missing foo()"
+            ),
+        ],
+    )
     out = inv_mod.run(BrainState(event=_ev()), RepoConfig())
     assert len(out.findings) == 1
     assert out.findings[0].check == "cited_symbols_exist"
@@ -63,6 +77,7 @@ def test_investigator_runs_pr_checks(monkeypatch):
 def test_investigator_respects_disabled_check(monkeypatch):
     def f(ev):
         return Finding(check="cosmetic_only", result="fail", evidence="x")
+
     f.__name__ = "cosmetic_only"
     monkeypatch.setattr(inv_mod, "PR_CHECKS", [f])
     cfg = RepoConfig(checks={"cosmetic_only": False})
@@ -72,14 +87,17 @@ def test_investigator_respects_disabled_check(monkeypatch):
 
 # --- Judge (Task 9) ---
 
+
 def test_judge_reads_findings_only(monkeypatch):
     captured = {}
 
     def fake_llm(messages, schema):
         captured["prompt"] = messages[-1]["content"]
         return schema(
-            label="slop", confidence=0.92,
-            reasons=["cites missing foo()"], primary_evidence="cited_symbols_exist",
+            label="slop",
+            confidence=0.92,
+            reasons=["cites missing foo()"],
+            primary_evidence="cited_symbols_exist",
         )
 
     monkeypatch.setattr(judge_mod, "llm", fake_llm)

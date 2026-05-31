@@ -20,9 +20,34 @@ _LANG_BY_EXT = {
 # Code extensions tree-sitter can't parse; a symbol "missing" from one of these is
 # unverifiable, so confidence is downgraded when the change touches them.
 _UNPARSEABLE_CODE_EXT = {
-    ".php", ".kt", ".kts", ".swift", ".c", ".h", ".cpp", ".cc", ".hpp", ".cs",
-    ".scala", ".ex", ".exs", ".clj", ".cljs", ".dart", ".lua", ".pl", ".pm",
-    ".m", ".mm", ".sh", ".bash", ".zig", ".hs", ".erl", ".vue", ".svelte",
+    ".php",
+    ".kt",
+    ".kts",
+    ".swift",
+    ".c",
+    ".h",
+    ".cpp",
+    ".cc",
+    ".hpp",
+    ".cs",
+    ".scala",
+    ".ex",
+    ".exs",
+    ".clj",
+    ".cljs",
+    ".dart",
+    ".lua",
+    ".pl",
+    ".pm",
+    ".m",
+    ".mm",
+    ".sh",
+    ".bash",
+    ".zig",
+    ".hs",
+    ".erl",
+    ".vue",
+    ".svelte",
 }
 
 
@@ -113,7 +138,7 @@ class RepoReader:
             if count == 0:
                 kind = _val(node, "kind")
                 if isinstance(kind, str) and kind.endswith("identifier"):
-                    name = data[_val(node, "start_byte"):_val(node, "end_byte")]
+                    name = data[_val(node, "start_byte") : _val(node, "end_byte")]
                     symbols.add(name.decode("utf-8", "ignore"))
                 continue
             for i in range(count):
