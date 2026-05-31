@@ -9,7 +9,8 @@ from core import graph
 
 CLONE = str(pathlib.Path(__file__).parent / "fixtures" / "clone")
 CASES = sorted(
-    p for p in glob.glob(str(pathlib.Path(__file__).parent / "golden" / "*" / "*.json"))
+    p
+    for p in glob.glob(str(pathlib.Path(__file__).parent / "golden" / "*" / "*.json"))
     if pathlib.Path(p).parent.name in ("legit", "slop")
 )
 
@@ -24,7 +25,8 @@ pytestmark = [
 
 @pytest.mark.parametrize("path", CASES, ids=[pathlib.Path(p).stem for p in CASES])
 def test_golden_case(path):
-    case = json.load(open(path))
+    with open(path) as f:
+        case = json.load(f)
     bucket = pathlib.Path(path).parent.name
     event = case["event"]
     event["repo"]["clone_path"] = CLONE
@@ -34,6 +36,10 @@ def test_golden_case(path):
 
     label = result["verdict"]["label"]
     if bucket == "slop":
-        assert label == "slop", f"{path}: expected slop, got {label} ({result['verdict']['reasons']})"
+        assert label == "slop", (
+            f"{path}: expected slop, got {label} ({result['verdict']['reasons']})"
+        )
     else:
-        assert label != "slop", f"{path}: legit control flagged as slop ({result['verdict']['reasons']})"
+        assert label != "slop", (
+            f"{path}: legit control flagged as slop ({result['verdict']['reasons']})"
+        )

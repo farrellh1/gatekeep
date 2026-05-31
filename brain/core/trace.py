@@ -35,7 +35,10 @@ def _summary(node: str, s: BrainState) -> str:
         fails = [f"{f.check}({f.confidence}/{f.engine})" for f in s.findings if f.result == "fail"]
         return f"{len(s.findings)} findings, fails={fails or 'none'}"
     if node == "judge" and s.verdict:
-        return f"label={s.verdict.label} conf={s.verdict.confidence:.2f} :: {'; '.join(s.verdict.reasons)}"
+        return (
+            f"label={s.verdict.label} conf={s.verdict.confidence:.2f} "
+            f":: {'; '.join(s.verdict.reasons)}"
+        )
     if node == "responder":
         gated = s.gate.gated if s.gate else []
         return f"actions={[a.action for a in s.actions]} gated={gated}"
@@ -57,25 +60,29 @@ class Tracer:
 
     def record(self, node: str, state: BrainState, elapsed_ms: float) -> None:
         summary = _summary(node, state)
-        self.steps.append({
-            "node": node,
-            "elapsed_ms": round(elapsed_ms, 1),
-            "summary": summary,
-            "output": _salient(node, state),
-        })
+        self.steps.append(
+            {
+                "node": node,
+                "elapsed_ms": round(elapsed_ms, 1),
+                "summary": summary,
+                "output": _salient(node, state),
+            }
+        )
         logger.info("[%s] %s (%.0fms): %s", self.delivery_id, node, elapsed_ms, summary)
 
     def record_error(self, node: str, exc: Exception, elapsed_ms: float) -> None:
         """A node raised: record which one and why, so a failed run is still
         readable in the trace."""
         detail = f"{type(exc).__name__}: {exc}"
-        self.steps.append({
-            "node": node,
-            "elapsed_ms": round(elapsed_ms, 1),
-            "summary": f"ERROR: {detail}",
-            "error": detail,
-            "output": {},
-        })
+        self.steps.append(
+            {
+                "node": node,
+                "elapsed_ms": round(elapsed_ms, 1),
+                "summary": f"ERROR: {detail}",
+                "error": detail,
+                "output": {},
+            }
+        )
         logger.error("[%s] %s (%.0fms) FAILED: %s", self.delivery_id, node, elapsed_ms, detail)
 
     def to_dict(self) -> dict:

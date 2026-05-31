@@ -1,0 +1,29 @@
+# Editor-agnostic style gate: same checks as the CI `lint` workflow, run on the
+# files you're about to commit. Activate once per clone with `pre-commit install`.
+repos:
+  # Ruff is pinned here (not taken from a local venv), so every contributor lints
+  # Python with the exact version CI uses, even without the brain venv set up.
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.15
+    hooks:
+      - id: ruff-check # lint + autofix
+        args: [--fix]
+      - id: ruff-format
+
+  # Gateway uses its own pinned ESLint/Prettier (package.json) as the single
+  # source of truth -- no duplicate version to drift from CI. Requires
+  # `npm install` in gateway/, which you need to develop there anyway.
+  - repo: local
+    hooks:
+      - id: gateway-prettier
+        name: prettier (gateway)
+        entry: bash -c 'cd gateway && npm run --silent format'
+        language: system
+        files: ^gateway/.*\.(ts|js|json|jsonc|md)$
+        pass_filenames: false
+      - id: gateway-eslint
+        name: eslint (gateway)
+        entry: bash -c 'cd gateway && npm run --silent lint:fix'
+        language: system
+        files: ^gateway/.*\.(ts|js)$
+        pass_filenames: false

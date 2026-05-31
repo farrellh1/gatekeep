@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from core.schemas import BrainState, Action, GateInfo
 from core.config import RepoConfig
 from core.llm import llm
+from core.schemas import Action, BrainState, GateInfo
 
 
 def draft_comment(state: BrainState) -> str:

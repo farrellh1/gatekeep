@@ -14,22 +14,33 @@ export interface CloneRepo {
 }
 
 export type GitRunner = (args: string[], cwd?: string) => Promise<void>;
-interface Fs { exists: (p: string) => boolean }
+interface Fs {
+  exists: (p: string) => boolean;
+}
 
-const realGit: GitRunner = async (args, cwd) => { await exec("git", args, { cwd }); };
+const realGit: GitRunner = async (args, cwd) => {
+  await exec("git", args, { cwd });
+};
 const realFs: Fs = { exists: existsSync };
 
 const ROOT = "/tmp/gatekeep/clones";
 const locks = new Map<string, Promise<void>>();
 
 export async function ensureClone(
-  repo: CloneRepo, git: GitRunner = realGit, fs: Fs = realFs,
+  repo: CloneRepo,
+  git: GitRunner = realGit,
+  fs: Fs = realFs,
 ): Promise<string> {
   const dir = path.join(ROOT, `${repo.owner}-${repo.name}`);
   const prev = locks.get(dir) ?? Promise.resolve();
   let release!: () => void;
-  const mine = new Promise<void>((r) => { release = r; });
-  locks.set(dir, prev.then(() => mine));
+  const mine = new Promise<void>((r) => {
+    release = r;
+  });
+  locks.set(
+    dir,
+    prev.then(() => mine),
+  );
   await prev;
   try {
     await mkdir(ROOT, { recursive: true });

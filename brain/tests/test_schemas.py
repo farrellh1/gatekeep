@@ -1,11 +1,15 @@
-from core.schemas import NormalizedEvent, BrainState, Finding, Verdict, Action
+from core.schemas import Action, BrainState, NormalizedEvent
 
 
 def test_normalized_event_minimal_issue():
     ev = NormalizedEvent(
-        delivery_id="d1", kind="issue", action="opened",
+        delivery_id="d1",
+        kind="issue",
+        action="opened",
         repo={"owner": "o", "name": "r", "default_branch": "main", "clone_path": "/tmp/x"},
-        number=5, title="bug", body="it breaks",
+        number=5,
+        title="bug",
+        body="it breaks",
         author={"login": "alice", "account_age_days": 400, "is_first_time_contributor": False},
     )
     assert ev.kind == "issue"
@@ -14,9 +18,13 @@ def test_normalized_event_minimal_issue():
 
 def test_brainstate_starts_empty():
     ev = NormalizedEvent(
-        delivery_id="d1", kind="issue", action="opened",
+        delivery_id="d1",
+        kind="issue",
+        action="opened",
         repo={"owner": "o", "name": "r", "default_branch": "main", "clone_path": "/tmp/x"},
-        number=5, title="bug", body="",
+        number=5,
+        title="bug",
+        body="",
         author={"login": "a", "account_age_days": 1, "is_first_time_contributor": True},
     )
     st = BrainState(event=ev)

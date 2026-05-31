@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from core.schemas import BrainState
-from core.config import RepoConfig
 from core import checks
+from core.config import RepoConfig
+from core.schemas import BrainState
 
 PR_CHECKS = [
     checks.cited_symbols_exist,

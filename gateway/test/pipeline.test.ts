@@ -16,9 +16,13 @@ function deps() {
   };
 }
 const ctx = {
-  app: {} as any, installationId: 42,
+  app: {} as any,
+  installationId: 42,
   repo: { owner: "o", name: "r", default_branch: "main", clone_url: "https://github.com/o/r.git" },
-  payload: {} as WebhookPayload, kind: "pull_request" as const, deliveryId: "d1", brainUrl: "http://brain",
+  payload: {} as WebhookPayload,
+  kind: "pull_request" as const,
+  deliveryId: "d1",
+  brainUrl: "http://brain",
 };
 
 describe("handleEvent", () => {
@@ -27,10 +31,15 @@ describe("handleEvent", () => {
     await handleEvent(ctx, d as any);
     expect(d.ensureClone).toHaveBeenCalled();
     expect(d.callBrain).toHaveBeenCalledWith(
-      { number: 7, repo: { owner: "o", name: "r" } }, "mode: suggest-only", "http://brain");
+      { number: 7, repo: { owner: "o", name: "r" } },
+      "mode: suggest-only",
+      "http://brain",
+    );
     expect(d.execute).toHaveBeenCalledWith(
-      { id: "octo" }, { owner: "o", repo: "r", issue_number: 7 },
-      [{ action: "comment", body: "note" }]);
+      { id: "octo" },
+      { owner: "o", repo: "r", issue_number: 7 },
+      [{ action: "comment", body: "note" }],
+    );
   });
 
   it("skips execute when the brain routes to skip", async () => {
