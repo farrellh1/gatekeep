@@ -67,6 +67,26 @@ def test_cited_symbols_dotted_path_uses_last_segment():
     assert checks.cited_symbols_exist(ev).result == "pass"
 
 
+def test_cited_symbols_passes_symbol_added_in_diff():
+    # the brain clones only the base branch, so a symbol the PR is adding is
+    # absent from the clone -- it must not be read as a hallucination
+    ev = _pr(
+        body="This adds `calculateRewards()` to the rewards path.",
+        diff="--- a/src/rewards.py\n+++ b/src/rewards.py\n@@\n+def calculateRewards(user):\n+    return 0\n",
+    )
+    assert checks.cited_symbols_exist(ev).result == "pass"
+
+
+def test_cited_symbols_flags_symbol_absent_from_repo_and_diff():
+    # genuine hallucination: cited as part of the fix but nowhere in repo or diff
+    ev = _pr(
+        body="This wires up `validateToken()` before login.",
+        diff="--- a/src/auth.py\n+++ b/src/auth.py\n@@\n-    return True\n+    return True  # patched\n",
+    )
+    f = checks.cited_symbols_exist(ev)
+    assert f.result == "fail" and "validateToken" in f.evidence
+
+
 def test_touches_real_files_flags_missing():
     ev = _pr(changed_files=["src/nope.py"])
     assert checks.touches_real_files(ev).result == "fail"

@@ -53,8 +53,20 @@ export interface Action {
 
 export interface BrainResult {
   intake?: { kind: string; relevant: boolean; route: "firewall" | "skip"; reason: string } | null;
-  findings: { check: string; result: "pass" | "fail" | "unknown"; evidence: string }[];
+  findings: {
+    check: string;
+    result: "pass" | "fail" | "unknown";
+    evidence: string;
+    confidence?: "HIGH" | "LOW";
+    engine?: "AST_TREE_SITTER" | "HEURISTIC" | "DETERMINISTIC" | "LLM";
+  }[];
   verdict?: { label: "slop" | "needs-info" | "legit"; confidence: number; reasons: string[]; primary_evidence: string } | null;
   actions: Action[];
   gate?: { policy: string; gated: string[]; reason: string } | null;
+  trace?: {
+    delivery_id: string;
+    kind: string;
+    number: number;
+    steps: { node: string; elapsed_ms: number; summary: string; output: Record<string, unknown> }[];
+  } | null;
 }

@@ -51,6 +51,8 @@ class Finding(BaseModel):
     check: str
     result: Literal["pass", "fail", "unknown"]
     evidence: str  # human-readable; becomes the comment text
+    confidence: Literal["HIGH", "LOW"] = "HIGH"  # LOW evidence must not drive a harsh verdict alone
+    engine: Literal["AST_TREE_SITTER", "HEURISTIC", "DETERMINISTIC", "LLM"] = "DETERMINISTIC"
 
 
 class IntakeResult(BaseModel):
@@ -63,8 +65,8 @@ class IntakeResult(BaseModel):
 class Verdict(BaseModel):
     label: Literal["slop", "needs-info", "legit"]
     confidence: float = Field(ge=0.0, le=1.0)
-    reasons: list[str]
-    primary_evidence: str
+    reasons: list[str] = []
+    primary_evidence: str = ""
 
 
 class Action(BaseModel):

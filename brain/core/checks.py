@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from pathlib import Path
 from typing import Optional
 
 from pydantic import BaseModel
@@ -11,6 +12,7 @@ from core.llm import llm
 
 _CODE_SPAN_RE = re.compile(r"`+([^`]+?)`+")
 _CALL_REF_RE = re.compile(r"([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*)\(")
+_IDENT_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 
 
 def cited_symbols(text: str) -> set[str]:
@@ -21,6 +23,22 @@ def cited_symbols(text: str) -> set[str]:
     return cited
 
 
+def diff_added_identifiers(diff: str | None) -> set[str]:
+    """Identifiers on the diff's added lines.
+
+    The brain clones only the base branch, so a symbol a PR is adding isn't in the
+    index yet; counting it as present avoids flagging code being written. Scans
+    added lines wholesale (comments and strings included), erring toward not flagging.
+    """
+    if not diff:
+        return set()
+    added = "\n".join(
+        l[1:] for l in diff.splitlines()
+        if l.startswith("+") and not l.startswith("+++")
+    )
+    return set(_IDENT_RE.findall(added))
+
+
 def cited_symbols_exist(event: NormalizedEvent) -> Finding:
     reader = RepoReader(event.repo.clone_path)
     cited = cited_symbols(f"{event.title}\n{event.body}")
@@ -29,16 +47,22 @@ def cited_symbols_exist(event: NormalizedEvent) -> Finding:
             check="cited_symbols_exist", result="pass",
             evidence="no specific code symbols cited",
         )
-    missing = [name for name in cited if not reader.symbol_exists(name)]
+    added = diff_added_identifiers(event.diff)
+    missing = [name for name in cited if not reader.symbol_exists(name) and name not in added]
+    # grade confidence against the languages the change touches
+    relevant = {Path(f).suffix for f in (event.changed_files or [])}
+    confidence, engine = reader.evidence_grade(relevant or None)
     if missing:
         names = ", ".join(f"`{m}()`" for m in sorted(missing))
         return Finding(
             check="cited_symbols_exist", result="fail",
             evidence=f"references {names} which do not exist in this repo",
+            confidence=confidence, engine=engine,
         )
     return Finding(
         check="cited_symbols_exist", result="pass",
         evidence="all cited symbols exist in the repo",
+        confidence="HIGH", engine=engine,
     )
 
 
@@ -88,8 +112,8 @@ def ci_status_check(event: NormalizedEvent) -> Finding:
 
 
 class _DiffMatch(BaseModel):
-    mismatch: bool
-    reason: str
+    mismatch: bool = False  # default to "matches" if the field is absent
+    reason: str = ""
 
 
 def diff_matches_description(event: NormalizedEvent) -> Finding:
@@ -107,12 +131,13 @@ def diff_matches_description(event: NormalizedEvent) -> Finding:
     return Finding(
         check="diff_matches_description",
         result="fail" if out.mismatch else "pass", evidence=out.reason,
+        engine="LLM",
     )
 
 
 class _Repro(BaseModel):
-    has_repro: bool
-    reason: str
+    has_repro: bool = True  # default to "has repro" if the field is absent
+    reason: str = ""
 
 
 def has_repro(event: NormalizedEvent) -> Finding:
@@ -126,12 +151,13 @@ def has_repro(event: NormalizedEvent) -> Finding:
     return Finding(
         check="has_repro",
         result="pass" if out.has_repro else "fail", evidence=out.reason,
+        engine="LLM",
     )
 
 
 class _Dupe(BaseModel):
-    duplicate_of: Optional[int]
-    reason: str
+    duplicate_of: Optional[int] = None  # default to "not a duplicate" if absent
+    reason: str = ""
 
 
 def is_duplicate(event: NormalizedEvent) -> Finding:
@@ -151,5 +177,6 @@ def is_duplicate(event: NormalizedEvent) -> Finding:
         return Finding(
             check="is_duplicate", result="fail",
             evidence=f"appears to duplicate #{out.duplicate_of}: {out.reason}",
+            engine="LLM",
         )
-    return Finding(check="is_duplicate", result="pass", evidence="no duplicate found")
+    return Finding(check="is_duplicate", result="pass", evidence="no duplicate found", engine="LLM")
