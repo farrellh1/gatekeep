@@ -83,8 +83,18 @@ Gatekeep runs as two local processes plus a webhook relay.
 2. **Brain:** `cd brain && python3 -m venv .venv && . .venv/bin/activate && pip install -e ".[dev]"`. Put `OPENROUTER_API_KEY` in `brain/.env`, then run `uvicorn server:app --port 8000`.
 3. **Gateway:** `cd gateway && npm install`. Copy `.env.example` to `.env` and fill the App credentials, then run `npm start`.
 4. **Relay webhooks** to your laptop with smee: `npx smee-client --url <your smee channel> --target http://localhost:3000`.
+5. **Enable the style hook** (once per clone): with the brain venv active, `pre-commit install` from the repo root. It auto-formats and lints staged files on commit; the same checks run in CI as a backstop.
 
 Run the tests with `cd brain && pytest -m "not golden"` and `cd gateway && npm test`.
+
+## Code style
+
+Formatting and linting are enforced by CI and a pre-commit hook, so style stays consistent across contributors.
+
+- **Brain (Python):** Ruff. `cd brain && ruff check --fix . && ruff format .`
+- **Gateway (TypeScript):** ESLint + Prettier. `cd gateway && npm run lint:fix && npm run format`
+
+If a commit is blocked, run the relevant fixer above and re-stage.
 
 ## Status
 
