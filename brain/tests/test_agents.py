@@ -64,7 +64,7 @@ def _stub_check(name):
     return Check(
         name=name,
         kinds=("pull_request",),
-        run=lambda ev: Finding(check=name, result="fail", evidence="x"),
+        run=lambda ev, ctx: Finding(check=name, result="fail", evidence="x"),
     )
 
 

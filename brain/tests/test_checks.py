@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from core import checks
+from core.run_context import RunContext
 from core.schemas import NormalizedEvent
 
 CLONE = str(Path(__file__).parent / "fixtures" / "clone")
@@ -21,55 +22,59 @@ def _pr(**kw):
     return NormalizedEvent(**base)
 
 
+def _ctx(ev):
+    return RunContext(ev)
+
+
 # --- deterministic checks (Task 5) ---
 
 
 def test_cited_symbols_flags_hallucinated():
     ev = _pr(body="This calls `validateToken()` to fix it")
-    f = checks.cited_symbols_exist(ev)
+    f = checks.cited_symbols_exist(ev, _ctx(ev))
     assert f.result == "fail"
     assert "validateToken" in f.evidence
 
 
 def test_cited_symbols_passes_real():
     ev = _pr(body="touches `login()`")
-    assert checks.cited_symbols_exist(ev).result == "pass"
+    assert checks.cited_symbols_exist(ev, _ctx(ev)).result == "pass"
 
 
 def test_cited_symbols_ignores_prose_parentheticals():
     # normal English with parentheticals must NOT be read as fabricated symbols
     ev = _pr(body="This works (mostly) and we tested it (twice). See foo (the old one).")
-    assert checks.cited_symbols_exist(ev).result == "pass"
+    assert checks.cited_symbols_exist(ev, _ctx(ev)).result == "pass"
 
 
 def test_cited_symbols_ignores_unbackticked_prose_calls():
     # Option A: bare prose calls are not trusted, even if they look like symbols
     ev = _pr(body="we call validateToken() somewhere")
-    assert checks.cited_symbols_exist(ev).result == "pass"
+    assert checks.cited_symbols_exist(ev, _ctx(ev)).result == "pass"
 
 
 def test_cited_symbols_ignores_control_flow_in_backticks():
     # the no-space-before-paren rule excludes `if (x)` by shape, no keyword list
     ev = _pr(body="guard with `if (ready)` before calling")
-    assert checks.cited_symbols_exist(ev).result == "pass"
+    assert checks.cited_symbols_exist(ev, _ctx(ev)).result == "pass"
 
 
 def test_cited_symbols_flags_backtick_fabrication():
     # explicitly-marked code that doesn't exist is the true positive we want
     ev = _pr(body="This patch wires up `parseConfg()` to the loader.")
-    f = checks.cited_symbols_exist(ev)
+    f = checks.cited_symbols_exist(ev, _ctx(ev))
     assert f.result == "fail" and "parseConfg" in f.evidence
 
 
 def test_cited_symbols_passes_real_backtick():
     ev = _pr(body="calls `login()` correctly")
-    assert checks.cited_symbols_exist(ev).result == "pass"
+    assert checks.cited_symbols_exist(ev, _ctx(ev)).result == "pass"
 
 
 def test_cited_symbols_dotted_path_uses_last_segment():
     # `utils.login()` -> verifies `login`, which exists in the fixture
     ev = _pr(body="delegates to `utils.login()`")
-    assert checks.cited_symbols_exist(ev).result == "pass"
+    assert checks.cited_symbols_exist(ev, _ctx(ev)).result == "pass"
 
 
 def test_cited_symbols_passes_symbol_added_in_diff():
@@ -85,7 +90,7 @@ def test_cited_symbols_passes_symbol_added_in_diff():
             "+    return 0\n"
         ),
     )
-    assert checks.cited_symbols_exist(ev).result == "pass"
+    assert checks.cited_symbols_exist(ev, _ctx(ev)).result == "pass"
 
 
 def test_cited_symbols_flags_symbol_absent_from_repo_and_diff():
@@ -100,39 +105,70 @@ def test_cited_symbols_flags_symbol_absent_from_repo_and_diff():
             "+    return True  # patched\n"
         ),
     )
-    f = checks.cited_symbols_exist(ev)
+    f = checks.cited_symbols_exist(ev, _ctx(ev))
     assert f.result == "fail" and "validateToken" in f.evidence
+
+
+def test_cited_symbols_grades_engine_at_runtime():
+    # the engine is graded on the result, not fixed by the registry: a fully
+    # parseable repo yields AST_TREE_SITTER on a miss.
+    ev = _pr(body="This wires up `validateToken()` before login.", changed_files=["src/auth.py"])
+    f = checks.cited_symbols_exist(ev, _ctx(ev))
+    assert f.result == "fail"
+    assert (f.confidence, f.engine) == ("HIGH", "AST_TREE_SITTER")
+
+
+def test_reader_built_once_per_event_across_checks(monkeypatch):
+    # both reader-using checks share ctx.reader, so the tree-sitter index is built
+    # exactly once per event -- not once per check.
+    from core import repo_reader
+
+    builds = {"n": 0}
+    orig = repo_reader.RepoReader._build_index
+
+    def counting_build(self):
+        builds["n"] += 1
+        return orig(self)
+
+    monkeypatch.setattr(repo_reader.RepoReader, "_build_index", counting_build)
+
+    ev = _pr(body="touches `login()`", changed_files=["src/auth.py"])
+    ctx = _ctx(ev)
+    checks.cited_symbols_exist(ev, ctx)
+    checks.touches_real_files(ev, ctx)  # file_exists alone doesn't build the index
+    # cited_symbols_exist builds the index once; the shared reader is reused
+    assert builds["n"] == 1
 
 
 def test_touches_real_files_flags_missing():
     ev = _pr(changed_files=["src/nope.py"])
-    assert checks.touches_real_files(ev).result == "fail"
+    assert checks.touches_real_files(ev, _ctx(ev)).result == "fail"
 
 
 def test_touches_real_files_passes_when_some_exist():
     # a PR adding a new file alongside an existing one is legit, not slop
     ev = _pr(changed_files=["src/auth.py", "src/new_feature.py"])
-    assert checks.touches_real_files(ev).result == "pass"
+    assert checks.touches_real_files(ev, _ctx(ev)).result == "pass"
 
 
 def test_cosmetic_only_flags_whitespace_diff():
     ev = _pr(diff="--- a/x\n+++ b/x\n-foo( )\n+foo()\n")
-    assert checks.cosmetic_only(ev).result == "fail"
+    assert checks.cosmetic_only(ev, _ctx(ev)).result == "fail"
 
 
 def test_cosmetic_only_passes_real_change():
     ev = _pr(diff="--- a/x\n+++ b/x\n-return 1\n+return 2\n")
-    assert checks.cosmetic_only(ev).result == "pass"
+    assert checks.cosmetic_only(ev, _ctx(ev)).result == "pass"
 
 
 def test_ci_status_failure():
     ev = _pr(ci_status="failure")
-    assert checks.ci_status_check(ev).result == "fail"
+    assert checks.ci_status_check(ev, _ctx(ev)).result == "fail"
 
 
 def test_ci_status_unknown_when_absent():
     ev = _pr(ci_status="none")
-    assert checks.ci_status_check(ev).result == "unknown"
+    assert checks.ci_status_check(ev, _ctx(ev)).result == "unknown"
 
 
 # --- llm-backed checks (Task 6); llm() is mocked ---
@@ -145,7 +181,7 @@ def test_diff_matches_description_flags_mismatch(monkeypatch):
         lambda m, schema, **kw: schema(mismatch=True, reason="body claims fix, diff is noop"),
     )
     ev = _pr(body="Fixes the auth bug", diff="--- a/r\n+++ b/r\n+# comment\n")
-    f = checks.diff_matches_description(ev)
+    f = checks.diff_matches_description(ev, _ctx(ev))
     assert f.result == "fail" and "noop" in f.evidence
 
 
@@ -156,7 +192,7 @@ def test_diff_matches_description_passes(monkeypatch):
         lambda messages, schema, **kw: schema(mismatch=False, reason="diff matches"),
     )
     ev = _pr(body="bump", diff="--- a/r\n+++ b/r\n+x=2\n")
-    assert checks.diff_matches_description(ev).result == "pass"
+    assert checks.diff_matches_description(ev, _ctx(ev)).result == "pass"
 
 
 def test_has_repro_flags_missing(monkeypatch):
@@ -166,7 +202,7 @@ def test_has_repro_flags_missing(monkeypatch):
         lambda messages, schema, **kw: schema(has_repro=False, reason="no steps"),
     )
     ev = _pr(kind="issue", body="it doesn't work pls fix")
-    assert checks.has_repro(ev).result == "fail"
+    assert checks.has_repro(ev, _ctx(ev)).result == "fail"
 
 
 def test_is_duplicate_flags_match(monkeypatch):
@@ -180,10 +216,10 @@ def test_is_duplicate_flags_match(monkeypatch):
         body="crash on save",
         existing_issues=[{"number": 7, "title": "crash on save", "body": "..."}],
     )
-    f = checks.is_duplicate(ev)
+    f = checks.is_duplicate(ev, _ctx(ev))
     assert f.result == "fail" and "#7" in f.evidence
 
 
 def test_is_duplicate_unknown_without_candidates():
     ev = _pr(kind="issue", existing_issues=None)
-    assert checks.is_duplicate(ev).result == "unknown"
+    assert checks.is_duplicate(ev, _ctx(ev)).result == "unknown"

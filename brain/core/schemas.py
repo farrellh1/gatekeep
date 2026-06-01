@@ -47,6 +47,16 @@ class NormalizedEvent(BaseModel):
     existing_issues: list[IssueRef] | None = None
 
 
+class CheckResult(BaseModel):
+    """What a check returns: a Finding minus its name. The check grades the
+    evidence; the registry composes the name, so a check cannot name itself."""
+
+    result: Literal["pass", "fail", "unknown"]
+    evidence: str  # human-readable; becomes the comment text
+    confidence: Literal["HIGH", "LOW"] = "HIGH"  # LOW evidence must not drive a harsh verdict alone
+    engine: Literal["AST_TREE_SITTER", "HEURISTIC", "DETERMINISTIC", "LLM"] = "DETERMINISTIC"
+
+
 class Finding(BaseModel):
     check: str
     result: Literal["pass", "fail", "unknown"]

@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from core.registry import REGISTRY, suite_for
+from core.run_context import RunContext
 from core.schemas import NormalizedEvent
 
 CLONE = str(Path(__file__).parent / "fixtures" / "clone")
@@ -24,8 +25,10 @@ def _ev(**kw):
 def test_ci_status_check_reports_under_registry_name():
     # a check's Finding.check is its registry name, not the function's __name__
     ci = next(c for c in REGISTRY if c.name == "ci_status")
-    finding = ci.run(_ev(ci_status="failure"))
-    assert finding.check == "ci_status"
+    ev = _ev(ci_status="failure")
+    finding = ci.run(ev, RunContext(ev))
+    assert finding.check == "ci_status"  # registry composes the name onto the CheckResult
+    assert finding.result == "fail"
 
 
 def test_cited_symbols_exist_runs_on_both_kinds():

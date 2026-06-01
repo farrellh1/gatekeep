@@ -6,8 +6,8 @@ from pathlib import Path
 from pydantic import BaseModel
 
 from core.llm import llm
-from core.repo_reader import RepoReader
-from core.schemas import Finding, NormalizedEvent
+from core.run_context import RunContext
+from core.schemas import CheckResult, NormalizedEvent
 
 _CODE_SPAN_RE = re.compile(r"`+([^`]+?)`+")
 _CALL_REF_RE = re.compile(r"([A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*)\(")
@@ -39,15 +39,11 @@ def diff_added_identifiers(diff: str | None) -> set[str]:
     return set(_IDENT_RE.findall(added))
 
 
-def cited_symbols_exist(event: NormalizedEvent) -> Finding:
-    reader = RepoReader(event.repo.clone_path)
+def cited_symbols_exist(event: NormalizedEvent, ctx: RunContext) -> CheckResult:
+    reader = ctx.reader
     cited = cited_symbols(f"{event.title}\n{event.body}")
     if not cited:
-        return Finding(
-            check="cited_symbols_exist",
-            result="pass",
-            evidence="no specific code symbols cited",
-        )
+        return CheckResult(result="pass", evidence="no specific code symbols cited")
     added = diff_added_identifiers(event.diff)
     missing = [name for name in cited if not reader.symbol_exists(name) and name not in added]
     # grade confidence against the languages the change touches
@@ -55,15 +51,13 @@ def cited_symbols_exist(event: NormalizedEvent) -> Finding:
     confidence, engine = reader.evidence_grade(relevant or None)
     if missing:
         names = ", ".join(f"`{m}()`" for m in sorted(missing))
-        return Finding(
-            check="cited_symbols_exist",
+        return CheckResult(
             result="fail",
             evidence=f"references {names} which do not exist in this repo",
             confidence=confidence,
             engine=engine,
         )
-    return Finding(
-        check="cited_symbols_exist",
+    return CheckResult(
         result="pass",
         evidence="all cited symbols exist in the repo",
         confidence="HIGH",
@@ -71,23 +65,22 @@ def cited_symbols_exist(event: NormalizedEvent) -> Finding:
     )
 
 
-def touches_real_files(event: NormalizedEvent) -> Finding:
+def touches_real_files(event: NormalizedEvent, ctx: RunContext) -> CheckResult:
     if not event.changed_files:
-        return Finding(check="touches_real_files", result="unknown", evidence="no file list")
-    reader = RepoReader(event.repo.clone_path)
+        return CheckResult(result="unknown", evidence="no file list")
+    reader = ctx.reader
     missing = [f for f in event.changed_files if not reader.file_exists(f)]
     if missing and len(missing) == len(event.changed_files):
-        return Finding(
-            check="touches_real_files",
+        return CheckResult(
             result="fail",
             evidence=f"changed paths do not exist and are not added: {missing}",
         )
-    return Finding(check="touches_real_files", result="pass", evidence="changed paths coherent")
+    return CheckResult(result="pass", evidence="changed paths coherent")
 
 
-def cosmetic_only(event: NormalizedEvent) -> Finding:
+def cosmetic_only(event: NormalizedEvent, ctx: RunContext) -> CheckResult:
     if not event.diff:
-        return Finding(check="cosmetic_only", result="unknown", evidence="no diff")
+        return CheckResult(result="unknown", evidence="no diff")
     changed = [
         line
         for line in event.diff.splitlines()
@@ -100,24 +93,19 @@ def cosmetic_only(event: NormalizedEvent) -> Finding:
     adds = {norm(line) for line in changed if line.startswith("+")}
     dels = {norm(line) for line in changed if line.startswith("-")}
     if adds == dels and adds:
-        return Finding(
-            check="cosmetic_only",
+        return CheckResult(
             result="fail",
             evidence="diff is whitespace/formatting only -- no behavior change",
         )
-    return Finding(check="cosmetic_only", result="pass", evidence="diff changes behavior")
+    return CheckResult(result="pass", evidence="diff changes behavior")
 
 
-def ci_status_check(event: NormalizedEvent) -> Finding:
+def ci_status_check(event: NormalizedEvent, ctx: RunContext) -> CheckResult:
     if event.ci_status in (None, "none", "pending"):
-        return Finding(
-            check="ci_status",
-            result="unknown",
-            evidence=f"CI {event.ci_status or 'absent'}",
-        )
+        return CheckResult(result="unknown", evidence=f"CI {event.ci_status or 'absent'}")
     if event.ci_status == "failure":
-        return Finding(check="ci_status", result="fail", evidence="existing CI is failing")
-    return Finding(check="ci_status", result="pass", evidence="existing CI passing")
+        return CheckResult(result="fail", evidence="existing CI is failing")
+    return CheckResult(result="pass", evidence="existing CI passing")
 
 
 class _DiffMatch(BaseModel):
@@ -125,9 +113,9 @@ class _DiffMatch(BaseModel):
     reason: str = ""
 
 
-def diff_matches_description(event: NormalizedEvent) -> Finding:
+def diff_matches_description(event: NormalizedEvent, ctx: RunContext) -> CheckResult:
     if not event.diff:
-        return Finding(check="diff_matches_description", result="unknown", evidence="no diff")
+        return CheckResult(result="unknown", evidence="no diff")
     msg = [
         {
             "role": "system",
@@ -142,8 +130,7 @@ def diff_matches_description(event: NormalizedEvent) -> Finding:
         },
     ]
     out = llm(msg, schema=_DiffMatch, role="checks")
-    return Finding(
-        check="diff_matches_description",
+    return CheckResult(
         result="fail" if out.mismatch else "pass",
         evidence=out.reason,
         engine="LLM",
@@ -155,7 +142,7 @@ class _Repro(BaseModel):
     reason: str = ""
 
 
-def has_repro(event: NormalizedEvent) -> Finding:
+def has_repro(event: NormalizedEvent, ctx: RunContext) -> CheckResult:
     msg = [
         {
             "role": "system",
@@ -166,8 +153,7 @@ def has_repro(event: NormalizedEvent) -> Finding:
         {"role": "user", "content": f"{event.title}\n{event.body}"},
     ]
     out = llm(msg, schema=_Repro, role="checks")
-    return Finding(
-        check="has_repro",
+    return CheckResult(
         result="pass" if out.has_repro else "fail",
         evidence=out.reason,
         engine="LLM",
@@ -179,10 +165,10 @@ class _Dupe(BaseModel):
     reason: str = ""
 
 
-def is_duplicate(event: NormalizedEvent) -> Finding:
+def is_duplicate(event: NormalizedEvent, ctx: RunContext) -> CheckResult:
     candidates = event.existing_issues or []
     if not candidates:
-        return Finding(check="is_duplicate", result="unknown", evidence="no candidates provided")
+        return CheckResult(result="unknown", evidence="no candidates provided")
     listing = "\n".join(f"#{c.number}: {c.title}" for c in candidates)
     msg = [
         {
@@ -194,10 +180,9 @@ def is_duplicate(event: NormalizedEvent) -> Finding:
     ]
     out = llm(msg, schema=_Dupe, role="checks")
     if out.duplicate_of is not None:
-        return Finding(
-            check="is_duplicate",
+        return CheckResult(
             result="fail",
             evidence=f"appears to duplicate #{out.duplicate_of}: {out.reason}",
             engine="LLM",
         )
-    return Finding(check="is_duplicate", result="pass", evidence="no duplicate found", engine="LLM")
+    return CheckResult(result="pass", evidence="no duplicate found", engine="LLM")

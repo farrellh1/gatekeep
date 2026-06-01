@@ -4,9 +4,12 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from core import checks
-from core.schemas import Finding, NormalizedEvent
+from core.run_context import RunContext
+from core.schemas import CheckResult, Finding, NormalizedEvent
 
 Kind = str  # "pull_request" | "issue"
+
+CheckFn = Callable[[NormalizedEvent, RunContext], CheckResult]
 
 
 @dataclass(frozen=True)
@@ -16,27 +19,25 @@ class Check:
     `name` is the one canonical string -- simultaneously the config key, the
     reported `Finding.check`, and the audited name -- so it cannot drift. `kinds`
     is the event kinds this Check applies to (its suite membership). `run` calls
-    the check and stamps `name` onto the Finding it returns.
+    the nameless check and composes `name` onto the `CheckResult` it returns.
     """
 
     name: str
     kinds: tuple[Kind, ...]
-    run: Callable[[NormalizedEvent], Finding]
+    run: Callable[[NormalizedEvent, RunContext], Finding]
 
 
-def _adapt(
-    name: str, fn: Callable[[NormalizedEvent], Finding]
-) -> Callable[[NormalizedEvent], Finding]:
-    """Wrap an existing check function, overwriting Finding.check with the
-    registry name so the gated name and the reported name are the same string."""
+def _adapt(name: str, fn: CheckFn) -> Callable[[NormalizedEvent, RunContext], Finding]:
+    """Wrap a nameless check, composing the registry name onto its CheckResult.
+    The check cannot name itself, so the gated and reported name are one string."""
 
-    def run(event: NormalizedEvent) -> Finding:
-        return fn(event).model_copy(update={"check": name})
+    def run(event: NormalizedEvent, ctx: RunContext) -> Finding:
+        return Finding(check=name, **fn(event, ctx).model_dump())
 
     return run
 
 
-def _check(name: str, kinds: tuple[Kind, ...], fn: Callable[[NormalizedEvent], Finding]) -> Check:
+def _check(name: str, kinds: tuple[Kind, ...], fn: CheckFn) -> Check:
     return Check(name=name, kinds=kinds, run=_adapt(name, fn))
 
 
