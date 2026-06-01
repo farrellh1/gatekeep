@@ -1,4 +1,4 @@
-from core.schemas import Action, BrainState, NormalizedEvent
+from core.schemas import Action, BrainState, CheckResult, NormalizedEvent
 
 
 def test_normalized_event_minimal_issue():
@@ -34,3 +34,12 @@ def test_brainstate_starts_empty():
 def test_action_close_has_no_body():
     a = Action(action="close")
     assert a.body is None
+
+
+def test_check_result_is_nameless_with_finding_defaults():
+    # a CheckResult carries the same shape as Finding minus the name; the registry
+    # composes the name, so a check is structurally incapable of naming itself.
+    r = CheckResult(result="fail", evidence="missing foo()")
+    assert not hasattr(r, "check")
+    assert r.confidence == "HIGH"  # same default as Finding
+    assert r.engine == "DETERMINISTIC"  # same default as Finding

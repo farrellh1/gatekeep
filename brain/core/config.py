@@ -1,9 +1,14 @@
 from __future__ import annotations
 
+import logging
 from typing import Literal
 
 import yaml
 from pydantic import BaseModel
+
+from core.registry import REGISTRY
+
+logger = logging.getLogger("gatekeep.config")
 
 
 class RepoConfig(BaseModel):
@@ -21,4 +26,23 @@ def load_config(yaml_text: str | None) -> RepoConfig:
     if not yaml_text:
         return RepoConfig()
     data = yaml.safe_load(yaml_text) or {}
-    return RepoConfig(**data)
+    config = RepoConfig(**data)
+    _warn_unknown_checks(config)
+    return config
+
+
+def _warn_unknown_checks(config: RepoConfig) -> None:
+    """Warn (do not raise) when a `checks` key names no registered check.
+
+    The valid names come straight from the registry, so there is no second
+    hand-maintained list to drift. A typo'd or stale key (e.g. `ci_status_check`)
+    surfaces loudly but the rest of the config still runs.
+    """
+    valid = {c.name for c in REGISTRY}
+    unknown = sorted(k for k in config.checks if k not in valid)
+    if unknown:
+        logger.warning(
+            "Ignoring unknown check key(s) in .gatekeep.yml: %s (valid checks: %s)",
+            ", ".join(unknown),
+            ", ".join(sorted(valid)),
+        )
