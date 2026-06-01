@@ -1,0 +1,37 @@
+# Model config. No secrets: keys come from each provider's api_key_env.
+# Path override: $GATEKEEP_MODELS_CONFIG.
+
+[defaults]
+temperature = 0
+timeout     = 120
+max_retries = 2
+
+# client selects the builder in core/llm.py BUILDERS.
+
+[providers.openrouter]
+client      = "openai"
+base_url    = "https://openrouter.ai/api/v1"
+api_key_env = "OPENROUTER_API_KEY"
+
+[providers.deepseek]
+client      = "openai"
+base_url    = "https://api.deepseek.com"
+api_key_env = "DEEPSEEK_API_KEY"
+extra_body  = { thinking = { type = "disabled" } }
+
+# thinking on; json_mode since thinking disallows forced tool_choice.
+# thinking ignores temperature; add reasoning_effort = "max" to deepen it.
+[providers.deepseek-think]
+client            = "openai"
+base_url          = "https://api.deepseek.com"
+api_key_env       = "DEEPSEEK_API_KEY"
+extra_body        = { thinking = { type = "enabled" } }
+structured_method = "json_mode"
+
+# role = "provider:model"; unlisted roles fall back to default.
+[roles]
+default   = "deepseek:deepseek-v4-pro"
+intake    = "deepseek:deepseek-v4-pro"
+checks    = "deepseek:deepseek-v4-pro"
+judge     = "deepseek-think:deepseek-v4-pro"
+responder = "deepseek:deepseek-v4-pro"

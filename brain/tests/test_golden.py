@@ -6,8 +6,10 @@ import pathlib
 import pytest
 
 from core import graph
+from core.models_config import load_models_config
 
 CLONE = str(pathlib.Path(__file__).parent / "fixtures" / "clone")
+_DEFAULT_PROVIDER, _ = load_models_config().resolve("default")
 CASES = sorted(
     p
     for p in glob.glob(str(pathlib.Path(__file__).parent / "golden" / "*" / "*.json"))
@@ -17,8 +19,8 @@ CASES = sorted(
 pytestmark = [
     pytest.mark.golden,
     pytest.mark.skipif(
-        not os.environ.get("OPENROUTER_API_KEY"),
-        reason="golden set hits the real model; set OPENROUTER_API_KEY to run",
+        not os.environ.get(_DEFAULT_PROVIDER.api_key_env),
+        reason=f"golden set hits the real model; set ${_DEFAULT_PROVIDER.api_key_env} to run",
     ),
 ]
 

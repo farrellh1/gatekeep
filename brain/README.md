@@ -22,7 +22,7 @@ pip install -e ".[dev]"
 
 ```bash
 pytest                      # offline suite (llm calls mocked); golden set auto-skips
-OPENROUTER_API_KEY=... pytest -m golden   # real-model golden set (slop caught, legit passes)
+DEEPSEEK_API_KEY=... pytest -m golden   # real-model golden set (key = default provider's api_key_env)
 ```
 
 ## Config
@@ -34,7 +34,37 @@ mode: suggest-only      # suggest-only | auto-gate
 threshold: 0.85         # min confidence for auto-gate to close
 ```
 
-## Model
+## Models
 
-LLM access goes through `core/llm.py` over OpenRouter — model-agnostic, set
-`GATEKEEP_MODEL` and `OPENROUTER_API_KEY`.
+All LLM access goes through `core/llm.py`; no agent imports a provider SDK.
+Providers and the per-agent model map live in `config/models.toml` (committed,
+no secrets); API keys come from per-provider env vars.
+
+```toml
+[providers.deepseek]
+client      = "openai"
+base_url    = "https://api.deepseek.com"
+api_key_env = "DEEPSEEK_API_KEY"
+extra_body  = { thinking = { type = "disabled" } }
+
+# thinking on; json_mode since thinking disallows forced tool_choice
+[providers.deepseek-think]
+client            = "openai"
+base_url          = "https://api.deepseek.com"
+api_key_env       = "DEEPSEEK_API_KEY"
+extra_body        = { thinking = { type = "enabled" } }
+structured_method = "json_mode"
+
+[roles]
+default = "deepseek:deepseek-v4-pro"
+judge   = "deepseek-think:deepseek-v4-pro"   # reasoning stage runs with thinking on
+```
+
+- **Keys:** set the env var each provider names in `api_key_env`
+  (`OPENROUTER_API_KEY`, `DEEPSEEK_API_KEY`, ...). Keys never live in the file.
+- **Roles:** `default`, `intake`, `checks`, `judge`, `responder`. A role maps to
+  `"provider:model"`; unlisted roles fall back to `default`.
+- **Config path:** override with `GATEKEEP_MODELS_CONFIG`.
+- **Adding a non-OpenAI-wire provider** (e.g. Anthropic native): register a
+  builder in `core/llm.py` `BUILDERS` and set that provider's `client`, with no
+  call-site changes.

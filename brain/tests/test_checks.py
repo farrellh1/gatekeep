@@ -142,7 +142,7 @@ def test_diff_matches_description_flags_mismatch(monkeypatch):
     monkeypatch.setattr(
         checks,
         "llm",
-        lambda messages, schema: schema(mismatch=True, reason="body claims fix, diff is noop"),
+        lambda m, schema, **kw: schema(mismatch=True, reason="body claims fix, diff is noop"),
     )
     ev = _pr(body="Fixes the auth bug", diff="--- a/r\n+++ b/r\n+# comment\n")
     f = checks.diff_matches_description(ev)
@@ -153,7 +153,7 @@ def test_diff_matches_description_passes(monkeypatch):
     monkeypatch.setattr(
         checks,
         "llm",
-        lambda messages, schema: schema(mismatch=False, reason="diff matches"),
+        lambda messages, schema, **kw: schema(mismatch=False, reason="diff matches"),
     )
     ev = _pr(body="bump", diff="--- a/r\n+++ b/r\n+x=2\n")
     assert checks.diff_matches_description(ev).result == "pass"
@@ -163,7 +163,7 @@ def test_has_repro_flags_missing(monkeypatch):
     monkeypatch.setattr(
         checks,
         "llm",
-        lambda messages, schema: schema(has_repro=False, reason="no steps"),
+        lambda messages, schema, **kw: schema(has_repro=False, reason="no steps"),
     )
     ev = _pr(kind="issue", body="it doesn't work pls fix")
     assert checks.has_repro(ev).result == "fail"
@@ -173,7 +173,7 @@ def test_is_duplicate_flags_match(monkeypatch):
     monkeypatch.setattr(
         checks,
         "llm",
-        lambda messages, schema: schema(duplicate_of=7, reason="same crash"),
+        lambda messages, schema, **kw: schema(duplicate_of=7, reason="same crash"),
     )
     ev = _pr(
         kind="issue",

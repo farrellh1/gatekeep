@@ -141,7 +141,7 @@ def diff_matches_description(event: NormalizedEvent) -> Finding:
             "content": f"DESCRIPTION:\n{event.title}\n{event.body}\n\nDIFF:\n{event.diff}",
         },
     ]
-    out = llm(msg, schema=_DiffMatch)
+    out = llm(msg, schema=_DiffMatch, role="checks")
     return Finding(
         check="diff_matches_description",
         result="fail" if out.mismatch else "pass",
@@ -165,7 +165,7 @@ def has_repro(event: NormalizedEvent) -> Finding:
         },
         {"role": "user", "content": f"{event.title}\n{event.body}"},
     ]
-    out = llm(msg, schema=_Repro)
+    out = llm(msg, schema=_Repro, role="checks")
     return Finding(
         check="has_repro",
         result="pass" if out.has_repro else "fail",
@@ -192,7 +192,7 @@ def is_duplicate(event: NormalizedEvent) -> Finding:
         },
         {"role": "user", "content": f"NEW:\n{event.title}\n{event.body}\n\nEXISTING:\n{listing}"},
     ]
-    out = llm(msg, schema=_Dupe)
+    out = llm(msg, schema=_Dupe, role="checks")
     if out.duplicate_of is not None:
         return Finding(
             check="is_duplicate",

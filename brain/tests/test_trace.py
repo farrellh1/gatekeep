@@ -33,22 +33,22 @@ def _patch_all(monkeypatch):
     monkeypatch.setattr(
         intake,
         "llm",
-        lambda messages, schema: schema(relevant=True, route="firewall", reason="new PR"),
+        lambda messages, schema, **kw: schema(relevant=True, route="firewall", reason="new PR"),
     )
     monkeypatch.setattr(
-        checks, "llm", lambda messages, schema: schema(mismatch=True, reason="noop")
+        checks, "llm", lambda messages, schema, **kw: schema(mismatch=True, reason="noop")
     )
     monkeypatch.setattr(
         judge,
         "llm",
-        lambda messages, schema: Verdict(
+        lambda messages, schema, **kw: Verdict(
             label="slop",
             confidence=0.95,
             reasons=["cites validateToken()"],
             primary_evidence="cited_symbols_exist",
         ),
     )
-    monkeypatch.setattr(responder, "llm", lambda messages: "polite note")
+    monkeypatch.setattr(responder, "llm", lambda messages, **kw: "polite note")
 
 
 def test_trace_records_full_handoff_in_order(monkeypatch):
@@ -88,7 +88,7 @@ def test_trace_captures_node_error_and_persists(monkeypatch, tmp_path):
     monkeypatch.setattr(
         judge,
         "llm",
-        lambda messages, schema: (_ for _ in ()).throw(ValueError("structured output broke")),
+        lambda messages, schema, **kw: (_ for _ in ()).throw(ValueError("structured output broke")),
     )
     monkeypatch.setenv("GATEKEEP_TRACE_DIR", str(tmp_path))
 

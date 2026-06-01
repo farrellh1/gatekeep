@@ -20,7 +20,7 @@ def draft_comment(state: BrainState) -> str:
         },
         {"role": "user", "content": f"Author handle: {author}\nConcerns:\n{reasons}"},
     ]
-    return llm(msg)
+    return llm(msg, role="responder")
 
 
 def _draft(state: BrainState, config: RepoConfig) -> list[Action]:

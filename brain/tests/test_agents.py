@@ -31,7 +31,7 @@ def test_intake_routes_opened_pr_to_firewall(monkeypatch):
     monkeypatch.setattr(
         intake_mod,
         "llm",
-        lambda messages, schema: schema(relevant=True, route="firewall", reason="new PR"),
+        lambda messages, schema, **kw: schema(relevant=True, route="firewall", reason="new PR"),
     )
     out = intake_mod.run(BrainState(event=_ev()))
     assert out.intake.route == "firewall"
@@ -43,7 +43,7 @@ def test_intake_survives_model_omitting_fields(monkeypatch):
     monkeypatch.setattr(
         intake_mod,
         "llm",
-        lambda messages, schema: schema(route="firewall"),
+        lambda messages, schema, **kw: schema(route="firewall"),
     )
     out = intake_mod.run(BrainState(event=_ev()))
     assert out.intake.route == "firewall"
@@ -91,7 +91,7 @@ def test_investigator_respects_disabled_check(monkeypatch):
 def test_judge_reads_findings_only(monkeypatch):
     captured = {}
 
-    def fake_llm(messages, schema):
+    def fake_llm(messages, schema, **kwargs):
         captured["prompt"] = messages[-1]["content"]
         return schema(
             label="slop",

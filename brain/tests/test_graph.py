@@ -30,22 +30,22 @@ def test_process_slop_pr_end_to_end(monkeypatch):
     monkeypatch.setattr(
         intake,
         "llm",
-        lambda messages, schema: schema(relevant=True, route="firewall", reason="new PR"),
+        lambda messages, schema, **kw: schema(relevant=True, route="firewall", reason="new PR"),
     )
     monkeypatch.setattr(
-        checks, "llm", lambda messages, schema: schema(mismatch=True, reason="noop")
+        checks, "llm", lambda messages, schema, **kw: schema(mismatch=True, reason="noop")
     )
     monkeypatch.setattr(
         judge,
         "llm",
-        lambda messages, schema: Verdict(
+        lambda messages, schema, **kw: Verdict(
             label="slop",
             confidence=0.95,
             reasons=["cites validateToken()"],
             primary_evidence="cited_symbols_exist",
         ),
     )
-    monkeypatch.setattr(responder, "llm", lambda messages: "polite note")
+    monkeypatch.setattr(responder, "llm", lambda messages, **kw: "polite note")
 
     result = graph.process(_event_dict(), config_yaml=None)
     assert result["verdict"]["label"] == "slop"

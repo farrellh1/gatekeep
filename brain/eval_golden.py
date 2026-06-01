@@ -14,7 +14,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dotenv import load_dotenv
 
 from core import graph
-from core.llm import DEFAULT_MODEL
+from core.models_config import load_models_config
 from core.trace import configure_logging
 
 ROOT = pathlib.Path(__file__).parent
@@ -211,14 +211,18 @@ def main() -> int:
     args = ap.parse_args()
     configure_logging()
 
-    if not os.environ.get("OPENROUTER_API_KEY"):
-        print("OPENROUTER_API_KEY not set; the golden set hits the real model.", file=sys.stderr)
+    provider, model_name = load_models_config().resolve("default")
+    if not os.environ.get(provider.api_key_env):
+        print(
+            f"${provider.api_key_env} not set; the golden set hits the real model.",
+            file=sys.stderr,
+        )
         return 2
     if not CASES:
         print("no golden cases found under tests/golden/*/*.json", file=sys.stderr)
         return 2
 
-    model = os.environ.get("GATEKEEP_MODEL", DEFAULT_MODEL)
+    model = f"{provider.name}:{model_name}"
     tasks = [(p, i) for p in CASES for i in range(args.runs)]
     by_path: dict[str, list] = {p: [None] * args.runs for p in CASES}
     started = time.perf_counter()

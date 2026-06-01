@@ -32,7 +32,8 @@ python eval_golden.py              # full report + results.json, fails if FPR > 
 python eval_golden.py --max-fpr 0.05
 ```
 
-Needs `OPENROUTER_API_KEY` (loaded from `brain/.env`): the golden set hits the real model.
+Needs the default provider's API key (the `api_key_env` named in `config/models.toml`, e.g.
+`DEEPSEEK_API_KEY`, loaded from `brain/.env`): the golden set hits the real model.
 
 ## Metric
 

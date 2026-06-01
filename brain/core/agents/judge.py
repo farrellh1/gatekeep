@@ -41,9 +41,12 @@ def run(state: BrainState) -> BrainState:
             "DETERMINISTIC/AST_TREE_SITTER) are authoritative. If every check passed, the label is "
             "'legit' -- do not invent slop from a clean findings list. If a check "
             "failed, your label "
-            "must follow from that specific failure.",
+            "must follow from that specific failure.\n"
+            'Respond with ONLY a JSON object of the form: {"label": "slop"|"needs-info"|"legit", '
+            '"confidence": <number 0..1>, "reasons": [<string>, ...], '
+            '"primary_evidence": <string>}. No prose outside the JSON.',
         },
         {"role": "user", "content": f"FINDINGS:\n{findings or '(none)'}"},
     ]
-    state.verdict = llm(msg, schema=Verdict)
+    state.verdict = llm(msg, schema=Verdict, role="judge")
     return state

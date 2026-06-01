@@ -37,7 +37,7 @@ def run(state: BrainState) -> BrainState:
         },
         {"role": "user", "content": f"kind={ev.kind} title={ev.title}\n{ev.body}"},
     ]
-    out = llm(msg, schema=_IntakeOut)
+    out = llm(msg, schema=_IntakeOut, role="intake")
     route = "firewall" if out.route == "firewall" else "skip"
     state.intake = IntakeResult(
         kind=ev.kind,
