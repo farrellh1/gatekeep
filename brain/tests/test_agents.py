@@ -4,6 +4,7 @@ from core.agents import intake as intake_mod
 from core.agents import investigator as inv_mod
 from core.agents import judge as judge_mod
 from core.config import RepoConfig
+from core.registry import Check
 from core.schemas import BrainState, Finding, NormalizedEvent
 
 CLONE = str(Path(__file__).parent / "fixtures" / "clone")
@@ -59,30 +60,38 @@ def test_intake_skips_irrelevant_action():
 # --- Investigator (Task 8) ---
 
 
-def test_investigator_runs_pr_checks(monkeypatch):
-    monkeypatch.setattr(
-        inv_mod,
-        "PR_CHECKS",
-        [
-            lambda ev: Finding(
-                check="cited_symbols_exist", result="fail", evidence="missing foo()"
-            ),
-        ],
+def _stub_check(name):
+    return Check(
+        name=name,
+        kinds=("pull_request",),
+        run=lambda ev: Finding(check=name, result="fail", evidence="x"),
     )
+
+
+def test_investigator_runs_pr_checks(monkeypatch):
+    monkeypatch.setattr(inv_mod, "suite_for", lambda kind: [_stub_check("cited_symbols_exist")])
     out = inv_mod.run(BrainState(event=_ev()), RepoConfig())
     assert len(out.findings) == 1
     assert out.findings[0].check == "cited_symbols_exist"
 
 
 def test_investigator_respects_disabled_check(monkeypatch):
-    def f(ev):
-        return Finding(check="cosmetic_only", result="fail", evidence="x")
-
-    f.__name__ = "cosmetic_only"
-    monkeypatch.setattr(inv_mod, "PR_CHECKS", [f])
+    monkeypatch.setattr(inv_mod, "suite_for", lambda kind: [_stub_check("cosmetic_only")])
     cfg = RepoConfig(checks={"cosmetic_only": False})
     out = inv_mod.run(BrainState(event=_ev()), cfg)
     assert out.findings == []
+
+
+def test_ci_status_false_disables_ci_check_regression():
+    # disabling a check by its registry name removes its Finding. A bare PR (no
+    # diff/files) short-circuits every other check before any llm call.
+    ev = _ev(ci_status="failure")
+    enabled = inv_mod.run(BrainState(event=ev), RepoConfig())
+    assert any(f.check == "ci_status" for f in enabled.findings)  # runs by default
+
+    cfg = RepoConfig(checks={"ci_status": False})
+    disabled = inv_mod.run(BrainState(event=ev), cfg)
+    assert not any(f.check == "ci_status" for f in disabled.findings)  # disabled
 
 
 # --- Judge (Task 9) ---

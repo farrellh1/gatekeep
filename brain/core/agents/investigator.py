@@ -1,21 +1,8 @@
 from __future__ import annotations
 
-from core import checks
 from core.config import RepoConfig
+from core.registry import suite_for
 from core.schemas import BrainState
-
-PR_CHECKS = [
-    checks.cited_symbols_exist,
-    checks.touches_real_files,
-    checks.cosmetic_only,
-    checks.ci_status_check,
-    checks.diff_matches_description,
-]
-ISSUE_CHECKS = [
-    checks.cited_symbols_exist,
-    checks.is_duplicate,
-    checks.has_repro,
-]
 
 
 def run(state: BrainState, config: RepoConfig) -> BrainState:
@@ -23,10 +10,12 @@ def run(state: BrainState, config: RepoConfig) -> BrainState:
 
     The Investigator GATHERS -- it has no opinion and never sets a verdict.
     That discipline keeps judgment in exactly one place (the Judge).
+
+    The suite is the registry filtered by event kind; each check is gated on its
+    registry name -- the same name it reports -- so config keys cannot drift.
     """
-    suite = PR_CHECKS if state.event.kind == "pull_request" else ISSUE_CHECKS
-    for check_fn in suite:
-        if not config.is_check_enabled(check_fn.__name__):
+    for check in suite_for(state.event.kind):
+        if not config.is_check_enabled(check.name):
             continue
-        state.findings.append(check_fn(state.event))
+        state.findings.append(check.run(state.event))
     return state
