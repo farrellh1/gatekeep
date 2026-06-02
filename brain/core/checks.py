@@ -135,21 +135,54 @@ def touches_real_files(event: NormalizedEvent, ctx: RunContext) -> CheckResult:
     return CheckResult(result="pass", evidence="changed paths coherent")
 
 
+def _diff_hunks(diff: str) -> list[list[str]]:
+    """The changed/context lines of each hunk, kept separate per hunk.
+
+    A file/meta header ends the current hunk; a `@@` or a change line with no open
+    hunk starts one. Grouping per hunk keeps a line moved between files (or hunks)
+    from cancelling out against its own paste elsewhere.
+    """
+    hunks: list[list[str]] = []
+    cur: list[str] | None = None
+    for line in diff.splitlines():
+        if line.startswith("@@"):
+            cur = []
+            hunks.append(cur)
+        elif line.startswith(("--- ", "+++ ", "diff --git ")):
+            cur = None
+        elif line.startswith(("+", "-")):
+            if cur is None:
+                cur = []
+                hunks.append(cur)
+            cur.append(line)
+        elif cur is not None:
+            cur.append(line)
+    return hunks
+
+
 def cosmetic_only(event: NormalizedEvent, ctx: RunContext) -> CheckResult:
     if not event.diff:
         return CheckResult(result="unknown", evidence="no diff")
-    changed = [
-        line
-        for line in event.diff.splitlines()
-        if line.startswith(("+", "-")) and not line.startswith(("+++", "---"))
-    ]
 
     def norm(line: str) -> str:
-        return re.sub(r"\s+", "", line[1:])
+        # leading indentation is significant (it is the behavior in Python/YAML);
+        # only internal and trailing whitespace is cosmetic
+        body = line[1:]
+        rest = body.lstrip()
+        leading = body[: len(body) - len(rest)]
+        return leading + re.sub(r"\s+", "", rest)
 
-    adds = {norm(line) for line in changed if line.startswith("+")}
-    dels = {norm(line) for line in changed if line.startswith("-")}
-    if adds == dels and adds:
+    changed = False
+    for hunk in _diff_hunks(event.diff):
+        # ordered: a whitespace reformat keeps line order, so a reorder is a real change
+        adds = [norm(line) for line in hunk if line.startswith("+")]
+        dels = [norm(line) for line in hunk if line.startswith("-")]
+        if not adds and not dels:
+            continue
+        changed = True
+        if adds != dels:  # a hunk with a real change -- not cosmetic
+            return CheckResult(result="pass", evidence="diff changes behavior")
+    if changed:
         return CheckResult(
             result="fail",
             evidence="diff is whitespace/formatting only -- no behavior change",

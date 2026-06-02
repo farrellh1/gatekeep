@@ -227,6 +227,59 @@ def test_cosmetic_only_passes_real_change():
     assert checks.cosmetic_only(ev, _ctx(ev)).result == "pass"
 
 
+def test_cosmetic_only_passes_significant_dedent():
+    # leading indentation is behavior in whitespace-significant languages: pulling
+    # `return None` out of the `if` block changes when it runs
+    ev = _pr(
+        diff=(
+            "--- a/auth.py\n"
+            "+++ b/auth.py\n"
+            "@@\n"
+            "     if not user:\n"
+            "-        return None\n"
+            "+    return None\n"
+        ),
+    )
+    assert checks.cosmetic_only(ev, _ctx(ev)).result == "pass"
+
+
+def test_cosmetic_only_passes_code_move_across_files():
+    # a function cut from one file and pasted into another has matching add/remove
+    # lines pooled together, but per file it is a deletion and an addition
+    ev = _pr(
+        diff=(
+            "--- a/a.py\n"
+            "+++ b/a.py\n"
+            "@@\n"
+            "-def helper():\n"
+            "-    return 1\n"
+            "--- a/b.py\n"
+            "+++ b/b.py\n"
+            "@@\n"
+            "+def helper():\n"
+            "+    return 1\n"
+        ),
+    )
+    assert checks.cosmetic_only(ev, _ctx(ev)).result == "pass"
+
+
+def test_cosmetic_only_passes_statement_reorder():
+    # swapping two statements is a behavior change, but the added and removed lines
+    # are the same set -- only their order differs
+    ev = _pr(
+        diff=(
+            "--- a/x.py\n"
+            "+++ b/x.py\n"
+            "@@\n"
+            "-    save(db)\n"
+            "-    commit(db)\n"
+            "+    commit(db)\n"
+            "+    save(db)\n"
+        ),
+    )
+    assert checks.cosmetic_only(ev, _ctx(ev)).result == "pass"
+
+
 def test_ci_status_failure():
     ev = _pr(ci_status="failure")
     assert checks.ci_status_check(ev, _ctx(ev)).result == "fail"
