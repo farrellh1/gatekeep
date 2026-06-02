@@ -1,8 +1,32 @@
 import type { Octokit } from "octokit";
-import type { NormalizedEvent, PRPayload, IssuePayload } from "./types.js";
+import type {
+  AuthorInfo,
+  IssueRef,
+  NormalizedEvent,
+  PRPayload,
+  IssuePayload,
+  RepoRef,
+} from "./types.js";
 
 type Clock = () => Date;
 const DAY = 1000 * 60 * 60 * 24;
+
+// the GitHub reads plus the payload facts the mapper needs, with no mapping applied:
+// raw diff/file list, the unmapped combined-status state, and the author's user record
+export interface RawEvidence {
+  delivery_id: string;
+  kind: "pull_request" | "issue";
+  action: string;
+  repo: RepoRef;
+  number: number;
+  title: string;
+  body: string;
+  author: { login: string; author_association: string; created_at: string };
+  diff: string | null;
+  changed_files: string[] | null;
+  ci_state: string | null;
+  existing_issues: IssueRef[] | null;
+}
 
 const MAX_DIFF_BYTES = Number(process.env.GATEKEEP_MAX_DIFF_BYTES) || 1_000_000;
 const MAX_CHANGED_FILES = Number(process.env.GATEKEEP_MAX_CHANGED_FILES) || 300;
@@ -26,13 +50,48 @@ function capFiles(files: string[]): string[] {
   ];
 }
 
-export async function normalizePullRequest(
+const ciMap: Record<string, NormalizedEvent["ci_status"]> = {
+  success: "success",
+  failure: "failure",
+  pending: "pending",
+};
+
+export function buildAuthor(author: RawEvidence["author"], now: Date): AuthorInfo {
+  return {
+    login: author.login,
+    account_age_days: accountAgeDays(author.created_at, now),
+    is_first_time_contributor:
+      author.author_association === "FIRST_TIME_CONTRIBUTOR" ||
+      author.author_association === "NONE",
+  };
+}
+
+export function toNormalizedEvent(
+  raw: RawEvidence,
+  clock: Clock = () => new Date(),
+): NormalizedEvent {
+  return {
+    delivery_id: raw.delivery_id,
+    kind: raw.kind,
+    action: raw.action,
+    repo: raw.repo,
+    number: raw.number,
+    title: raw.title,
+    body: raw.body,
+    author: buildAuthor(raw.author, clock()),
+    diff: raw.diff === null ? null : capDiff(raw.diff),
+    changed_files: raw.changed_files === null ? null : capFiles(raw.changed_files),
+    ci_status: raw.ci_state === null ? null : (ciMap[raw.ci_state] ?? "none"),
+    existing_issues: raw.existing_issues,
+  };
+}
+
+export async function gatherEvidence(
   octokit: Octokit,
   payload: PRPayload,
   deliveryId: string,
   clonePath: string,
-  clock: Clock = () => new Date(),
-): Promise<NormalizedEvent> {
+): Promise<RawEvidence> {
   const pr = payload.pull_request;
   const owner = pr.base.repo.owner!.login;
   const name = pr.base.repo.name;
@@ -51,12 +110,6 @@ export async function normalizePullRequest(
   });
   const user = await octokit.rest.users.getByUsername({ username: pr.user!.login });
 
-  const ciMap: Record<string, NormalizedEvent["ci_status"]> = {
-    success: "success",
-    failure: "failure",
-    pending: "pending",
-  };
-
   return {
     delivery_id: deliveryId,
     kind: "pull_request",
@@ -67,15 +120,24 @@ export async function normalizePullRequest(
     body: pr.body ?? "",
     author: {
       login: pr.user!.login,
-      account_age_days: accountAgeDays(user.data.created_at, clock()),
-      is_first_time_contributor:
-        pr.author_association === "FIRST_TIME_CONTRIBUTOR" || pr.author_association === "NONE",
+      author_association: pr.author_association,
+      created_at: user.data.created_at,
     },
-    diff: capDiff(diffRes.data as unknown as string),
-    changed_files: capFiles(files.data.map((f) => f.filename)),
-    ci_status: ciMap[status.data.state] ?? "none",
+    diff: diffRes.data as unknown as string,
+    changed_files: files.data.map((f) => f.filename),
+    ci_state: status.data.state,
     existing_issues: null,
   };
+}
+
+export async function normalizePullRequest(
+  octokit: Octokit,
+  payload: PRPayload,
+  deliveryId: string,
+  clonePath: string,
+  clock: Clock = () => new Date(),
+): Promise<NormalizedEvent> {
+  return toNormalizedEvent(await gatherEvidence(octokit, payload, deliveryId, clonePath), clock);
 }
 
 export async function normalizeIssue(
