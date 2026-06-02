@@ -39,6 +39,41 @@ def diff_added_identifiers(diff: str | None) -> set[str]:
     return set(_IDENT_RE.findall(added))
 
 
+def diff_added_files(diff: str | None) -> set[str]:
+    """Paths the diff introduces as brand-new files.
+
+    The brain clones only the base branch, so a file a PR adds isn't on disk yet;
+    counting it as present avoids flagging a greenfield contribution. A new file
+    shows its old side as /dev/null, so the following `+++ b/<path>` header names a
+    path the PR creates -- a diff that instead claims to modify a path absent from
+    the clone keeps its real old side and is left to fail as a hallucination.
+    """
+    if not diff:
+        return set()
+    added: set[str] = set()
+    prev = ""
+    for line in diff.splitlines():
+        if line.startswith("+++ ") and prev.startswith("--- /dev/null"):
+            path = line[4:]
+            added.add(path[2:] if path.startswith("b/") else path)
+        prev = line
+    return added
+
+
+def diff_renamed_paths(diff: str | None) -> set[str]:
+    """Destination paths the diff renames a file to.
+
+    A rename moves an existing file, so its new path is absent from the base clone
+    just like an added file -- but the diff shows no /dev/null, only a `rename to
+    <path>` header. Counting that target as present keeps a rename PR from reading
+    as touching nothing real.
+    """
+    if not diff:
+        return set()
+    marker = "rename to "
+    return {line[len(marker) :] for line in diff.splitlines() if line.startswith(marker)}
+
+
 def cited_symbols_exist(event: NormalizedEvent, ctx: RunContext) -> CheckResult:
     reader = ctx.reader
     cited = cited_symbols(f"{event.title}\n{event.body}")
@@ -65,12 +100,34 @@ def cited_symbols_exist(event: NormalizedEvent, ctx: RunContext) -> CheckResult:
     )
 
 
+# the gateway's sentinel for a diff it capped at GATEKEEP_MAX_DIFF_BYTES
+_DIFF_TRUNCATED = "[gatekeep: diff truncated"
+
+
+def _diff_vouches(diff: str | None) -> bool:
+    """Whether the diff is complete enough to call an unseen path hallucinated.
+
+    The gateway sends no diff for some events and truncates oversized ones. A null
+    or truncated diff cannot distinguish a file the PR adds from one it invents --
+    the clone has neither and the file's header may simply be absent or past the
+    cut -- so the check must abstain rather than fail.
+    """
+    return bool(diff) and _DIFF_TRUNCATED not in diff
+
+
 def touches_real_files(event: NormalizedEvent, ctx: RunContext) -> CheckResult:
     if not event.changed_files:
         return CheckResult(result="unknown", evidence="no file list")
     reader = ctx.reader
-    missing = [f for f in event.changed_files if not reader.file_exists(f)]
+    present = diff_added_files(event.diff) | diff_renamed_paths(event.diff)
+    missing = [f for f in event.changed_files if not reader.file_exists(f) and f not in present]
     if missing and len(missing) == len(event.changed_files):
+        if not _diff_vouches(event.diff):
+            return CheckResult(
+                result="unknown",
+                evidence=f"changed paths absent from the base clone, no usable diff to "
+                f"confirm they are added: {missing}",
+            )
         return CheckResult(
             result="fail",
             evidence=f"changed paths do not exist and are not added: {missing}",
