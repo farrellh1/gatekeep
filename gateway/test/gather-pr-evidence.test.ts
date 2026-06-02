@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { gatherEvidence } from "../src/normalize.js";
+import { gatherPrEvidence } from "../src/normalize.js";
 
 function fakeOctokit() {
   return {
@@ -32,10 +32,10 @@ const prPayload = {
   },
 };
 
-describe("gatherEvidence (PR)", () => {
+describe("gatherPrEvidence (PR)", () => {
   it("collects the raw GitHub reads without applying any mapping", async () => {
     const ok = fakeOctokit();
-    const raw = await gatherEvidence(
+    const raw = await gatherPrEvidence(
       ok as any,
       prPayload as any,
       "dlv-1",
@@ -75,7 +75,7 @@ describe("gatherEvidence (PR)", () => {
     process.env.GATEKEEP_MAX_DIFF_BYTES = "10";
     process.env.GATEKEEP_MAX_CHANGED_FILES = "1";
     vi.resetModules();
-    const { gatherEvidence: fresh } = await import("../src/normalize.js");
+    const { gatherPrEvidence: fresh } = await import("../src/normalize.js");
 
     const ok = fakeOctokit();
     ok.rest.pulls.get = vi.fn().mockResolvedValue({ data: "y".repeat(500) });

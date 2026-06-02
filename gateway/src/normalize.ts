@@ -109,7 +109,7 @@ export function toNormalizedEvent(
   };
 }
 
-export async function gatherEvidence(
+export async function gatherPrEvidence(
   octokit: Octokit,
   payload: PRPayload,
   deliveryId: string,
@@ -160,7 +160,7 @@ export async function normalizePullRequest(
   clonePath: string,
   clock: Clock = () => new Date(),
 ): Promise<NormalizedEvent> {
-  return toNormalizedEvent(await gatherEvidence(octokit, payload, deliveryId, clonePath), clock);
+  return toNormalizedEvent(await gatherPrEvidence(octokit, payload, deliveryId, clonePath), clock);
 }
 
 export async function gatherIssueEvidence(
