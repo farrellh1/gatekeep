@@ -1,5 +1,12 @@
 import type { Octokit } from "octokit";
-import type { AuthorInfo, NormalizedEvent, PRPayload, IssuePayload, RepoRef } from "./types.js";
+import type {
+  AuthorInfo,
+  IssueRef,
+  NormalizedEvent,
+  PRPayload,
+  IssuePayload,
+  RepoRef,
+} from "./types.js";
 
 type Clock = () => Date;
 const DAY = 1000 * 60 * 60 * 24;
@@ -60,6 +67,18 @@ const ciMap: Record<string, NormalizedEvent["ci_status"]> = {
   pending: "pending",
 };
 
+// the duplicate-detection candidates minus the current issue itself and any pull requests
+// (GitHub folds PRs into the issues list); returns null when there are no candidates (the PR path)
+function buildExistingIssues(
+  candidates: IssueCandidate[] | null,
+  currentNumber: number,
+): IssueRef[] | null {
+  if (candidates === null) return null;
+  return candidates
+    .filter((c) => c.number !== currentNumber && !c.is_pull_request)
+    .map((c) => ({ number: c.number, title: c.title, body: c.body }));
+}
+
 export function buildAuthor(author: RawEvidence["author"], now: Date): AuthorInfo {
   return {
     login: author.login,
@@ -86,12 +105,7 @@ export function toNormalizedEvent(
     diff: raw.diff === null ? null : capDiff(raw.diff),
     changed_files: raw.changed_files === null ? null : capFiles(raw.changed_files),
     ci_status: raw.ci_state === null ? null : (ciMap[raw.ci_state] ?? "none"),
-    existing_issues:
-      raw.issue_candidates === null
-        ? null
-        : raw.issue_candidates
-            .filter((c) => c.number !== raw.number && !c.is_pull_request)
-            .map((c) => ({ number: c.number, title: c.title, body: c.body })),
+    existing_issues: buildExistingIssues(raw.issue_candidates, raw.number),
   };
 }
 
