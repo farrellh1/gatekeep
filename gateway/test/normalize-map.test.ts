@@ -18,7 +18,38 @@ function prEvidence(overrides: Partial<RawEvidence> = {}): RawEvidence {
     diff: "--- a/x\n+++ b/x\n+# noop\n",
     changed_files: ["src/auth.py"],
     ci_state: "failure",
-    existing_issues: null,
+    issue_candidates: null,
+    ...overrides,
+  };
+}
+
+function issueEvidence(overrides: Partial<RawEvidence> = {}): RawEvidence {
+  return {
+    delivery_id: "dlv-9",
+    kind: "issue",
+    action: "opened",
+    repo: { owner: "o", name: "r", default_branch: "main", clone_path: "/tmp/gatekeep/clones/o-r" },
+    number: 42,
+    title: "App crashes on launch",
+    body: "stack trace attached",
+    author: {
+      login: "reporter",
+      author_association: "NONE",
+      created_at: "2020-01-01T00:00:00Z",
+    },
+    diff: null,
+    changed_files: null,
+    ci_state: null,
+    issue_candidates: [
+      {
+        number: 42,
+        title: "App crashes on launch",
+        body: "stack trace attached",
+        is_pull_request: false,
+      },
+      { number: 41, title: "Older open issue", body: "still relevant", is_pull_request: false },
+      { number: 40, title: "A pull request", body: "code", is_pull_request: true },
+    ],
     ...overrides,
   };
 }
@@ -68,5 +99,27 @@ describe("toNormalizedEvent (PR)", () => {
   it("leaves ci_status null when there is no combined status (issue-shaped evidence)", () => {
     const ev = toNormalizedEvent(prEvidence({ ci_state: null }), () => new Date());
     expect(ev.ci_status).toBeNull();
+  });
+});
+
+describe("toNormalizedEvent (issue)", () => {
+  it("maps raw issue evidence with no I/O and no diff/CI", () => {
+    const ev = toNormalizedEvent(issueEvidence(), () => new Date("2021-01-01T00:00:00Z"));
+    expect(ev.kind).toBe("issue");
+    expect(ev.number).toBe(42);
+    expect(ev.title).toBe("App crashes on launch");
+    expect(ev.diff).toBeNull();
+    expect(ev.changed_files).toBeNull();
+    expect(ev.ci_status).toBeNull();
+    expect(ev.author.login).toBe("reporter");
+    expect(ev.author.is_first_time_contributor).toBe(true);
+    expect(ev.author.account_age_days).toBe(366);
+  });
+
+  it("drops the current issue and any pull requests from existing_issues", () => {
+    const ev = toNormalizedEvent(issueEvidence(), () => new Date("2021-01-01T00:00:00Z"));
+    expect(ev.existing_issues).toEqual([
+      { number: 41, title: "Older open issue", body: "still relevant" },
+    ]);
   });
 });

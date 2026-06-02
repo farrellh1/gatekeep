@@ -63,7 +63,7 @@ describe("gatherEvidence (PR)", () => {
       author_association: "FIRST_TIME_CONTRIBUTOR",
       created_at: "2020-01-01T00:00:00Z",
     });
-    expect(raw.existing_issues).toBeNull();
+    expect(raw.issue_candidates).toBeNull();
 
     // adapter reads the head ref for combined status
     expect(ok.rest.repos.getCombinedStatusForRef).toHaveBeenCalledWith(

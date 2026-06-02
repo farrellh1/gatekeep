@@ -1,18 +1,22 @@
 import type { Octokit } from "octokit";
-import type {
-  AuthorInfo,
-  IssueRef,
-  NormalizedEvent,
-  PRPayload,
-  IssuePayload,
-  RepoRef,
-} from "./types.js";
+import type { AuthorInfo, NormalizedEvent, PRPayload, IssuePayload, RepoRef } from "./types.js";
 
 type Clock = () => Date;
 const DAY = 1000 * 60 * 60 * 24;
 
+// an open issue as returned by the list endpoint, before the mapper drops the current
+// issue and any pull requests; `is_pull_request` flags the entries GitHub folds into the
+// issues list but that are actually PRs
+export interface IssueCandidate {
+  number: number;
+  title: string;
+  body: string;
+  is_pull_request: boolean;
+}
+
 // the GitHub reads plus the payload facts the mapper needs, with no mapping applied:
-// raw diff/file list, the unmapped combined-status state, and the author's user record
+// raw diff/file list, the unmapped combined-status state, the raw open-issue candidates,
+// and the author's user record
 export interface RawEvidence {
   delivery_id: string;
   kind: "pull_request" | "issue";
@@ -25,7 +29,7 @@ export interface RawEvidence {
   diff: string | null;
   changed_files: string[] | null;
   ci_state: string | null;
-  existing_issues: IssueRef[] | null;
+  issue_candidates: IssueCandidate[] | null;
 }
 
 const MAX_DIFF_BYTES = Number(process.env.GATEKEEP_MAX_DIFF_BYTES) || 1_000_000;
@@ -82,7 +86,12 @@ export function toNormalizedEvent(
     diff: raw.diff === null ? null : capDiff(raw.diff),
     changed_files: raw.changed_files === null ? null : capFiles(raw.changed_files),
     ci_status: raw.ci_state === null ? null : (ciMap[raw.ci_state] ?? "none"),
-    existing_issues: raw.existing_issues,
+    existing_issues:
+      raw.issue_candidates === null
+        ? null
+        : raw.issue_candidates
+            .filter((c) => c.number !== raw.number && !c.is_pull_request)
+            .map((c) => ({ number: c.number, title: c.title, body: c.body })),
   };
 }
 
@@ -126,7 +135,7 @@ export async function gatherEvidence(
     diff: diffRes.data as unknown as string,
     changed_files: files.data.map((f) => f.filename),
     ci_state: status.data.state,
-    existing_issues: null,
+    issue_candidates: null,
   };
 }
 
@@ -140,13 +149,12 @@ export async function normalizePullRequest(
   return toNormalizedEvent(await gatherEvidence(octokit, payload, deliveryId, clonePath), clock);
 }
 
-export async function normalizeIssue(
+export async function gatherIssueEvidence(
   octokit: Octokit,
   payload: IssuePayload,
   deliveryId: string,
   clonePath: string,
-  clock: Clock = () => new Date(),
-): Promise<NormalizedEvent> {
+): Promise<RawEvidence> {
   const issue = payload.issue;
   const owner = payload.repository.owner.login;
   const name = payload.repository.name;
@@ -169,16 +177,30 @@ export async function normalizeIssue(
     body: issue.body ?? "",
     author: {
       login: issue.user!.login,
-      account_age_days: accountAgeDays(user.data.created_at, clock()),
-      is_first_time_contributor:
-        issue.author_association === "FIRST_TIME_CONTRIBUTOR" ||
-        issue.author_association === "NONE",
+      author_association: issue.author_association,
+      created_at: user.data.created_at,
     },
     diff: null,
     changed_files: null,
-    ci_status: null,
-    existing_issues: open.data
-      .filter((i) => i.number !== issue.number && !i.pull_request)
-      .map((i) => ({ number: i.number, title: i.title ?? "", body: i.body ?? "" })),
+    ci_state: null,
+    issue_candidates: open.data.map((i) => ({
+      number: i.number,
+      title: i.title ?? "",
+      body: i.body ?? "",
+      is_pull_request: Boolean(i.pull_request),
+    })),
   };
+}
+
+export async function normalizeIssue(
+  octokit: Octokit,
+  payload: IssuePayload,
+  deliveryId: string,
+  clonePath: string,
+  clock: Clock = () => new Date(),
+): Promise<NormalizedEvent> {
+  return toNormalizedEvent(
+    await gatherIssueEvidence(octokit, payload, deliveryId, clonePath),
+    clock,
+  );
 }

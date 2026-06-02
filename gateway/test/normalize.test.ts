@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { normalizePullRequest } from "../src/normalize.js";
+import { normalizePullRequest, normalizeIssue } from "../src/normalize.js";
 
 function fakeOctokit() {
   return {
@@ -77,5 +77,66 @@ describe("normalizePullRequest", () => {
 
     delete process.env.GATEKEEP_MAX_DIFF_BYTES;
     delete process.env.GATEKEEP_MAX_CHANGED_FILES;
+  });
+});
+
+function fakeIssueOctokit() {
+  return {
+    rest: {
+      issues: {
+        listForRepo: vi.fn().mockResolvedValue({
+          data: [
+            { number: 42, title: "App crashes on launch", body: "trace", pull_request: undefined },
+            {
+              number: 41,
+              title: "Older open issue",
+              body: "still relevant",
+              pull_request: undefined,
+            },
+            { number: 40, title: "A pull request", body: "code", pull_request: { url: "..." } },
+          ],
+        }),
+      },
+      users: {
+        getByUsername: vi.fn().mockResolvedValue({ data: { created_at: "2020-01-01T00:00:00Z" } }),
+      },
+    },
+  };
+}
+
+const issuePayload = {
+  action: "opened",
+  issue: {
+    number: 42,
+    title: "App crashes on launch",
+    body: "stack trace attached",
+    user: { login: "reporter" },
+    author_association: "NONE",
+  },
+  repository: { owner: { login: "o" }, name: "r", default_branch: "main" },
+};
+
+describe("normalizeIssue", () => {
+  it("assembles a NormalizedEvent from payload + octokit reads", async () => {
+    const ok = fakeIssueOctokit();
+    const ev = await normalizeIssue(
+      ok as any,
+      issuePayload as any,
+      "dlv-9",
+      "/tmp/gatekeep/clones/o-r",
+      () => new Date("2021-01-01T00:00:00Z"),
+    );
+    expect(ev.kind).toBe("issue");
+    expect(ev.number).toBe(42);
+    expect(ev.diff).toBeNull();
+    expect(ev.changed_files).toBeNull();
+    expect(ev.ci_status).toBeNull();
+    expect(ev.repo.clone_path).toBe("/tmp/gatekeep/clones/o-r");
+    expect(ev.author.is_first_time_contributor).toBe(true);
+    expect(ev.author.account_age_days).toBe(366);
+    // the current issue and any pull requests are dropped from the duplicate candidates
+    expect(ev.existing_issues).toEqual([
+      { number: 41, title: "Older open issue", body: "still relevant" },
+    ]);
   });
 });
