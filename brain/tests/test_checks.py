@@ -118,9 +118,9 @@ def test_cited_symbols_grades_engine_at_runtime():
     assert (f.confidence, f.engine) == ("HIGH", "AST_TREE_SITTER")
 
 
-def test_reader_built_once_per_event_across_checks(monkeypatch):
-    # both reader-using checks share ctx.reader, so the tree-sitter index is built
-    # exactly once per event -- not once per check.
+def test_reader_built_once_per_event(monkeypatch):
+    # checks share ctx.reader, so the tree-sitter index is built exactly once per
+    # event and reused across calls -- not rebuilt on every check invocation.
     from core import repo_reader
 
     builds = {"n": 0}
@@ -135,86 +135,9 @@ def test_reader_built_once_per_event_across_checks(monkeypatch):
     ev = _pr(body="touches `login()`", changed_files=["src/auth.py"])
     ctx = _ctx(ev)
     checks.cited_symbols_exist(ev, ctx)
-    checks.touches_real_files(ev, ctx)  # file_exists alone doesn't build the index
-    # cited_symbols_exist builds the index once; the shared reader is reused
+    # cited_symbols_exist builds the index once; a second call reuses the reader
+    checks.cited_symbols_exist(ev, ctx)
     assert builds["n"] == 1
-
-
-def test_touches_real_files_flags_missing():
-    # a complete diff that does not add the cited path -- the path is in the base
-    # clone neither nor created here, so it is a genuine hallucination
-    ev = _pr(
-        changed_files=["src/nope.py"],
-        diff=("--- a/src/auth.py\n+++ b/src/auth.py\n@@\n-x = 1\n+x = 2\n"),
-    )
-    assert checks.touches_real_files(ev, _ctx(ev)).result == "fail"
-
-
-def test_touches_real_files_passes_when_some_exist():
-    # a PR adding a new file alongside an existing one is legit, not slop
-    ev = _pr(changed_files=["src/auth.py", "src/new_feature.py"])
-    assert checks.touches_real_files(ev, _ctx(ev)).result == "pass"
-
-
-def test_touches_real_files_flags_path_absent_from_clone_and_diff():
-    # the diff adds a different file, so the cited path is neither in the base
-    # clone nor created by the PR -- a genuine hallucination
-    ev = _pr(
-        changed_files=["src/nope.py"],
-        diff=("--- /dev/null\n+++ b/src/other.py\n@@\n+x = 1\n"),
-    )
-    assert checks.touches_real_files(ev, _ctx(ev)).result == "fail"
-
-
-def test_touches_real_files_passes_greenfield_add():
-    # the brain clones only the base branch, so a file the PR adds is absent from
-    # the clone -- a purely-additive PR must not be read as touching nothing real
-    ev = _pr(
-        changed_files=["src/new_feature.py"],
-        diff=("--- /dev/null\n+++ b/src/new_feature.py\n@@\n+def feature():\n+    return 0\n"),
-    )
-    f = checks.touches_real_files(ev, _ctx(ev))
-    # the path the diff adds is never described as one that "is not added"
-    assert f.result == "pass" and "are not added" not in f.evidence
-
-
-def test_touches_real_files_unknown_when_no_diff_to_vouch():
-    # without a diff, a file the PR adds is indistinguishable from a hallucinated
-    # path: the base clone holds neither, so the check must abstain, not fail
-    ev = _pr(changed_files=["src/new_feature.py"])  # diff defaults to None
-    assert checks.touches_real_files(ev, _ctx(ev)).result == "unknown"
-
-
-def test_touches_real_files_unknown_when_diff_truncated():
-    # the gateway caps oversized diffs; a new file's header can fall past the cut,
-    # so a truncated diff cannot vouch for the path -- abstain rather than fail
-    ev = _pr(
-        changed_files=["src/new_feature.py"],
-        diff=(
-            "--- a/src/auth.py\n"
-            "+++ b/src/auth.py\n"
-            "@@\n"
-            "+x = 1\n"
-            "\n"
-            "[gatekeep: diff truncated to 1000 of 90000 bytes]"
-        ),
-    )
-    assert checks.touches_real_files(ev, _ctx(ev)).result == "unknown"
-
-
-def test_touches_real_files_passes_pure_rename():
-    # a rename target is absent from the base clone like a new file, but its diff
-    # has no /dev/null -- the `rename to` header is what vouches for the path
-    ev = _pr(
-        changed_files=["src/renamed.py"],
-        diff=(
-            "diff --git a/src/auth.py b/src/renamed.py\n"
-            "similarity index 100%\n"
-            "rename from src/auth.py\n"
-            "rename to src/renamed.py\n"
-        ),
-    )
-    assert checks.touches_real_files(ev, _ctx(ev)).result == "pass"
 
 
 def test_cosmetic_only_flags_whitespace_diff():

@@ -44,7 +44,6 @@ def _check(name: str, kinds: tuple[Kind, ...], fn: CheckFn) -> Check:
 # The one explicit catalog. Every check is named exactly once, here.
 REGISTRY: list[Check] = [
     _check("cited_symbols_exist", ("pull_request", "issue"), checks.cited_symbols_exist),
-    _check("touches_real_files", ("pull_request",), checks.touches_real_files),
     _check("cosmetic_only", ("pull_request",), checks.cosmetic_only),
     _check("ci_status", ("pull_request",), checks.ci_status_check),
     _check("diff_matches_description", ("pull_request",), checks.diff_matches_description),
