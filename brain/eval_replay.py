@@ -25,6 +25,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dotenv import load_dotenv
 
 from core.models_config import load_models_config
+from core.repo_reader import _LANG_BY_EXT
 from core.trace import configure_logging
 from eval_corpus import CorpusCase, load_case
 from eval_scoring import aggregate, confusion, dist_str, pct, rate, run_once
@@ -98,6 +99,45 @@ def tpr_gate(
     }
 
 
+# The languages the Brain acts on in v1: the distinct tree-sitter languages the
+# RepoReader can parse. ADR-0003 scopes v1 to this parseable set, so it is the
+# coverage target below. A parameter rather than a literal in the scoring logic
+# so the acted-on set can be narrowed or widened without editing the rate math.
+ACTED_ON_LANGUAGES = frozenset(_LANG_BY_EXT.values())
+
+
+def pooled_fpr(records: list[dict]) -> dict:
+    """One FPR pooled across every acted-on language. The FP-driving checks
+    (diff_matches_description, cosmetic_only, ci_status) are language-blind, so a
+    false positive on Go is the same failure as one on Python and belongs in the
+    same denominator. `n` is the named denominator: verified legit cases scored."""
+    fp = 0
+    n = 0
+    for r in records:
+        if r.get("error") or r["expected_positive"]:
+            continue
+        n += 1
+        if r["predicted_positive"]:
+            fp += 1
+    return {"fp": fp, "n": n, "fpr": rate(fp, n)}
+
+
+def legit_coverage(records: list[dict], acted_on: frozenset = ACTED_ON_LANGUAGES) -> dict:
+    """Per-language count of verified legit cases. This is a coverage check (every
+    acted-on language is exercised by at least one legit case), NOT a per-language
+    FPR gate, and explicitly not a claim that tail languages are low-FP-risk: off
+    the parseable set the AST net is absent. An acted-on language with zero legit
+    cases is surfaced as a gap rather than omitted."""
+    by_language: dict[str, int] = {}
+    for r in records:
+        if r.get("error") or r["expected_positive"]:
+            continue
+        language = r["language"]
+        by_language[language] = by_language.get(language, 0) + 1
+    gaps = sorted(lang for lang in acted_on if by_language.get(lang, 0) == 0)
+    return {"by_language": by_language, "gaps": gaps}
+
+
 def report(
     records: list[dict], sl: list[dict], cm: dict, model: str, runs: int, strata: dict | None = None
 ) -> None:
@@ -133,6 +173,17 @@ def report(
     print(f"  FPR (legit flagged):    {pct(fpr):>7}  ({fp}/{fp + tn})   <- Do No Harm")
     if cm["errored"]:
         print(f"  errored:                {cm['errored']}")
+
+    pf = pooled_fpr(sl)
+    print("\nPooled FPR (one rate over all acted-on languages, positive = slop):")
+    print(f"  FPR (legit flagged):    {pct(pf['fpr']):>7}  ({pf['fp']}/{pf['n']} verified legit)")
+
+    coverage = legit_coverage(sl)
+    print("\nLegit coverage (verified legit n per language):")
+    for language in sorted(coverage["by_language"]):
+        print(f"  {language:<12} {coverage['by_language'][language]}")
+    if coverage["gaps"]:
+        print(f"  coverage gaps (acted-on, zero verified legit): {', '.join(coverage['gaps'])}")
 
     if strata is None:
         strata = tpr_strata(sl)
@@ -201,6 +252,8 @@ def main() -> int:
         "confusion": cm,
         "fpr": rate(cm["fp"], cm["fp"] + cm["tn"]),
         "tpr": rate(cm["tp"], cm["tp"] + cm["fn"]),
+        "pooled_fpr": pooled_fpr(sl),
+        "legit_coverage": legit_coverage(sl),
         "tpr_strata": strata,
         "tpr_gate": gate,
         "cases": records,
