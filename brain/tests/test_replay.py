@@ -5,7 +5,7 @@ import pytest
 
 from core.models_config import load_models_config
 from eval_corpus import load_corpus, parse_case
-from eval_replay import case_record, slice_verified
+from eval_replay import case_record, slice_verified, tpr_gate, tpr_strata
 from eval_scoring import confusion, rate, run_once
 
 CLONE = str(Path(__file__).parent / "fixtures" / "clone")
@@ -41,12 +41,70 @@ def _case(label, verified, number, language="python"):
     )
 
 
+def _rec(expected_positive, predicted_positive, slop_kind=None):
+    return {
+        "name": "x",
+        "expected_positive": expected_positive,
+        "predicted_positive": predicted_positive,
+        "slop_kind": slop_kind,
+        "verified": True,
+    }
+
+
 def test_case_record_carries_label_verification_and_language():
     rec = case_record(_case("slop", True, 101), _runs("slop", "slop"))
     assert rec["expected_positive"] is True
     assert rec["predicted_positive"] is True
     assert rec["verified"] is True
     assert rec["language"] == "python"
+    assert rec["slop_kind"] == "obvious"
+
+
+def test_tpr_strata_splits_obvious_and_subtle_with_own_denominators():
+    records = [
+        _rec(True, True, "obvious"),
+        _rec(True, False, "obvious"),
+        _rec(True, True, "subtle"),
+        _rec(True, True, "subtle"),
+    ]
+    strata = tpr_strata(records)
+    assert strata["obvious"] == {"tp": 1, "n": 2, "tpr": 0.5}
+    assert strata["subtle"] == {"tp": 2, "n": 2, "tpr": 1.0}
+
+
+def test_tpr_gate_blocks_when_subtle_below_floor():
+    records = [_rec(True, True, "obvious")] * 9 + [_rec(True, False, "subtle")]
+    gate = tpr_gate(tpr_strata(records))
+    assert gate["blended_ok"] is True
+    assert gate["subtle_ok"] is False
+    assert gate["passed"] is False
+
+
+def test_tpr_gate_passes_when_both_floors_clear():
+    records = [_rec(True, True, "obvious")] * 6 + [_rec(True, True, "subtle")] * 4
+    gate = tpr_gate(tpr_strata(records))
+    assert gate["passed"] is True
+
+
+def test_tpr_gate_blocks_on_empty_subtle_stratum():
+    records = [_rec(True, True, "obvious")] * 10
+    gate = tpr_gate(tpr_strata(records))
+    assert gate["blended_ok"] is True
+    assert gate["subtle_ok"] is False
+    assert gate["passed"] is False
+
+
+def test_null_kind_slop_counts_blended_only():
+    records = [
+        _rec(True, True, "obvious"),
+        _rec(True, True, "subtle"),
+        _rec(True, False, None),
+    ]
+    strata = tpr_strata(records)
+    assert strata["obvious"]["n"] == 1
+    assert strata["subtle"]["n"] == 1
+    assert strata["blended"]["n"] == 3
+    assert strata["blended"]["tp"] == 2
 
 
 def test_legit_case_record_is_negative():

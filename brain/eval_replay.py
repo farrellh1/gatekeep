@@ -38,6 +38,11 @@ os.environ.setdefault("GATEKEEP_TRACE_DIR", str(ROOT / "tests" / "corpus" / "tra
 CLONE = str(ROOT / "tests" / "fixtures" / "clone")
 CORPUS_DIR = str(ROOT / "tests" / "corpus")
 
+# ADR-0003 default floors; issue 04 folds these into the master gate.
+OBVIOUS, SUBTLE = "obvious", "subtle"
+TPR_FLOOR = 0.60
+SUBTLE_TPR_FLOOR = 0.40
+
 
 def case_record(case: CorpusCase, runs: list[dict]) -> dict:
     """Fold a Corpus case's per-run outcomes into a voted record. Unlike the
@@ -48,6 +53,7 @@ def case_record(case: CorpusCase, runs: list[dict]) -> dict:
     rec = aggregate(name, case.label == "slop", runs)
     rec["verified"] = case.verified
     rec["language"] = case.language
+    rec["slop_kind"] = case.slop_kind
     return rec
 
 
@@ -57,7 +63,44 @@ def slice_verified(records: list[dict]) -> list[dict]:
     return [r for r in records if r.get("verified")]
 
 
-def report(records: list[dict], sl: list[dict], cm: dict, model: str, runs: int) -> None:
+def tpr_strata(records: list[dict]) -> dict:
+    """TPR split by Slop stratum over the passed Slice. Each stratum counts only
+    verified-Slop records, skipping errors; a null slop_kind counts toward blended
+    but neither stratum (the human verifier owns that judgement)."""
+    buckets = {OBVIOUS: [0, 0], SUBTLE: [0, 0], "blended": [0, 0]}
+    for r in records:
+        if r.get("error") or not r["expected_positive"]:
+            continue
+        hit = r["predicted_positive"]
+        buckets["blended"][0] += hit
+        buckets["blended"][1] += 1
+        kind = r.get("slop_kind")
+        if kind in (OBVIOUS, SUBTLE):
+            buckets[kind][0] += hit
+            buckets[kind][1] += 1
+    return {k: {"tp": tp, "n": n, "tpr": rate(tp, n)} for k, (tp, n) in buckets.items()}
+
+
+def tpr_gate(
+    strata: dict, tpr_floor: float = TPR_FLOOR, subtle_floor: float = SUBTLE_TPR_FLOOR
+) -> dict:
+    """The gate cannot pass on easy mode: a strong blended TPR is not enough if the
+    subtle stratum is below floor or empty."""
+    blended, subtle = strata["blended"]["tpr"], strata[SUBTLE]["tpr"]
+    blended_ok = blended is not None and blended >= tpr_floor
+    subtle_ok = subtle is not None and subtle >= subtle_floor
+    return {
+        "passed": blended_ok and subtle_ok,
+        "blended_ok": blended_ok,
+        "subtle_ok": subtle_ok,
+        "tpr_floor": tpr_floor,
+        "subtle_floor": subtle_floor,
+    }
+
+
+def report(
+    records: list[dict], sl: list[dict], cm: dict, model: str, runs: int, strata: dict | None = None
+) -> None:
     print("\nGATEKEEP REPLAY EVAL")
     print("=" * 72)
     print(
@@ -90,6 +133,17 @@ def report(records: list[dict], sl: list[dict], cm: dict, model: str, runs: int)
     print(f"  FPR (legit flagged):    {pct(fpr):>7}  ({fp}/{fp + tn})   <- Do No Harm")
     if cm["errored"]:
         print(f"  errored:                {cm['errored']}")
+
+    if strata is None:
+        strata = tpr_strata(sl)
+    gate = tpr_gate(strata)
+    print("\nStratified TPR (positive = slop):")
+    for k in (OBVIOUS, SUBTLE, "blended"):
+        s = strata[k]
+        print(f"  {k:<8} {pct(s['tpr']):>7}  ({s['tp']}/{s['n']})")
+    if not gate["subtle_ok"]:
+        print(f"  subtle below floor {pct(gate['subtle_floor'])} -> gate blocked")
+
     print(f"\n  Slice {len(sl)} of {len(records)} Corpus cases verified\n")
 
 
@@ -134,7 +188,9 @@ def main() -> int:
     records = [case_record(c, by_path[p]) for p, c in zip(paths, cases, strict=True)]
     sl = slice_verified(records)
     cm = confusion(sl)
-    report(records, sl, cm, model, args.runs)
+    strata = tpr_strata(sl)
+    gate = tpr_gate(strata)
+    report(records, sl, cm, model, args.runs, strata)
     print(f"  wall time:  {wall:.0f}s ({len(tasks)} runs, {args.workers} workers)\n")
 
     artifact = {
@@ -145,6 +201,8 @@ def main() -> int:
         "confusion": cm,
         "fpr": rate(cm["fp"], cm["fp"] + cm["tn"]),
         "tpr": rate(cm["tp"], cm["tp"] + cm["fn"]),
+        "tpr_strata": strata,
+        "tpr_gate": gate,
         "cases": records,
     }
     pathlib.Path(args.out).write_text(json.dumps(artifact, indent=2))
