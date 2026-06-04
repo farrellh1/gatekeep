@@ -129,8 +129,10 @@ def ci_status_check(event: NormalizedEvent, ctx: RunContext) -> CheckResult:
 
 
 class _DiffMatch(BaseModel):
-    mismatch: bool = False  # default to "matches" if the field is absent
+    # reason comes first so the model writes its claim-by-claim check before it
+    # commits to the verdict, which makes the verdict steadier across runs.
     reason: str = ""
+    mismatch: bool = False  # default to "matches" if the field is absent
 
 
 def diff_matches_description(event: NormalizedEvent, ctx: RunContext) -> CheckResult:
@@ -139,10 +141,20 @@ def diff_matches_description(event: NormalizedEvent, ctx: RunContext) -> CheckRe
     msg = [
         {
             "role": "system",
-            "content": "You compare a PR description to its actual diff. Set "
-            "mismatch=true ONLY if the "
-            "diff plainly does not do what the description claims (e.g. claims a fix but is a "
-            "no-op/comment/unrelated change). Be conservative.",
+            "content": (
+                "Verify a PR's description against its actual diff, claim by claim.\n"
+                "1. From the description, extract the concrete, checkable changes it claims "
+                "to make -- specific files, functions, behaviors, or additions. Ignore vague "
+                "or high-level framing.\n"
+                "2. For each concrete claim, decide whether the diff actually contains it. "
+                "Write this claim-by-claim list in `reason`.\n"
+                "3. Set mismatch=true when the description claims specific changes that are "
+                "absent from the diff, or the diff's changes are unrelated to what the "
+                "description claims. Set mismatch=false when every concrete claim is present, "
+                "or the description is only high-level with no specific claim to contradict.\n"
+                "Do NOT flag a PR for a merely terse or vague description, for stylistic "
+                "wording, or when the diff is a reasonable subset of a broad description."
+            ),
         },
         {
             "role": "user",
@@ -152,6 +164,91 @@ def diff_matches_description(event: NormalizedEvent, ctx: RunContext) -> CheckRe
     out = llm(msg, schema=_DiffMatch, role="checks")
     return CheckResult(
         result="fail" if out.mismatch else "pass",
+        evidence=out.reason,
+        engine="LLM",
+    )
+
+
+class _Substantive(BaseModel):
+    # reason first so the model weighs the description before it commits to a verdict
+    reason: str = ""
+    is_low_effort: bool = False  # default to "substantive" if the field is absent
+
+
+def substantive_description(event: NormalizedEvent, ctx: RunContext) -> CheckResult:
+    files = len(event.changed_files or [])
+    diff_lines = len((event.diff or "").splitlines())
+    msg = [
+        {
+            "role": "system",
+            "content": (
+                "Judge whether a PR's description does the minimum work of explaining its "
+                "change. Set is_low_effort=true ONLY when the description is effectively "
+                "empty -- blank, an untouched PR template (section headers with nothing "
+                "filled in), or a meaningless placeholder like 'V1' / 'update' / 'wip' -- AND "
+                "it gives no explanation of what the change does or why. Weigh it against the "
+                "size of the change: a large change with no explanation is low-effort; a "
+                "small, self-evident change with a short but clear title is fine. Set "
+                "is_low_effort=false for any description that genuinely explains the change, "
+                "however terse, and never flag a PR merely for being brief. Write your "
+                "reasoning in reason first."
+            ),
+        },
+        {
+            "role": "user",
+            "content": (
+                f"TITLE:\n{event.title}\n\nDESCRIPTION:\n{event.body}\n\n"
+                f"CHANGE SIZE: {files} files, {diff_lines} diff lines"
+            ),
+        },
+    ]
+    out = llm(msg, schema=_Substantive, role="checks")
+    return CheckResult(
+        result="fail" if out.is_low_effort else "pass",
+        evidence=out.reason,
+        engine="LLM",
+    )
+
+
+class _FixAddresses(BaseModel):
+    # reason first so the model identifies the reported cause before it concludes
+    reason: str = ""
+    addresses: bool = True  # default to "addresses" if the field is absent
+
+
+def fix_addresses_issue(event: NormalizedEvent, ctx: RunContext) -> CheckResult:
+    issues = event.linked_issues or []
+    if not issues or not event.diff:
+        return CheckResult(result="unknown", evidence="no linked issue to verify against")
+    listing = "\n\n".join(f"ISSUE #{i.number}: {i.title}\n{i.body}" for i in issues)
+    msg = [
+        {
+            "role": "system",
+            "content": (
+                "A PR claims to fix the linked issue(s). Decide whether its diff actually "
+                "addresses the cause the issue describes.\n"
+                "1. From the issue, identify the reported cause -- the specific component, "
+                "code path, or behavior that is failing.\n"
+                "2. Check whether the diff changes that same component / path / behavior.\n"
+                "3. Set addresses=false ONLY when the diff plainly targets a different "
+                "component or path than the one the issue reports -- a misdirected fix that "
+                "would not resolve the reported problem. Set addresses=true when the diff "
+                "changes the reported area, or when you cannot tell which area is at fault. "
+                "Be conservative: do not flag a partial or imperfect fix, only a clearly "
+                "misdirected one. Write your reasoning in reason first."
+            ),
+        },
+        {
+            "role": "user",
+            "content": (
+                f"PR TITLE:\n{event.title}\n\nPR DESCRIPTION:\n{event.body}\n\n"
+                f"LINKED {listing}\n\nDIFF:\n{event.diff}"
+            ),
+        },
+    ]
+    out = llm(msg, schema=_FixAddresses, role="checks")
+    return CheckResult(
+        result="pass" if out.addresses else "fail",
         evidence=out.reason,
         engine="LLM",
     )

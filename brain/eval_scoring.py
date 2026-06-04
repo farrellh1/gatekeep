@@ -9,27 +9,52 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import time
 from collections import Counter
 
 from core import graph
+from core.repo_reader import RepoReader
 
 SLOP = "slop"
+NEEDS_INFO = "needs-info"
+
+
+def _reader_from_snapshot(case_path: str, case: dict) -> RepoReader | None:
+    """Hydrate a RepoReader from a case's frozen snapshot, or None if it has none.
+
+    A Corpus case carries a `snapshot` path relative to its own directory; the
+    file holds the three derived sets a clone-backed reader would build. Hydrating
+    from it lets the Brain score the case against the repo as it stood, with no
+    clone on disk. A case with no snapshot (the golden Suite) returns None so the
+    caller falls back to the clone.
+    """
+    snapshot = case.get("snapshot")
+    if not snapshot:
+        return None
+    snapshot_file = os.path.join(os.path.dirname(case_path), snapshot)
+    if not os.path.exists(snapshot_file):
+        return None
+    with open(snapshot_file) as f:
+        index = json.load(f)
+    return RepoReader.from_index(index["symbols"], index["paths"], index["unparsed_exts"])
 
 
 def run_once(path: str, clone_path: str, run_idx: int = 0) -> dict:
     """One pipeline run over a case. The clone is injected by the caller so the
-    same driver serves the golden Suite and a Corpus case. The delivery_id is
-    suffixed with the run index so each run persists its own trace file (flaky
-    runs aren't overwritten)."""
+    same driver serves the golden Suite and a Corpus case. A case carrying a frozen
+    snapshot is scored against a reader hydrated from it instead of the clone. The
+    delivery_id is suffixed with the run index so each run persists its own trace
+    file (flaky runs aren't overwritten)."""
     with open(path) as f:
         case = json.load(f)
     event = dict(case["event"])
     event["repo"] = dict(event["repo"], clone_path=clone_path)
     event["delivery_id"] = f"{event['delivery_id']}-r{run_idx}"
+    reader = _reader_from_snapshot(path, case)
     started = time.perf_counter()
     try:
-        result = graph.process(event, case.get("config_yaml"))
+        result = graph.process(event, case.get("config_yaml"), reader=reader)
     except Exception as exc:
         logging.getLogger("gatekeep.eval").warning("run error on %s: %s", event["delivery_id"], exc)
         return {
@@ -82,6 +107,7 @@ def aggregate(name: str, expected_positive: bool, runs: list[dict]) -> dict:
             vote="error",
             label=None,
             predicted_positive=None,
+            predicted_flagged=None,
             agreement=0.0,
         )
         return base
@@ -89,7 +115,11 @@ def aggregate(name: str, expected_positive: bool, runs: list[dict]) -> dict:
     base.update(
         vote=vote,
         label=vote,
+        # condemn = called it slop; flagged = took any protective action (slop OR
+        # needs-info). The assistant's job is to flag a bad PR for the maintainer,
+        # so a needs-info catch counts toward TPR; only a condemn is a hard FP.
         predicted_positive=vote == SLOP,
+        predicted_flagged=vote in (SLOP, NEEDS_INFO),
         agreement=round(count / len(runs), 3),
         confidence=round(sum(confs) / len(confs), 2) if confs else None,
         reasons=reasons,

@@ -43,6 +43,10 @@ class NormalizedEvent(BaseModel):
     diff: str | None = None
     changed_files: list[str] | None = None
     ci_status: Literal["success", "failure", "pending", "none"] | None = None
+    # PR-only: the issue(s) this PR claims to fix, parsed from "Fixes #N" closing
+    # keywords. Lets a check verify the diff addresses the reported cause, not just
+    # that it matches its own description. Distinct from existing_issues below.
+    linked_issues: list[IssueRef] | None = None
     # issue-only (Gateway supplies open-issue candidates for dupe detection)
     existing_issues: list[IssueRef] | None = None
 

@@ -29,11 +29,12 @@ def _traced(name, fn, tracer: Tracer):
     return wrapper
 
 
-def _build(config: RepoConfig, tracer: Tracer):
+def _build(config: RepoConfig, tracer: Tracer, reader=None):
     g = StateGraph(BrainState)
     g.add_node("intake", _traced("intake", intake.run, tracer))
     g.add_node(
-        "investigator", _traced("investigator", lambda s: investigator.run(s, config), tracer)
+        "investigator",
+        _traced("investigator", lambda s: investigator.run(s, config, reader), tracer),
     )
     g.add_node("judge", _traced("judge", judge.run, tracer))
     g.add_node("responder", _traced("responder", lambda s: responder.run(s, config), tracer))
@@ -46,13 +47,13 @@ def _build(config: RepoConfig, tracer: Tracer):
     return g.compile()
 
 
-def process(event_dict: dict, config_yaml: str | None) -> dict:
+def process(event_dict: dict, config_yaml: str | None, reader=None) -> dict:
     config = load_config(config_yaml)
     event = NormalizedEvent(**event_dict)
     tracer = Tracer(event)
     trace_dir = os.environ.get("GATEKEEP_TRACE_DIR")
     try:
-        final = _build(config, tracer).invoke(BrainState(event=event))
+        final = _build(config, tracer, reader).invoke(BrainState(event=event))
     except Exception:
         if trace_dir:  # persist the partial trace (with the error step) before re-raising
             tracer.write(trace_dir)

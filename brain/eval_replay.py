@@ -81,21 +81,26 @@ def slice_verified(records: list[dict]) -> list[dict]:
 
 
 def tpr_strata(records: list[dict]) -> dict:
-    """TPR split by Slop stratum over the passed Slice. Each stratum counts only
+    """Protective TPR split by Slop stratum over the passed Slice. A Slop case is
+    "caught" when the bot takes any protective action -- condemn (slop) OR flag
+    (needs-info) -- because the firewall is an assistant: its job is to surface a
+    bad PR to the maintainer, not only to condemn it. `condemned` is carried
+    alongside so the condemn-vs-flag split stays visible. Each stratum counts only
     verified-Slop records, skipping errors; a null slop_kind counts toward blended
     but neither stratum (the human verifier owns that judgement)."""
-    buckets = {OBVIOUS: [0, 0], SUBTLE: [0, 0], "blended": [0, 0]}
+    buckets = {OBVIOUS: [0, 0, 0], SUBTLE: [0, 0, 0], "blended": [0, 0, 0]}
     for r in records:
         if r.get("error") or not r["expected_positive"]:
             continue
-        hit = r["predicted_positive"]
-        buckets["blended"][0] += hit
-        buckets["blended"][1] += 1
-        kind = r.get("slop_kind")
-        if kind in (OBVIOUS, SUBTLE):
-            buckets[kind][0] += hit
-            buckets[kind][1] += 1
-    return {k: {"tp": tp, "n": n, "tpr": rate(tp, n)} for k, (tp, n) in buckets.items()}
+        for key in ("blended", r.get("slop_kind")):
+            if key in buckets:
+                buckets[key][0] += r["predicted_flagged"]
+                buckets[key][1] += r["predicted_positive"]
+                buckets[key][2] += 1
+    return {
+        k: {"tp": caught, "condemned": condemned, "n": n, "tpr": rate(caught, n)}
+        for k, (caught, condemned, n) in buckets.items()
+    }
 
 
 def tpr_gate(
@@ -136,6 +141,23 @@ def pooled_fpr(records: list[dict]) -> dict:
         if r["predicted_positive"]:
             fp += 1
     return {"fp": fp, "n": n, "fpr": rate(fp, n)}
+
+
+def soft_fpr(records: list[dict]) -> dict:
+    """Soft FPR: verified-legit cases the bot merely FLAGGED (needs-info) rather
+    than condemned. Questioning a good PR is mildly annoying, not the catastrophic
+    failure a condemn (hard FP) is, so this is reported and watched but does not
+    block the gate the way pooled FPR does. `predicted_flagged and not
+    predicted_positive` is exactly a needs-info verdict on a legit case."""
+    soft = 0
+    n = 0
+    for r in records:
+        if r.get("error") or r["expected_positive"]:
+            continue
+        n += 1
+        if r["predicted_flagged"] and not r["predicted_positive"]:
+            soft += 1
+    return {"soft_fp": soft, "n": n, "fpr": rate(soft, n)}
 
 
 def legit_coverage(records: list[dict], acted_on: frozenset = ACTED_ON_LANGUAGES) -> dict:
@@ -185,6 +207,7 @@ def gate_decision(
     failing any one fails the gate. The pieces it computed are carried in the
     result so the report renders the exact numbers the decision was made on."""
     pooled = pooled_fpr(records)
+    soft = soft_fpr(records)
     coverage = legit_coverage(records, acted_on)
     strata = tpr_strata(records)
     fg = fpr_gate(pooled, fpr_ceiling)
@@ -196,6 +219,7 @@ def gate_decision(
         "tpr_gate": tg,
         "coverage_gate": cg,
         "pooled_fpr": pooled,
+        "soft_fpr": soft,
         "tpr_strata": strata,
         "legit_coverage": coverage,
     }
@@ -258,7 +282,13 @@ def report(
             vote, ok = "ERROR", "✗"
         else:
             vote = r["vote"]
-            ok = "✓" if r["expected_positive"] == r["predicted_positive"] else "✗"
+            # A Slop case is right when the bot acted (flag or condemn); a legit
+            # case is right when the bot did NOT condemn it (a soft needs-info flag
+            # on legit is not counted a hard miss here -- it is tracked as soft FPR).
+            if r["expected_positive"]:
+                ok = "✓" if r["predicted_flagged"] else "✗"
+            else:
+                ok = "✓" if not r["predicted_positive"] else "✗"
         agree = f"{int(round(r['agreement'] * runs))}/{runs}"
         in_slice = "slice" if r.get("verified") else "funnel"
         flake = "  FLAKY" if r.get("flaky") else ""
@@ -268,19 +298,22 @@ def report(
         )
 
     pooled = gate["pooled_fpr"]
+    soft = gate["soft_fpr"]
     strata = gate["tpr_strata"]
     coverage = gate["legit_coverage"]
     fg, tg, cg = gate["fpr_gate"], gate["tpr_gate"], gate["coverage_gate"]
 
     # The go/no-go headline. Each line is one dimension of the master gate, shown
-    # with the rate and the denominator it was computed over.
+    # with the rate and the denominator it was computed over. TPR here is
+    # protective (slop flagged OR condemned), since the firewall's job is to
+    # surface a bad PR, not only to condemn it.
     print(f"\nGO-PUBLIC GATE: {'GO' if gate['passed'] else 'NO-GO'}")
     print(
-        f"  pooled FPR <= {pct(fg['ceiling']):<6} {_ok(fg['passed']):<5} "
-        f"{pct(fg['fpr'])} over {pooled['n']} verified legit   <- Do No Harm"
+        f"  hard FPR <= {pct(fg['ceiling']):<6} {_ok(fg['passed']):<5} "
+        f"{pct(fg['fpr'])} legit condemned over {pooled['n']} legit   <- Do No Harm"
     )
     print(
-        f"  blended TPR >= {pct(tg['tpr_floor']):<5} {_ok(tg['blended_ok']):<5} "
+        f"  protective TPR >= {pct(tg['tpr_floor']):<5} {_ok(tg['blended_ok']):<5} "
         f"{pct(strata['blended']['tpr'])} over {strata['blended']['n']} slop"
     )
     print(
@@ -294,14 +327,15 @@ def report(
 
     # Every denominator is named below so an under-powered slice or an unexercised
     # language is visible rather than hidden behind a headline rate.
-    print("\nPooled FPR (one rate over all acted-on languages, positive = slop):")
-    denom = f"{pooled['fp']}/{pooled['n']} verified legit"
-    print(f"  FPR (legit flagged):    {pct(pooled['fpr']):>7}  ({denom})")
+    print("\nFalse positives on verified legit (over all acted-on languages):")
+    print(f"  hard  (condemned as slop): {pct(pooled['fpr']):>7}  ({pooled['fp']}/{pooled['n']})")
+    print(f"  soft  (flagged needs-info):{pct(soft['fpr']):>7}  ({soft['soft_fp']}/{soft['n']})")
 
-    print("\nStratified TPR (positive = slop):")
+    print("\nProtective TPR (Slop the bot acted on -- flagged or condemned):")
     for k in (OBVIOUS, SUBTLE, "blended"):
         s = strata[k]
-        print(f"  {k:<8} {pct(s['tpr']):>7}  ({s['tp']}/{s['n']})")
+        detail = f"{s['tp']}/{s['n']} acted, {s['condemned']} condemned"
+        print(f"  {k:<8} {pct(s['tpr']):>7}  ({detail})")
 
     print("\nLegit coverage (verified legit n per language):")
     for language in sorted(coverage["by_language"]):

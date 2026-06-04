@@ -7,14 +7,16 @@ from core.schemas import NormalizedEvent
 class RunContext:
     """Per-event scratch shared across a Suite's checks.
 
-    Carries one lazily-built `RepoReader` for the event's clone, built on first
-    access and reused thereafter. Sharing it means the tree-sitter index is built
-    once per event instead of once per reader-using check.
+    Carries one `RepoReader` for the event, shared across the Suite's checks so the
+    tree-sitter index is built once. By default the reader is built lazily from the
+    event's clone on first access. A caller may instead inject a pre-built reader --
+    a snapshot-hydrated `RepoReader.from_index` -- so the same checks can run against
+    a frozen index with no clone on disk, which is how the Corpus eval scores cases.
     """
 
-    def __init__(self, event: NormalizedEvent):
+    def __init__(self, event: NormalizedEvent, reader: RepoReader | None = None):
         self.event = event
-        self._reader: RepoReader | None = None
+        self._reader: RepoReader | None = reader
 
     @property
     def reader(self) -> RepoReader:
