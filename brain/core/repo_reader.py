@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 from pathlib import Path
 
 from tree_sitter_language_pack import get_parser
@@ -59,15 +60,50 @@ def _val(node, name):
 
 
 class RepoReader:
-    """Reads a local clone. Filesystem only -- never touches GitHub."""
+    """Reads a local clone. Filesystem only -- never touches GitHub.
+
+    Two construction paths:
+    - __init__(clone_path): a live clone on disk; the symbol index is built lazily
+      and file_exists stats the filesystem on demand.
+    - from_index(symbols, paths, unparsed_exts): a frozen snapshot held in memory;
+      no clone present and no disk access.
+    """
 
     def __init__(self, clone_path: str):
         self.root = Path(clone_path)
         self._symbols: set[str] | None = None
         # code extensions we couldn't AST-parse; confidence is graded per-language
         self._unparsed_exts: set[str] = set()
+        # None means disk-backed; a set means snapshot-backed
+        self._frozen_paths: set[str] | None = None
+
+    @classmethod
+    def from_index(
+        cls,
+        symbols: Iterable[str],
+        paths: Iterable[str],
+        unparsed_exts: Iterable[str],
+    ) -> RepoReader:
+        """Hydrate a reader from a frozen snapshot instead of a live clone.
+
+        The three arguments are the derived sets a clone-backed reader would build
+        -- the indexed identifier symbols, the repo-relative file paths, and the
+        code extensions that could not be AST-parsed. Each may be any iterable of
+        strings and is copied into a set. A hydrated reader has no clone on disk, so
+        symbol_exists, file_exists, and evidence_grade answer from these sets alone
+        and never call _build_index or stat the filesystem.
+        """
+        reader = cls.__new__(cls)
+        reader.root = Path(".")
+        reader._symbols = set(symbols)
+        reader._unparsed_exts = set(unparsed_exts)
+        reader._frozen_paths = set(paths)
+        return reader
 
     def file_exists(self, rel_path: str) -> bool:
+        # Snapshot-backed readers answer from the frozen paths set without touching disk.
+        if self._frozen_paths is not None:
+            return rel_path in self._frozen_paths
         return (self.root / rel_path).is_file()
 
     def evidence_grade(self, relevant_exts: set[str] | None = None) -> tuple[str, str]:
