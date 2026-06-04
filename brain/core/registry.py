@@ -47,6 +47,8 @@ REGISTRY: list[Check] = [
     _check("cosmetic_only", ("pull_request",), checks.cosmetic_only),
     _check("ci_status", ("pull_request",), checks.ci_status_check),
     _check("diff_matches_description", ("pull_request",), checks.diff_matches_description),
+    _check("substantive_description", ("pull_request",), checks.substantive_description),
+    _check("fix_addresses_issue", ("pull_request",), checks.fix_addresses_issue),
     _check("has_repro", ("issue",), checks.has_repro),
     _check("is_duplicate", ("issue",), checks.is_duplicate),
 ]
