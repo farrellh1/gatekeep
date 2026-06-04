@@ -33,3 +33,13 @@ def test_reader_is_lazy_and_shared():
 def test_reader_built_from_event_clone_path():
     ctx = RunContext(_ev())
     assert str(ctx.reader.root) == CLONE
+
+
+def test_injected_reader_is_used_instead_of_the_clone():
+    # An injected reader (a snapshot-hydrated one) is returned as-is and the event's
+    # clone_path is never read -- this is the seam the Corpus eval scores cases on.
+    injected = RepoReader.from_index(symbols=["login"], paths=["src/auth.py"], unparsed_exts=[])
+    ctx = RunContext(_ev(), reader=injected)
+    assert ctx.reader is injected
+    assert ctx.reader.symbol_exists("login") is True
+    assert ctx.reader.file_exists("src/auth.py") is True
