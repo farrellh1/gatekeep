@@ -1,0 +1,40 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "python",
+  "source": {
+    "repo": "psf/requests",
+    "number": 7490,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-psf-requests-7490",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "psf",
+      "name": "requests",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 7490,
+    "title": "Add AI Policy",
+    "body": "The immense influx of low-quality pull requests, many of which are duplicated tens of times, are creating unnecessary toil. As such, we now need to spell out what used to be basic, decent, and reasonable open source behaviour because many are just using LLMs to spam and reputation farm instead of trying to make meaningful contributions.",
+    "author": {
+      "login": "sigmavirus24",
+      "account_age_days": 5899,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/.github/AI_POLICY.md b/.github/AI_POLICY.md\nnew file mode 100644\nindex 0000000000..a2980113cf\n--- /dev/null\n+++ b/.github/AI_POLICY.md\n@@ -0,0 +1,81 @@\n+# Generative AI / LLM Policy\n+\n+We appreciate that we can't realistically police how you author your pull requests, which includes whether you employ large-language model (LLM)-based development tools.\n+So, we don't.\n+\n+However, due to both legal and human reasons, we have to establish boundaries.\n+\n+> [!CAUTION]\n+> **TL;DR:**\n+> - We take the responsibility for this project very seriously and we expect you to take your responsibility for your contributions seriously, too.\n+>   This used to be a given, but it changed now that a pull request is just one prompt away.\n+>\n+> - Every contribution has to be backed by a human who unequivocally owns the copyright for all changes.\n+>   No LLM bots in `Co-authored-by:`s.\n+>\n+> - DoS-by-slop leads to a permanent ban.\n+>\n+> - Absolutely **no** unsupervised agentic tools like OpenClaw.\n+>\n+> ---\n+>\n+> By submitting a pull request, you certify that:\n+>\n+> - You are the author of the contribution or have the legal right to submit it.\n+> - You either hold the copyright to the changes or have explicit legal authorization to contribute them under this project's license.\n+> - You understand the code.\n+> - You accept full responsibility for it.\n+\n+\n+## Legal\n+\n+There is ongoing legal uncertainty regarding the copyright status of LLM-generated works and their provenance.\n+Since we do not have a formal [Contributor License Agreement](https://en.wikipedia.org/wiki/Contributor_license_agreement) (CLA), you retain your copyright to your changes to this project.\n+\n+Therefore, allowing contributions by LLMs has unpredictable consequences for the copyright status of this project \u2013 even when leaving aside possible copyright violations due to plagiarism.\n+\n+\n+## Human\n+\n+As the makers of software that is used by millions of people worldwide and with a reputation for high-quality maintenance, we take our responsibility to our users very seriously.\n+No matter what LLM vendors or boosters on LinkedIn tell you, we have to manually review every change before merging, because it's **our responsibility** to keep the project stable.\n+\n+Please understand that by opening low-quality pull requests you're not helping anyone.\n+Worse, you're [poisoning the open source ecosystem](https://lwn.net/Articles/1058266/) that was precarious even before the arrival of LLM tools.\n+Having to wade through plausible-looking-but-low-quality pull requests and trying to determine which ones are legit is extremely demoralizing and has already burned out many good maintainers.\n+\n+Put bluntly, we have no time or interest to become part of your vibe coding loop where you drop LLM slop at our door, we spend time and energy to review it, and you just feed it back into the LLM for another iteration.\n+\n+This dynamic is especially pernicious because it poisons the well for mentoring new contributors which we are committed to.\n+\n+\n+## Summary\n+\n+In practice, this means:\n+\n+- Pull requests that have an LLM product listed as co-author can't be merged and will be closed without further discussion.\n+  We cannot risk the copyright status of this project.\n+\n+  If you used LLM tools during development, you may still submit \u2013 but you must remove any LLM co-author tags and take full ownership of every line.\n+\n+- By submitting a pull request, **you** take full **technical and legal** responsibility for the contents of the pull request and promise that **you** hold the copyright for the changes submitted.\n+\n+  \"An LLM wrote it\" is **not** an acceptable response to questions or critique.\n+  **If you cannot explain and defend the changes you submit, do not submit them** and open a high-quality bug report/feature request instead.\n+\n+- Accounts that exercise bot-like behavior \u2013 like automated mass pull requests \u2013 will be permanently banned, whether they belong to a human or not.\n+\n+- Do **not** post LLM-generated review comments \u2013 we can prompt LLMs ourselves should we desire their wisdom.\n+  Do **not** post summaries unless you've fact-checked them and take responsibility for 100% of their content.\n+  Remember that *all* LLM output *looks* **plausible**.\n+  When using these tools, it's **your** responsibility to ensure that it's also **correct** and has a reasonable signal-to-noise ratio.\n+\n+---\n+\n+# Credits, Attribution\n+\n+The original version of this can be found in [pyca/service-identity][] and is\n+used with permission from Hynek Schlawack.\n+\n+[pyca/service-identity]:\n+    https://github.com/pyca/service-identity/blob/fa91bf55cfda64145aa3d202cc84059befb98af4/.github/AI_POLICY.md\ndiff --git a/.github/CONTRIBUTING.md b/.github/CONTRIBUTING.md\nindex 3470dfee83..a386cda00d 100644\n--- a/.github/CONTRIBUTING.md\n+++ b/.github/CONTRIBUTING.md\n@@ -1,7 +1,8 @@\n # Contribution Guidelines\n \n Before opening any issues or proposing any pull requests, please read\n-our [Contributor's Guide](https://requests.readthedocs.io/en/latest/dev/contributing/).\n+our [Contributor's Guide](https://requests.readthedocs.io/en/latest/dev/contributing/)\n+as well as our [AI Policy](./AI_POLICY.md).\n \n To get the greatest chance of helpful responses, please also observe the\n following additional notes.\n@@ -52,3 +53,14 @@ Please be aware of the following things when filing bug reports:\n    If you do not provide all of these things, it will take us much longer to\n    fix your problem. If we ask you to clarify these and you never respond, we\n    will close your issue without fixing it.\n+\n+## Good Pull Requests\n+\n+1. Avoid raising duplicate pull requests. *Please* use the GitHub pull request\n+   search feature to check whether someone else has already filed a pull\n+   request.\n+2. When filing a pull request, always include tests that fail without your\n+   changes thus preventing the fix from regressing.\n+3. Always run the test suite locally\n+4. Write commit messages that explain _why_ a change was made beyond \"Fixes\n+   #NNNN\". Why is this the right fix? What other options were ruled out? etc.\n",
+    "changed_files": [
+      ".github/AI_POLICY.md",
+      ".github/CONTRIBUTING.md"
+    ],
+    "ci_status": "success",
+    "existing_issues": null
+  },
+  "snapshot": "snapshots/c1d4892570d4555a15c568cb623977500f067c3cb441c81372b7f781d53ee13e.json"
+}

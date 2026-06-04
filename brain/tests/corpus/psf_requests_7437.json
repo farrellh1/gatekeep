@@ -1,0 +1,39 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "python",
+  "source": {
+    "repo": "psf/requests",
+    "number": 7437,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-psf-requests-7437",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "psf",
+      "name": "requests",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 7437,
+    "title": "Constrain Response.reason to str",
+    "body": "Similar to how we moved `status_code` to `int` to avoid needing to do `None` checks before doing `status_code<400` comparisons, we'll do the same ignore for `reason`.\r\n\r\nWhile `reason` is explicitly optional, in practice, urllib3 will always supply an empty str (`''`) when it's not present in the status line. This is an ergonomics change where the types may not represent all possible values, but a Response initialized by Requests will always populate the field. Anyone instantiating Responses manually will need to take considerations for their construction.",
+    "author": {
+      "login": "nateprewitt",
+      "account_age_days": 4670,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/src/requests/models.py b/src/requests/models.py\nindex 4142f2a4bb..eae828fd2b 100644\n--- a/src/requests/models.py\n+++ b/src/requests/models.py\n@@ -741,7 +741,7 @@ class Response:\n     url: str\n     encoding: str | None\n     history: list[Response]\n-    reason: str | None\n+    reason: str\n     cookies: RequestsCookieJar\n     elapsed: datetime.timedelta\n     request: PreparedRequest\n@@ -790,7 +790,7 @@ def __init__(self) -> None:\n         self.history = []\n \n         #: Textual reason of responded HTTP Status, e.g. \"Not Found\" or \"OK\".\n-        self.reason = None\n+        self.reason = None  # type: ignore[assignment]\n \n         #: A CookieJar of Cookies the server sent back.\n         self.cookies = cookiejar_from_dict({})\n",
+    "changed_files": [
+      "src/requests/models.py"
+    ],
+    "ci_status": "success",
+    "existing_issues": null
+  },
+  "snapshot": "snapshots/c1d4892570d4555a15c568cb623977500f067c3cb441c81372b7f781d53ee13e.json"
+}

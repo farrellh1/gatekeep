@@ -1,0 +1,39 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "python",
+  "source": {
+    "repo": "pallets/flask",
+    "number": 5962,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-pallets-flask-5962",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "pallets",
+      "name": "flask",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 5962,
+    "title": "remove unicode host test",
+    "body": "This test is invalid, the `Host` header cannot contain non-ASCII. It was added in https://github.com/pallets/flask/pull/2994. It appears there was some confusion over Python 2/3 handling of strings, rather than testing this because it was a valid `Host` header.\r\n\r\ncloses #5961 ",
+    "author": {
+      "login": "davidism",
+      "account_age_days": 5294,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/tests/test_reqctx.py b/tests/test_reqctx.py\nindex 78561f520d..3c5d5332ad 100644\n--- a/tests/test_reqctx.py\n+++ b/tests/test_reqctx.py\n@@ -294,27 +294,6 @@ def test_bad_environ_raises_bad_request():\n     assert response.status_code == 400\n \n \n-def test_environ_for_valid_idna_completes():\n-    app = flask.Flask(__name__)\n-\n-    @app.route(\"/\")\n-    def index():\n-        return \"Hello World!\"\n-\n-    from flask.testing import EnvironBuilder\n-\n-    builder = EnvironBuilder(app)\n-    environ = builder.get_environ()\n-\n-    # these characters are all IDNA-compatible\n-    environ[\"HTTP_HOST\"] = \"\u0105\u015b\u017a\u00e4\u00fc\u0436\u0160\u00df\u044f.com\"\n-\n-    with app.request_context(environ) as ctx:\n-        response = app.full_dispatch_request(ctx)\n-\n-    assert response.status_code == 200\n-\n-\n def test_normal_environ_completes():\n     app = flask.Flask(__name__)\n \n",
+    "changed_files": [
+      "tests/test_reqctx.py"
+    ],
+    "ci_status": "success",
+    "existing_issues": null
+  },
+  "snapshot": "snapshots/2d4473f3f3cffdedd1ac6b738fad3ec50d63fd2035c09f0fee9523c7f67dcdd3.json"
+}

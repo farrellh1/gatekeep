@@ -130,9 +130,11 @@ def test_unknown_origin_fails_loudly():
 def test_load_corpus_reads_committed_fixture_cases():
     cases = load_corpus(CORPUS)
     by_id = {c.event["delivery_id"]: c for c in cases}
-    assert by_id["c-legit-01"].label == "legit"
-    assert by_id["c-slop-01"].label == "slop"
-    assert by_id["c-legit-02"].verified is False
+    # Spot-check a representative legit case (psf/requests) and a slop case
+    # (openclaw/openclaw). All 16 committed cases are verified=True.
+    assert by_id["harvest-psf-requests-7433"].label == "legit"
+    assert by_id["harvest-psf-requests-7433"].verified is True
+    assert by_id["harvest-openclaw-openclaw-90251"].label == "slop"
 
 
 def test_load_corpus_names_the_offending_file(tmp_path):

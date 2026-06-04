@@ -1,0 +1,43 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "python",
+  "source": {
+    "repo": "pallets/flask",
+    "number": 5945,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-pallets-flask-5945",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "pallets",
+      "name": "flask",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 5945,
+    "title": "add zizmor to scan workflows",
+    "body": "https://docs.zizmor.sh/\r\n\r\nAmong the findings:\r\n\r\n- apply empty permissions with `permissions: {}`, although we have read only defaults set at the organization level\r\n- use concurrency group for each workflow\r\n- disable credentials for checkout\r\n- remove some template variables in favor of env vars",
+    "author": {
+      "login": "davidism",
+      "account_age_days": 5294,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/.github/workflows/lock.yaml b/.github/workflows/lock.yaml\nindex b464135326..533151a8af 100644\n--- a/.github/workflows/lock.yaml\n+++ b/.github/workflows/lock.yaml\n@@ -7,15 +7,17 @@ name: Lock inactive closed issues\n on:\n   schedule:\n     - cron: '0 0 * * *'\n-permissions:\n-  issues: write\n-  pull-requests: write\n-  discussions: write\n+permissions: {}\n concurrency:\n   group: lock\n+  cancel-in-progress: true\n jobs:\n   lock:\n     runs-on: ubuntu-latest\n+    permissions:\n+      issues: write\n+      pull-requests: write\n+      discussions: write\n     steps:\n       - uses: dessant/lock-threads@7266a7ce5c1df01b1c6db85bf8cd86c737dadbe7 # v6.0.0\n         with:\ndiff --git a/.github/workflows/pre-commit.yaml b/.github/workflows/pre-commit.yaml\nindex e8fd9e39ae..5e332842a0 100644\n--- a/.github/workflows/pre-commit.yaml\n+++ b/.github/workflows/pre-commit.yaml\n@@ -3,11 +3,17 @@ on:\n   pull_request:\n   push:\n     branches: [main, stable]\n+permissions: {}\n+concurrency:\n+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}\n+  cancel-in-progress: true\n jobs:\n   main:\n     runs-on: ubuntu-latest\n     steps:\n       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2\n+        with:\n+          persist-credentials: false\n       - uses: astral-sh/setup-uv@61cb8a9741eeb8a550a1b8544337180c0fc8476b # v7.2.0\n         with:\n           enable-cache: true\n@@ -21,5 +27,3 @@ jobs:\n           path: ~/.cache/pre-commit\n           key: pre-commit|${{ hashFiles('pyproject.toml', '.pre-commit-config.yaml') }}\n       - run: uv run --locked --group pre-commit pre-commit run --show-diff-on-failure --color=always --all-files\n-      - uses: pre-commit-ci/lite-action@5d6cc0eb514c891a40562a58a8e71576c5c7fb43 # v1.1.0\n-        if: ${{ !cancelled() }}\ndiff --git a/.github/workflows/publish.yaml b/.github/workflows/publish.yaml\nindex 6312a345f6..0604387620 100644\n--- a/.github/workflows/publish.yaml\n+++ b/.github/workflows/publish.yaml\n@@ -2,6 +2,10 @@ name: Publish\n on:\n   push:\n     tags: ['*']\n+permissions: {}\n+concurrency:\n+  group: publish-${{ github.event.push.ref }}\n+  cancel-in-progress: true\n jobs:\n   build:\n     runs-on: ubuntu-latest\n@@ -13,7 +17,7 @@ jobs:\n           persist-credentials: false\n       - uses: astral-sh/setup-uv@61cb8a9741eeb8a550a1b8544337180c0fc8476b # v7.2.0\n         with:\n-          enable-cache: true\n+          enable-cache: false\n           prune-cache: false\n       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0\n         with:\n@@ -37,7 +41,7 @@ jobs:\n           artifact-ids: ${{ needs.build.outputs.artifact-id }}\n           path: dist/\n       - name: create release\n-        run: gh release create --draft --repo ${{ github.repository }} ${{ github.ref_name }} dist/*\n+        run: gh release create --draft --repo ${GITHUB_REPOSITORY} ${GITHUB_REF_NAME} dist/*\n         env:\n           GH_TOKEN: ${{ github.token }}\n   publish-pypi:\ndiff --git a/.github/workflows/tests.yaml b/.github/workflows/tests.yaml\nindex da744a67f7..d15943541d 100644\n--- a/.github/workflows/tests.yaml\n+++ b/.github/workflows/tests.yaml\n@@ -5,6 +5,10 @@ on:\n   push:\n     branches: [main, stable]\n     paths-ignore: ['docs/**', 'README.md']\n+permissions: {}\n+concurrency:\n+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}\n+  cancel-in-progress: true\n jobs:\n   tests:\n     name: ${{ matrix.name || matrix.python }}\n@@ -27,6 +31,8 @@ jobs:\n           - {name: Development Versions, python: '3.10', tox: tests-dev}\n     steps:\n       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2\n+        with:\n+          persist-credentials: false\n       - uses: astral-sh/setup-uv@61cb8a9741eeb8a550a1b8544337180c0fc8476b # v7.2.0\n         with:\n           enable-cache: true\n@@ -34,11 +40,15 @@ jobs:\n       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0\n         with:\n           python-version: ${{ matrix.python }}\n-      - run: uv run --locked tox run -e ${{ matrix.tox || format('py{0}', matrix.python) }}\n+      - run: uv run --locked tox run\n+        env:\n+          TOX_ENV: ${{ matrix.tox || format('py{0}', matrix.python) }}\n   typing:\n     runs-on: ubuntu-latest\n     steps:\n       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2\n+        with:\n+          persist-credentials: false\n       - uses: astral-sh/setup-uv@61cb8a9741eeb8a550a1b8544337180c0fc8476b # v7.2.0\n         with:\n           enable-cache: true\ndiff --git a/.github/workflows/zizmor.yaml b/.github/workflows/zizmor.yaml\nnew file mode 100644\nindex 0000000000..fb73f8d755\n--- /dev/null\n+++ b/.github/workflows/zizmor.yaml\n@@ -0,0 +1,22 @@\n+name: GitHub Actions security analysis with zizmor\n+on:\n+  pull_request:\n+    paths: [\"**/*.yaml?\"]\n+  push:\n+    branches: [main, stable]\n+    paths: [\"**/*.yaml?\"]\n+permissions: {}\n+concurrency:\n+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}\n+  cancel-in-progress: true\n+jobs:\n+  zizmor:\n+    runs-on: ubuntu-latest\n+    steps:\n+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2\n+        with:\n+          persist-credentials: false\n+      - uses: zizmorcore/zizmor-action@0dce2577a4760a2749d8cfb7a84b7d5585ebcb7d # v0.5.0\n+        with:\n+          advanced-security: false\n+          annotations: true\n",
+    "changed_files": [
+      ".github/workflows/lock.yaml",
+      ".github/workflows/pre-commit.yaml",
+      ".github/workflows/publish.yaml",
+      ".github/workflows/tests.yaml",
+      ".github/workflows/zizmor.yaml"
+    ],
+    "ci_status": "success",
+    "existing_issues": null
+  },
+  "snapshot": "snapshots/e066689b5f7f87ed4dd304d5d65422ebc763d15c4e4024082d24c88ee03441ff.json"
+}

@@ -1,0 +1,68 @@
+{
+  "config_yaml": null,
+  "label": "slop",
+  "verified": true,
+  "slop_kind": "subtle",
+  "language": "typescript",
+  "source": {
+    "repo": "openclaw/openclaw",
+    "number": 90236,
+    "origin": "harvested",
+    "signal": "rejection_label"
+  },
+  "event": {
+    "delivery_id": "harvest-openclaw-openclaw-90236",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "openclaw",
+      "name": "openclaw",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 90236,
+    "title": "feat: add tools.fs.roots \u2014 per-agent filesystem roots with access modes",
+    "body": "Adds per-agent filesystem roots with configurable access modes (read, write, execute) for the fs tools.",
+    "author": {
+      "login": "deepshekhardas",
+      "account_age_days": 1002,
+      "is_first_time_contributor": true
+    },
+    "diff": "{\"message\":\"Sorry, the diff exceeded the maximum number of lines (20000)\",\"errors\":[{\"resource\":\"PullRequest\",\"field\":\"diff\",\"code\":\"too_large\"}],\"documentation_url\":\"https://docs.github.com/rest/pulls/pulls#get-a-pull-request\",\"status\":\"406\"}",
+    "changed_files": [
+      "docs/.generated/config-baseline.sha256",
+      "docs/.generated/plugin-sdk-api-baseline.sha256",
+      "extensions/discord/src/monitor/agent-components.ts",
+      "extensions/discord/src/monitor/message-handler.process.ts",
+      "extensions/discord/src/monitor/native-command.status-direct.test.ts",
+      "extensions/discord/src/monitor/native-command.ts",
+      "extensions/discord/src/monitor/reply-delivery.test.ts",
+      "extensions/discord/src/monitor/reply-delivery.ts",
+      "extensions/discord/src/send.outbound.ts",
+      "extensions/feishu/src/media.test.ts",
+      "extensions/feishu/src/media.ts",
+      "extensions/googlechat/src/actions.test.ts",
+      "extensions/googlechat/src/actions.ts",
+      "extensions/googlechat/src/channel.test.ts",
+      "extensions/imessage/src/channel.runtime.ts",
+      "extensions/matrix/src/matrix/monitor/handler.ts",
+      "extensions/matrix/src/matrix/monitor/replies.ts",
+      "extensions/matrix/src/matrix/monitor/runtime-api.ts",
+      "extensions/mattermost/runtime-api.ts",
+      "extensions/mattermost/src/mattermost/monitor-auth.test.ts",
+      "extensions/mattermost/src/mattermost/monitor-slash.test.ts",
+      "extensions/mattermost/src/mattermost/reply-delivery.test.ts",
+      "extensions/mattermost/src/mattermost/reply-delivery.ts",
+      "extensions/mattermost/src/mattermost/runtime-api.ts",
+      "extensions/memory-core/src/memory/qmd-manager.test.ts",
+      "extensions/signal/src/channel.ts",
+      "extensions/telegram/src/bot-message-dispatch.runtime.ts",
+      "extensions/telegram/src/bot-message-dispatch.test.ts",
+      "extensions/telegram/src/bot-message-dispatch.ts",
+      "extensions/telegram/src/bot-native-commands.runtime.ts"
+    ],
+    "ci_status": null,
+    "existing_issues": null
+  },
+  "snapshot": "snapshots/a2c06dc58a4fb4ef696fd36ec0cd04a658b9aa474f05aa8442b63e33028020a5.json"
+}
