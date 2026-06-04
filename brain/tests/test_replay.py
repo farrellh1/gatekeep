@@ -7,8 +7,12 @@ from core.models_config import load_models_config
 from eval_corpus import load_corpus, parse_case
 from eval_replay import (
     case_record,
+    coverage_gate,
+    fpr_gate,
+    gate_decision,
     legit_coverage,
     pooled_fpr,
+    power_warnings,
     slice_verified,
     tpr_gate,
     tpr_strata,
@@ -60,6 +64,20 @@ def _rec(expected_positive, predicted_positive, slop_kind=None, language="python
     if error:
         rec["error"] = True
     return rec
+
+
+def _legit(n, language="python", fp=0):
+    """n verified legit records in one language, `fp` of them false-positive."""
+    flagged = [_rec(False, True, language=language) for _ in range(fp)]
+    clean = [_rec(False, False, language=language) for _ in range(n - fp)]
+    return flagged + clean
+
+
+def _slop(n, kind, tp):
+    """n verified Slop records of one stratum, `tp` of them caught."""
+    caught = [_rec(True, True, kind) for _ in range(tp)]
+    missed = [_rec(True, False, kind) for _ in range(n - tp)]
+    return caught + missed
 
 
 def test_case_record_carries_label_verification_and_language():
@@ -193,6 +211,134 @@ def test_slice_keeps_only_verified_cases():
     sl = slice_verified(records)
     assert len(sl) == 2
     assert all(r["verified"] for r in sl)
+
+
+def test_fpr_gate_passes_at_or_below_ceiling():
+    assert fpr_gate({"fp": 0, "n": 50, "fpr": 0.0})["passed"] is True
+    assert fpr_gate({"fp": 1, "n": 50, "fpr": 0.02})["passed"] is True  # exactly the ceiling
+    assert fpr_gate({"fp": 3, "n": 50, "fpr": 0.06})["passed"] is False
+
+
+def test_fpr_gate_fails_on_unmeasured_fpr():
+    # no verified legit cases leaves FPR None; absence of evidence is not a pass
+    assert fpr_gate({"fp": 0, "n": 0, "fpr": None})["passed"] is False
+
+
+def test_fpr_gate_ceiling_is_a_parameter():
+    assert fpr_gate({"fp": 1, "n": 50, "fpr": 0.02}, ceiling=0.01)["passed"] is False
+
+
+def test_coverage_gate_passes_with_no_gaps():
+    assert coverage_gate({"by_language": {"python": 3}, "gaps": []})["passed"] is True
+
+
+def test_coverage_gate_fails_with_gap():
+    cg = coverage_gate({"by_language": {"python": 3}, "gaps": ["go"]})
+    assert cg["passed"] is False
+    assert cg["gaps"] == ["go"]
+
+
+def _passing_slice():
+    # clean legit pile (no FP), both Slop strata above floor, python exercised
+    return _legit(50, "python") + _slop(10, "obvious", 10) + _slop(10, "subtle", 6)
+
+
+def test_gate_decision_passes_when_all_dimensions_satisfied():
+    gate = gate_decision(_passing_slice(), frozenset({"python"}))
+    assert gate["passed"] is True
+    assert gate["fpr_gate"]["passed"] is True
+    assert gate["tpr_gate"]["passed"] is True
+    assert gate["coverage_gate"]["passed"] is True
+
+
+def test_gate_decision_fails_when_pooled_fpr_over_ceiling():
+    # 2 false positives in 50 legit = 4%, over the 2% ceiling — the hard gate fails
+    sl = _legit(50, "python", fp=2) + _slop(10, "obvious", 10) + _slop(10, "subtle", 6)
+    gate = gate_decision(sl, frozenset({"python"}))
+    assert gate["fpr_gate"]["passed"] is False
+    assert gate["passed"] is False
+
+
+def test_gate_decision_fails_when_subtle_below_floor():
+    # a strong blended TPR cannot carry the gate when the subtle stratum is thin
+    sl = _legit(50, "python") + _slop(20, "obvious", 20) + _slop(10, "subtle", 1)
+    gate = gate_decision(sl, frozenset({"python"}))
+    assert gate["tpr_gate"]["blended_ok"] is True
+    assert gate["tpr_gate"]["subtle_ok"] is False
+    assert gate["passed"] is False
+
+
+def test_gate_decision_fails_on_acted_on_language_with_zero_legit():
+    # go is acted-on but no verified legit case exercises it, so it is a coverage
+    # gap that blocks the pass even though every rate clears its bound
+    sl = _passing_slice()
+    gate = gate_decision(sl, frozenset({"python", "go"}))
+    assert gate["coverage_gate"]["passed"] is False
+    assert gate["coverage_gate"]["gaps"] == ["go"]
+    assert gate["passed"] is False
+
+
+def test_gate_decision_thresholds_are_parameters():
+    # the same slice flips pass -> fail when the ceiling is tightened below its
+    # measured FPR, proving thresholds are parameters not literals buried in scoring
+    sl = _legit(50, "python", fp=1) + _slop(10, "obvious", 10) + _slop(10, "subtle", 6)
+    assert gate_decision(sl, frozenset({"python"}))["passed"] is True
+    tightened = gate_decision(sl, frozenset({"python"}), fpr_ceiling=0.01)
+    assert tightened["fpr_gate"]["passed"] is False
+    assert tightened["passed"] is False
+
+
+def test_power_warnings_flags_under_n_pooled_legit():
+    pooled = {"fp": 0, "n": 10, "fpr": 0.0}
+    coverage = {"by_language": {"python": 10}, "gaps": []}
+    strata = tpr_strata(_slop(30, "obvious", 30) + _slop(30, "subtle", 20))
+    warns = power_warnings(pooled, coverage, strata, frozenset({"python"}))
+    assert [w["tier"] for w in warns] == ["pooled legit"]
+    assert warns[0]["n"] == 10
+    assert warns[0]["min"] == 150
+
+
+def test_power_warnings_flags_thin_per_language_but_not_zero_gap():
+    # a language with a few legit cases is under-powered (a warning); a language
+    # with zero is a coverage gap (a gate failure), so it does not warn here
+    pooled = {"fp": 0, "n": 200, "fpr": 0.0}
+    coverage = {"by_language": {"python": 195, "go": 5}, "gaps": ["rust"]}
+    strata = tpr_strata(_slop(30, "obvious", 30) + _slop(30, "subtle", 20))
+    warns = power_warnings(pooled, coverage, strata, frozenset({"python", "go", "rust"}))
+    tiers = [w["tier"] for w in warns]
+    assert "legit:go" in tiers  # 5 below the per-language minimum
+    assert "legit:rust" not in tiers  # zero is a gap, not a warning
+    assert "legit:python" not in tiers  # well above the minimum
+
+
+def test_power_warnings_flags_thin_slop_strata():
+    pooled = {"fp": 0, "n": 200, "fpr": 0.0}
+    coverage = {"by_language": {"python": 200}, "gaps": []}
+    strata = tpr_strata(_slop(10, "obvious", 10) + _slop(5, "subtle", 3))
+    warns = power_warnings(pooled, coverage, strata, frozenset({"python"}))
+    tiers = [w["tier"] for w in warns]
+    assert "slop:obvious" in tiers
+    assert "slop:subtle" in tiers
+
+
+def test_power_warnings_empty_when_all_tiers_meet_min():
+    pooled = {"fp": 0, "n": 200, "fpr": 0.0}
+    coverage = {"by_language": {"python": 200}, "gaps": []}
+    strata = tpr_strata(_slop(30, "obvious", 30) + _slop(30, "subtle", 20))
+    warns = power_warnings(pooled, coverage, strata, frozenset({"python"}))
+    assert warns == []
+
+
+def test_under_n_slice_warns_without_failing_gate():
+    # a tiny but clean Slice clears every gate dimension yet warns on power: a
+    # warning is distinct from a gate failure
+    sl = _legit(5, "python") + _slop(2, "obvious", 2) + _slop(2, "subtle", 1)
+    gate = gate_decision(sl, frozenset({"python"}))
+    warns = power_warnings(
+        gate["pooled_fpr"], gate["legit_coverage"], gate["tpr_strata"], frozenset({"python"})
+    )
+    assert gate["passed"] is True
+    assert warns  # under-powered on pooled legit and both Slop strata
 
 
 @pytest.mark.golden
