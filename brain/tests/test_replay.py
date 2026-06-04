@@ -52,11 +52,22 @@ def _case(label, verified, number, language="python"):
     )
 
 
-def _rec(expected_positive, predicted_positive, slop_kind=None, language="python", error=False):
+def _rec(
+    expected_positive,
+    predicted_positive,
+    slop_kind=None,
+    language="python",
+    error=False,
+    predicted_flagged=None,
+):
+    # A condemned case is always also flagged; default flagged to the condemn value
+    # so a plain _rec models pass/condemn. Pass predicted_flagged=True with
+    # predicted_positive=False to model a needs-info verdict.
     rec = {
         "name": "x",
         "expected_positive": expected_positive,
         "predicted_positive": predicted_positive,
+        "predicted_flagged": predicted_positive if predicted_flagged is None else predicted_flagged,
         "slop_kind": slop_kind,
         "language": language,
         "verified": True,
@@ -97,8 +108,34 @@ def test_tpr_strata_splits_obvious_and_subtle_with_own_denominators():
         _rec(True, True, "subtle"),
     ]
     strata = tpr_strata(records)
-    assert strata["obvious"] == {"tp": 1, "n": 2, "tpr": 0.5}
-    assert strata["subtle"] == {"tp": 2, "n": 2, "tpr": 1.0}
+    assert strata["obvious"] == {"tp": 1, "condemned": 1, "n": 2, "tpr": 0.5}
+    assert strata["subtle"] == {"tp": 2, "condemned": 2, "n": 2, "tpr": 1.0}
+
+
+def test_needs_info_counts_as_a_protective_catch():
+    # A slop case the bot flags (needs-info) but does not condemn still counts as
+    # caught: protective TPR credits any action, while `condemned` stays separate.
+    records = [
+        _rec(True, True, "subtle"),  # condemned
+        _rec(True, False, "subtle", predicted_flagged=True),  # needs-info flag
+        _rec(True, False, "subtle"),  # missed entirely (passed as legit)
+    ]
+    strata = tpr_strata(records)
+    assert strata["subtle"]["tp"] == 2  # condemn + flag both count as caught
+    assert strata["subtle"]["condemned"] == 1
+    assert strata["subtle"]["tpr"] == pytest.approx(2 / 3)
+
+
+def test_soft_fpr_counts_needs_info_on_legit_separately_from_hard():
+    from eval_replay import soft_fpr
+
+    records = [
+        _rec(False, True),  # legit condemned -> HARD false positive
+        _rec(False, False, predicted_flagged=True),  # legit flagged -> SOFT false positive
+        _rec(False, False),  # legit passed clean
+    ]
+    assert pooled_fpr(records) == {"fp": 1, "n": 3, "fpr": pytest.approx(1 / 3)}
+    assert soft_fpr(records) == {"soft_fp": 1, "n": 3, "fpr": pytest.approx(1 / 3)}
 
 
 def test_tpr_gate_blocks_when_subtle_below_floor():
