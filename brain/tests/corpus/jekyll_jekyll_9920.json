@@ -1,0 +1,40 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "ruby",
+  "source": {
+    "repo": "jekyll/jekyll",
+    "number": 9920,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-jekyll-jekyll-9920",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "jekyll",
+      "name": "jekyll",
+      "default_branch": "master",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 9920,
+    "title": "Add logger to Gemfile for Ruby 4.0",
+    "body": "<!--\r\n  Thanks for creating a Pull Request! Before you submit, please make sure\r\n  you've done the following:\r\n\r\n  - I read the contributing document at https://jekyllrb.com/docs/contributing/\r\n-->\r\n\r\n<!--\r\n  Make our lives easier! Choose one of the following by uncommenting it:\r\n-->\r\n\r\nThis is a \ud83d\udc1b bug fix. (ish)\r\n\r\n## Summary\r\n\r\nThe issue: on Ruby 4.0, `jekyll serve` fails unless I add `logger` to the local Gemfile.\r\n\r\nThe fix: add `logger` to the gemspec.\r\n\r\n## Context\r\nLogger is now a bundled gem, which means it must be added to the Gemfile/gemspec. See [this part of Ruby 4.0 changelog](https://www.ruby-lang.org/en/news/2025/12/25/ruby-4-0-0-released/#:~:text=logger%201%2E7%2E0).\r\n\r\n\r\nI'm picking the earliest version of Logger available, because we used to rely on the built-in logger which could've been old.",
+    "author": {
+      "login": "jbourassa",
+      "account_age_days": 5924,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/jekyll.gemspec b/jekyll.gemspec\nindex 96368bf34be..cb67a1d213b 100644\n--- a/jekyll.gemspec\n+++ b/jekyll.gemspec\n@@ -44,6 +44,7 @@ Gem::Specification.new do |s|\n   s.add_runtime_dependency(\"kramdown\",              \"~> 2.3\", \">= 2.3.1\")\n   s.add_runtime_dependency(\"kramdown-parser-gfm\",   \"~> 1.0\")\n   s.add_runtime_dependency(\"liquid\",                \"~> 4.0\")\n+  s.add_runtime_dependency(\"logger\",                \"~> 1.3\")\n   s.add_runtime_dependency(\"mercenary\",             \"~> 0.3\", \">= 0.3.6\")\n   s.add_runtime_dependency(\"pathutil\",              \"~> 0.9\")\n   s.add_runtime_dependency(\"rouge\",                 \">= 3.0\", \"< 5.0\")\n",
+    "changed_files": [
+      "jekyll.gemspec"
+    ],
+    "ci_status": "success",
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/bc5b9a4e2c87e9e2ee71749edad9c07d08c2c7982b58a7747208c2294cb640eb.json"
+}

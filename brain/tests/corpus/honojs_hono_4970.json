@@ -1,0 +1,40 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "typescript",
+  "source": {
+    "repo": "honojs/hono",
+    "number": 4970,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-honojs-hono-4970",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "honojs",
+      "name": "hono",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 4970,
+    "title": "docs(contribution): add AI Usage Policy",
+    "body": "Added a minimal description for the AI usage policy.\r\n\r\n### The author should do the following, if applicable\r\n\r\n- [ ] Add tests\r\n- [ ] Run tests\r\n- [ ] `bun run format:fix && bun run lint:fix` to format the code\r\n- [ ] Add [TSDoc](https://tsdoc.org/)/[JSDoc](https://jsdoc.app/about-getting-started) to document the code\r\n",
+    "author": {
+      "login": "yusukebe",
+      "account_age_days": 6591,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/docs/CONTRIBUTING.md b/docs/CONTRIBUTING.md\nindex 9d693cd582..e644990523 100644\n--- a/docs/CONTRIBUTING.md\n+++ b/docs/CONTRIBUTING.md\n@@ -18,6 +18,15 @@ So, if you propose great ideas, but I do not appropriate them, the idea may not\n Although, don't worry!\n Hono is tested well, polished by the contributors, and used by many developers. And I'll try my best to make Hono cool and hot, beautiful, and ultrafast.\n \n+## AI Usage Policy\n+\n+You may use AI to contribute, but it must never waste a maintainer's time or make their work unpleasant.\n+\n+To enforce this, and regardless of whether AI was actually used, a maintainer may:\n+\n+- Close your PR without notice and block your account.\n+- Close a non-compliant account's PR and use its contents freely. That account retains no rights to them.\n+\n ## Installing dependencies\n \n The `honojs/hono` project uses [Bun](https://bun.sh/) as its package manager. Developers should install Bun.\n",
+    "changed_files": [
+      "docs/CONTRIBUTING.md"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/24fe8d201003a171727a73bd7a755daa6d81aee7e008db7f561f6e254afa1d89.json"
+}

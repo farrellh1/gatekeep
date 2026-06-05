@@ -1,0 +1,41 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "typescript",
+  "source": {
+    "repo": "honojs/hono",
+    "number": 4987,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-honojs-hono-4987",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "honojs",
+      "name": "hono",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 4987,
+    "title": "fix(bearer-auth): mention verifyToken in missing-options error message",
+    "body": "The `bearerAuth` middleware accepts **either** a `token` **or** a `verifyToken` option, and throws when neither is provided. However, the error message only mentions `\"token\"`:\n\n```ts\nthrow new Error('bearer auth middleware requires options for \"token\"')\n```\n\nThis is misleading for users who intend to use `verifyToken` \u2014 the guard fires precisely when *neither* option is present, so the message should mention both. This also makes the message consistent with the sibling auth middlewares, which already list every accepted option:\n\n- `basic-auth`: `'basic auth middleware requires options for \"username and password\" or \"verifyUser\"'`\n- `jwk`: `'JWK auth middleware requires options for either \"keys\" or \"jwks_uri\" or both'`\n\nThis PR updates the message to:\n\n```ts\nthrow new Error('bearer auth middleware requires options for \"token\" or \"verifyToken\"')\n```\n\nand adds a test that asserts the new message (it fails against the previous message and passes with this change).\n\n## Author should do the following, if applicable\n\n- [x] Add tests\n- [x] Run tests\n- [x] Double-check your code matches Hono's [coding style](https://github.com/honojs/hono/blob/main/CONTRIBUTING.md#coding-style)\n",
+    "author": {
+      "login": "tan7vir",
+      "account_age_days": 1304,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/src/middleware/bearer-auth/index.test.ts b/src/middleware/bearer-auth/index.test.ts\nindex 828950b89..f853659eb 100644\n--- a/src/middleware/bearer-auth/index.test.ts\n+++ b/src/middleware/bearer-auth/index.test.ts\n@@ -1007,3 +1007,12 @@ describe('Bearer Auth types', () => {\n     expectTypeOf(middleware).toEqualTypeOf<MiddlewareHandler<TestEnv>>()\n   })\n })\n+\n+describe('Bearer Auth options validation', () => {\n+  it('Should throw an error mentioning both \"token\" and \"verifyToken\" when neither is provided', () => {\n+    expect(() => {\n+      // @ts-expect-error testing runtime guard with no valid options\n+      bearerAuth({})\n+    }).toThrow('bearer auth middleware requires options for \"token\" or \"verifyToken\"')\n+  })\n+})\ndiff --git a/src/middleware/bearer-auth/index.ts b/src/middleware/bearer-auth/index.ts\nindex 4cacdb9d6..bfe3b7783 100644\n--- a/src/middleware/bearer-auth/index.ts\n+++ b/src/middleware/bearer-auth/index.ts\n@@ -105,7 +105,7 @@ export const bearerAuth = <E extends Env = Env>(\n   options: BearerAuthOptions<E>\n ): MiddlewareHandler<E> => {\n   if (!('token' in options || 'verifyToken' in options)) {\n-    throw new Error('bearer auth middleware requires options for \"token\"')\n+    throw new Error('bearer auth middleware requires options for \"token\" or \"verifyToken\"')\n   }\n   if (!options.realm) {\n     options.realm = ''\n",
+    "changed_files": [
+      "src/middleware/bearer-auth/index.test.ts",
+      "src/middleware/bearer-auth/index.ts"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/24fe8d201003a171727a73bd7a755daa6d81aee7e008db7f561f6e254afa1d89.json"
+}

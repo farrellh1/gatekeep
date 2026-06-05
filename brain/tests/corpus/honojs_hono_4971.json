@@ -1,0 +1,41 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "typescript",
+  "source": {
+    "repo": "honojs/hono",
+    "number": 4971,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-honojs-hono-4971",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "honojs",
+      "name": "hono",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 4971,
+    "title": "fix(utils/ipaddr): do not compress a single 0 group to `::`",
+    "body": "### The author should do the following, if applicable\r\n\r\n- [x] Add tests\r\n- [x] Run tests\r\n- [x] `bun run format:fix && bun run lint:fix` to format the code\r\n- [ ] Add [TSDoc](https://tsdoc.org/)/[JSDoc](https://jsdoc.app/about-getting-started) to document the code\r\n",
+    "author": {
+      "login": "yusukebe",
+      "account_age_days": 6591,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/src/utils/ipaddr.test.ts b/src/utils/ipaddr.test.ts\nindex 925c39ce0..e5c55919d 100644\n--- a/src/utils/ipaddr.test.ts\n+++ b/src/utils/ipaddr.test.ts\n@@ -125,6 +125,10 @@ describe('convertIPv6ToString', () => {\n     ${'1234:5678:9abc:def0:1234:5678:9abc:def0'} | ${'1234:5678:9abc:def0:1234:5678:9abc:def0'}\n     ${'::ffff:127.0.0.1'}                        | ${'::ffff:127.0.0.1'}\n     ${'fe80::1%eth0'}                            | ${'fe80::1'}\n+    ${'1:0:2:3:4:5:6:7'}                         | ${'1:0:2:3:4:5:6:7'}\n+    ${'0:1:2:3:4:5:6:7'}                         | ${'0:1:2:3:4:5:6:7'}\n+    ${'1:2:3:4:5:6:7:0'}                         | ${'1:2:3:4:5:6:7:0'}\n+    ${'1:0:0:2:3:4:5:6'}                         | ${'1::2:3:4:5:6'}\n   `('convertIPv6ToString($input) === $expected', ({ input, expected }) => {\n     expect(convertIPv6BinaryToString(convertIPv6ToBinary(input))).toBe(expected)\n   })\ndiff --git a/src/utils/ipaddr.ts b/src/utils/ipaddr.ts\nindex a36bc4517..6ff879f18 100644\n--- a/src/utils/ipaddr.ts\n+++ b/src/utils/ipaddr.ts\n@@ -355,7 +355,8 @@ export const convertIPv6BinaryToString = (ipV6: bigint): string => {\n       maxZeroEnd = 8\n     }\n   }\n-  if (maxZeroStart !== -1) {\n+  // RFC 5952 4.2.2: compress only zero runs of at least two 16-bit fields.\n+  if (maxZeroStart !== -1 && maxZeroEnd - maxZeroStart > 1) {\n     sections.splice(maxZeroStart, maxZeroEnd - maxZeroStart, ':')\n   }\n \n",
+    "changed_files": [
+      "src/utils/ipaddr.test.ts",
+      "src/utils/ipaddr.ts"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/24fe8d201003a171727a73bd7a755daa6d81aee7e008db7f561f6e254afa1d89.json"
+}

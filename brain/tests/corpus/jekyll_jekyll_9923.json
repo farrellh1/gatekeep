@@ -1,0 +1,40 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "ruby",
+  "source": {
+    "repo": "jekyll/jekyll",
+    "number": 9923,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-jekyll-jekyll-9923",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "jekyll",
+      "name": "jekyll",
+      "default_branch": "master",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 9923,
+    "title": "Bump supported versions",
+    "body": "\r\n\r\n<!--\r\n  Thanks for creating a Pull Request! Before you submit, please make sure\r\n  you've done the following:\r\n\r\n  - I read the contributing document at https://jekyllrb.com/docs/contributing/\r\n-->\r\n\r\n<!--\r\n  Make our lives easier! Choose one of the following by uncommenting it:\r\n-->\r\n\r\n<!-- This is a \ud83d\udc1b bug fix. -->\r\n<!-- This is a \ud83d\ude4b feature or enhancement. -->\r\nThis is a \ud83d\udd26 documentation change. \r\n<!-- This is a \ud83d\udd28 code refactoring. -->\r\n\r\n<!--\r\n  Before you submit this pull request, make sure to have a look at the following\r\n  checklist. If you don't know how to do some of these, that's fine! Submit\r\n  your pull request and we will help you out on the way.\r\n\r\n  - I've added tests (if it's a bug, feature or enhancement)\r\n  - I've adjusted the documentation (if it's a feature or enhancement)\r\n  - The test suite passes locally (run `script/cibuild` to verify this)\r\n-->\r\n\r\n## Summary\r\n\r\nGitHub Pages uses 3.10 now: https://pages.github.com/versions.json\r\n\r\nand 4.4 is the latest Jekyll minor, so updated the docs to reflect the same. I wanted to update https://jekyllrb.com/docs/security/ which takes me to https://github.com/jekyll/jekyll/edit/master/docs/_docs/security.md but it mentioned it was auto-generated.\r\n\r\n## Context\r\n\r\nhttps://jekyllrb.com/docs/security/ was outdated.",
+    "author": {
+      "login": "captn3m0",
+      "account_age_days": 5608,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/.github/SECURITY.markdown b/.github/SECURITY.markdown\nindex c704a28fc1c..e130514c388 100644\n--- a/.github/SECURITY.markdown\n+++ b/.github/SECURITY.markdown\n@@ -2,13 +2,13 @@\n \n ## Supported Versions\n \n-Security updates are applied to the latest MINOR version of Jekyll, and the version used by GitHub Pages, v3.9.x.\n+Security updates are applied to the latest MINOR version of Jekyll, and the version used by GitHub Pages, v3.10.x.\n \n | Version | Supported          |\n | ------- | ------------------ |\n-| 4.2.x   | :white_check_mark: |\n-| 3.9.x   | :white_check_mark: |\n-| < 3.9.x | :x:                |\n+| 4.4.x   | :white_check_mark: |\n+| 3.10.x   | :white_check_mark: |\n+| < 3.10.x | :x:                |\n \n ## Reporting a Vulnerability\n \n",
+    "changed_files": [
+      ".github/SECURITY.markdown"
+    ],
+    "ci_status": "success",
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/bc5b9a4e2c87e9e2ee71749edad9c07d08c2c7982b58a7747208c2294cb640eb.json"
+}

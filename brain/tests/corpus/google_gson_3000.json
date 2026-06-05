@@ -1,0 +1,47 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "java",
+  "source": {
+    "repo": "google/gson",
+    "number": 3000,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-google-gson-3000",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "google",
+      "name": "gson",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 3000,
+    "title": "fix: Include location info in NumberFormatException from JsonReader",
+    "body": "## Problem\n\n`JsonReader.nextDouble()`, `nextInt()`, and `nextLong()` call `Double.parseDouble()` on peeked strings. When parsing fails (e.g., for empty strings like `\"\"`), the `NumberFormatException` thrown by `Double.parseDouble()` contains no JSON location information (line, column, path). This makes it difficult to locate the problematic value in the input JSON.\n\nFor example, parsing `{ x: ''}` as an int produces `NumberFormatException: empty String` with no indication of where in the JSON the error occurred.\n\n## Root Cause\n\nThe three methods had a comment `// don't catch this NumberFormatException.` and let the exception from `Double.parseDouble()` propagate directly. Other `NumberFormatException` throws in the same methods already include location information via `locationString()`.\n\n## Fix\n\nCatch the `NumberFormatException` from `Double.parseDouble()` and rethrow with a descriptive message that includes the location string, consistent with other error messages in `JsonReader`. The message format follows the existing pattern: `\"Expected a <type> but was <value> at line X column Y path $.<path>\"`.\n\n## Tests Added\n\n- `testNextDoubleNumberFormatExceptionContainsLocation` \u2014 verifies location in path `$[0]`\n- `testNextIntNumberFormatExceptionContainsLocation` \u2014 verifies location in path `$.x`\n- `testNextLongNumberFormatExceptionContainsLocation` \u2014 verifies location in path `$.y`\n\n## Impact\n\nOnly affects the error path when `Double.parseDouble()` fails on an invalid numeric string. The exception type (`NumberFormatException`) is unchanged. All 4589 existing tests pass.\n\nFixes #1564",
+    "author": {
+      "login": "daguimu",
+      "account_age_days": 3228,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/gson/src/main/java/com/google/gson/stream/JsonReader.java b/gson/src/main/java/com/google/gson/stream/JsonReader.java\nindex e908c79d85..eaed974527 100644\n--- a/gson/src/main/java/com/google/gson/stream/JsonReader.java\n+++ b/gson/src/main/java/com/google/gson/stream/JsonReader.java\n@@ -1050,7 +1050,15 @@ public double nextDouble() throws IOException {\n     }\n \n     peeked = PEEKED_BUFFERED;\n-    double result = Double.parseDouble(peekedString); // don't catch this NumberFormatException.\n+    double result;\n+    try {\n+      result = Double.parseDouble(peekedString);\n+    } catch (NumberFormatException e) {\n+      NumberFormatException rethrown =\n+          new NumberFormatException(\"Expected a double but was \" + peekedString + locationString());\n+      rethrown.initCause(e);\n+      throw rethrown;\n+    }\n     if (strictness != Strictness.LENIENT && (Double.isNaN(result) || Double.isInfinite(result))) {\n       throw syntaxError(\"JSON forbids NaN and infinities: \" + result);\n     }\n@@ -1104,7 +1112,15 @@ public long nextLong() throws IOException {\n     }\n \n     peeked = PEEKED_BUFFERED;\n-    double asDouble = Double.parseDouble(peekedString); // don't catch this NumberFormatException.\n+    double asDouble;\n+    try {\n+      asDouble = Double.parseDouble(peekedString);\n+    } catch (NumberFormatException e) {\n+      NumberFormatException rethrown =\n+          new NumberFormatException(\"Expected a long but was \" + peekedString + locationString());\n+      rethrown.initCause(e);\n+      throw rethrown;\n+    }\n     long result = (long) asDouble;\n     if (result != asDouble) { // Make sure no precision was lost casting to 'long'.\n       throw new NumberFormatException(\"Expected a long but was \" + peekedString + locationString());\n@@ -1347,7 +1363,15 @@ public int nextInt() throws IOException {\n     }\n \n     peeked = PEEKED_BUFFERED;\n-    double asDouble = Double.parseDouble(peekedString); // don't catch this NumberFormatException.\n+    double asDouble;\n+    try {\n+      asDouble = Double.parseDouble(peekedString);\n+    } catch (NumberFormatException e) {\n+      NumberFormatException rethrown =\n+          new NumberFormatException(\"Expected an int but was \" + peekedString + locationString());\n+      rethrown.initCause(e);\n+      throw rethrown;\n+    }\n     result = (int) asDouble;\n     if (result != asDouble) { // Make sure no precision was lost casting to 'int'.\n       throw new NumberFormatException(\"Expected an int but was \" + peekedString + locationString());\ndiff --git a/gson/src/test/java/com/google/gson/stream/JsonReaderTest.java b/gson/src/test/java/com/google/gson/stream/JsonReaderTest.java\nindex 24f15cfb43..e7916ecf37 100644\n--- a/gson/src/test/java/com/google/gson/stream/JsonReaderTest.java\n+++ b/gson/src/test/java/com/google/gson/stream/JsonReaderTest.java\n@@ -701,6 +701,38 @@ public void testLenientQuotedNonFiniteDoubles() throws IOException {\n     reader.endArray();\n   }\n \n+  /** Regression test for https://github.com/google/gson/issues/1564 */\n+  @Test\n+  public void testNextDoubleNumberFormatExceptionContainsLocation() throws IOException {\n+    JsonReader reader = new JsonReader(reader(\"[\\\"\\\" ]\"));\n+    reader.setStrictness(Strictness.LENIENT);\n+    reader.beginArray();\n+    NumberFormatException e = assertThrows(NumberFormatException.class, () -> reader.nextDouble());\n+    assertThat(e).hasMessageThat().contains(\"path $[0]\");\n+  }\n+\n+  /** Regression test for https://github.com/google/gson/issues/1564 */\n+  @Test\n+  public void testNextIntNumberFormatExceptionContainsLocation() throws IOException {\n+    JsonReader reader = new JsonReader(reader(\"{\\\"x\\\": \\\"\\\"}\"));\n+    reader.setStrictness(Strictness.LENIENT);\n+    reader.beginObject();\n+    var unused = reader.nextName();\n+    NumberFormatException e = assertThrows(NumberFormatException.class, () -> reader.nextInt());\n+    assertThat(e).hasMessageThat().contains(\"path $.x\");\n+  }\n+\n+  /** Regression test for https://github.com/google/gson/issues/1564 */\n+  @Test\n+  public void testNextLongNumberFormatExceptionContainsLocation() throws IOException {\n+    JsonReader reader = new JsonReader(reader(\"{\\\"y\\\": \\\"\\\"}\"));\n+    reader.setStrictness(Strictness.LENIENT);\n+    reader.beginObject();\n+    var unused = reader.nextName();\n+    NumberFormatException e = assertThrows(NumberFormatException.class, () -> reader.nextLong());\n+    assertThat(e).hasMessageThat().contains(\"path $.y\");\n+  }\n+\n   @Test\n   public void testStrictNonFiniteDoublesWithSkipValue() throws IOException {\n     String json = \"[NaN]\";\n",
+    "changed_files": [
+      "gson/src/main/java/com/google/gson/stream/JsonReader.java",
+      "gson/src/test/java/com/google/gson/stream/JsonReaderTest.java"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": [
+      {
+        "number": 1564,
+        "title": "JsonReader throws NumberFormatException which does not contain location info",
+        "body": "The message of exceptions thrown by `JsonReader` usually contains location information including the current path. This is really helpful to locate the error in the input JSON.\r\n\r\nExample: `java.lang.IllegalStateException: Expected an int but was BOOLEAN at line 7 column 10 path $.x.y`\r\n\r\nNow `JsonReader.nextInt(), .nextLong(), .nextDouble()` may throw exceptions that contain no such location information. The exception is thrown in the lines\r\n`double asDouble = Double.parseDouble(peekedString); // don't catch this NumberFormatException.`\r\n\r\nHow to provoke that specific exception:\r\nModel: `public class Model { int x; }`\r\nand then call `new GsonBuilder().create().fromJson(\"{ x: ''}\", Model.class}`\r\n\r\nThe exception message will be:  `java.lang.NumberFormatException: empty String`, containg no location information.\r\nThe exception itself was thrown by `Double` and `JsonReader` just passed it along.\r\n\r\nImho JsonReader should catch the exception from `Double.parseDouble` and add location information to a rethrown copy."
+      }
+    ]
+  },
+  "snapshot": "snapshots/a74d6725b30c42ffda858599b3b0d38597c35bc86138124cc6975edf470c4285.json"
+}

@@ -1,0 +1,48 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "rust",
+  "source": {
+    "repo": "BurntSushi/ripgrep",
+    "number": 3195,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-BurntSushi-ripgrep-3195",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "BurntSushi",
+      "name": "ripgrep",
+      "default_branch": "master",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 3195,
+    "title": "searcher: fix regression with `--line-buffered` flag",
+    "body": "In my fix for #3184, I actually had two fixes. One was a tweak to how we\nread data and the other was a tweak to how we determined how much of the\nbuffer we needed to keep around. It turns out that fixing #3184 only\nrequired the latter fix, found in commit\nd4b77a8d8967ce1bf701ec65ceb9a75e85e5f2e0. The former fix also helped the\nspecific case of #3184, but it ended up regressing `--line-buffered`.\n\nSpecifically, previous to 8c6595c215d1e24bed5b7b86e2b18f3c871439ef (the\nfirst fix), we would do one `read` syscall. This call might not fill our\ncaller provided buffer. And in particular, `stdin` seemed to fill fewer\nbytes than reading from a file. So the \"fix\" was to put `read` in a loop\nand keep calling it until the caller provided buffer was full or until\nthe stream was exhausted. This helped alleviate #3184 by amortizing\n`read` syscalls better.\n\nBut of course, in retrospect, this change is clearly contrary to how\n`--line-buffered` works. We specifically do _not_ want to wait around\nuntil the buffer is full. We want to read what we can, search it and\nmove on.\n\nSo this reverts the first fix but leaves the second, which still\nkeeps #3184 fixed and also fixes #3194 (the regression).\n\nThis reverts commit 8c6595c215d1e24bed5b7b86e2b18f3c871439ef.\n\nFixes #3194\n",
+    "author": {
+      "login": "BurntSushi",
+      "account_age_days": 5699,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/CHANGELOG.md b/CHANGELOG.md\nindex 22a2b39777..eaf51031a8 100644\n--- a/CHANGELOG.md\n+++ b/CHANGELOG.md\n@@ -1,7 +1,12 @@\n-TBD\n-===\n+15.0.1\n+======\n Unreleased changes. Release notes have not yet been written.\n \n+Bug fixes:\n+\n+* [BUG #3194](https://github.com/BurntSushi/ripgrep/issues/3194):\n+  Fix a regression with `--line-buffered` introduced in ripgrep 15.0.0.\n+\n \n 15.0.0 (2025-10-15)\n ===================\n@@ -37,8 +42,6 @@ Performance improvements:\n   Don't resolve helper binaries on Windows when `-z/--search-zip` isn't used.\n * [PERF #2865](https://github.com/BurntSushi/ripgrep/pull/2865):\n   Avoid using path canonicalization on Windows when emitting hyperlinks.\n-* [PERF #3184](https://github.com/BurntSushi/ripgrep/pull/3184):\n-  Improve performance of large values with `-A/--after-context`.\n \n Bug fixes:\n \ndiff --git a/crates/searcher/src/line_buffer.rs b/crates/searcher/src/line_buffer.rs\nindex 5bc49dbfa8..2a7ff09f70 100644\n--- a/crates/searcher/src/line_buffer.rs\n+++ b/crates/searcher/src/line_buffer.rs\n@@ -415,26 +415,21 @@ impl LineBuffer {\n         assert_eq!(self.pos, 0);\n         loop {\n             self.ensure_capacity()?;\n-            let oldend = self.end;\n-            while !self.free_buffer().is_empty() {\n-                let readlen = rdr.read(self.free_buffer())?;\n-                if readlen == 0 {\n-                    break;\n-                }\n-                self.end += readlen;\n+            let readlen = rdr.read(self.free_buffer().as_bytes_mut())?;\n+            if readlen == 0 {\n+                // We're only done reading for good once the caller has\n+                // consumed everything.\n+                self.last_lineterm = self.end;\n+                return Ok(!self.buffer().is_empty());\n             }\n \n             // Get a mutable view into the bytes we've just read. These are\n             // the bytes that we do binary detection on, and also the bytes we\n             // search to find the last line terminator. We need a mutable slice\n             // in the case of binary conversion.\n+            let oldend = self.end;\n+            self.end += readlen;\n             let newbytes = &mut self.buf[oldend..self.end];\n-            if newbytes.is_empty() {\n-                self.last_lineterm = self.end;\n-                // We're only done reading for good once the caller has\n-                // consumed everything.\n-                return Ok(!self.buffer().is_empty());\n-            }\n \n             // Binary detection.\n             match self.config.binary {\ndiff --git a/crates/searcher/src/searcher/glue.rs b/crates/searcher/src/searcher/glue.rs\nindex 7c943071d5..defb9c4caa 100644\n--- a/crates/searcher/src/searcher/glue.rs\n+++ b/crates/searcher/src/searcher/glue.rs\n@@ -737,7 +737,7 @@ d\n         // Namely, it will *always* detect binary data in the current buffer\n         // before searching it. Thus, the total number of bytes searched is\n         // smaller than below.\n-        let exp = \"0:a\\n\\nbyte count:262142\\nbinary offset:262153\\n\";\n+        let exp = \"0:a\\n\\nbyte count:262146\\nbinary offset:262153\\n\";\n         // In contrast, the slice readers (for multi line as well) will only\n         // look for binary data in the initial chunk of bytes. After that\n         // point, it only looks for binary data in matches. Note though that\n@@ -771,7 +771,7 @@ d\n         haystack.push_str(\"a\\x00a\\n\");\n         haystack.push_str(\"a\\n\");\n \n-        let exp = \"0:a\\n\\nbyte count:262142\\nbinary offset:262149\\n\";\n+        let exp = \"0:a\\n\\nbyte count:262146\\nbinary offset:262149\\n\";\n         // The binary offset for the Slice readers corresponds to the binary\n         // data in `a\\x00a\\n` since the first line with binary data\n         // (`b\\x00b\\n`) isn't part of a match, and is therefore undetected.\n",
+    "changed_files": [
+      "CHANGELOG.md",
+      "crates/searcher/src/line_buffer.rs",
+      "crates/searcher/src/searcher/glue.rs"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": [
+      {
+        "number": 3194,
+        "title": "Line buffering appears broken in 15.0.0",
+        "body": "### Please tick this box to confirm you have reviewed the above.\n\n- [x] I have a different issue.\n\n### What version of ripgrep are you using?\n\n```\nripgrep 15.0.0\n\nfeatures:+pcre2\nsimd(compile):+SSE2,+SSSE3,+AVX2\nsimd(runtime):+SSE2,+SSSE3,+AVX2\n\nPCRE2 10.45 is available (JIT is available)\n```\n\n### How did you install ripgrep?\n\nBug appears when built locally with Cargo as well as the binaries provided on the release page\n\n### What operating system are you using ripgrep on?\n\nArch Linux -- kernel `6.17.3`\n\n### Describe your bug.\n\nI've been using ripgrep to filter `journalctl` output in follow mode for years and thus need the `--line-buffered` option otherwise nothing is output since `stdin` doesn't close.  With the latest release that switch doesn't appear to be having any affect.\n\n### What are the steps to reproduce the behavior?\n\nNo output:\n\n    journalctl -n5 -f | ./rg --no-config --line-buffered  'Oct'\n\nDoes produce some output -- I assume this is because the \"block buffer\" is getting full?\n\n    journalctl -n5000 -f | ./rg --no-config --line-buffered  'Oct'\n\nWhen run with < `15.0.0` each line that is matched is output as soon as it's printed by `journalctl`.  Obviously you'll have to adjust the search to match whatever's in your logs.\n\n### What is the actual behavior?\n\nSame as \"steps to reproduce\"\n\n### What is the expected behavior?\n\nMatch lines (or inverse matches with `-v`) should be output as soon as they're output by the pipe"
+      }
+    ]
+  },
+  "snapshot": "snapshots/bfc6845e4c549f1633a8f93bd0f54a3a62d8dc6a4139b8dcfddad1abea8f5e94.json"
+}

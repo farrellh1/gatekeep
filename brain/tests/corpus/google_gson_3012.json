@@ -1,0 +1,40 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "java",
+  "source": {
+    "repo": "google/gson",
+    "number": 3012,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-google-gson-3012",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "google",
+      "name": "gson",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 3012,
+    "title": "Update outdated comment regarding serializable types",
+    "body": "See https://github.com/google/gson/pull/3011#discussion_r3066567509",
+    "author": {
+      "login": "Marcono1234",
+      "account_age_days": 4087,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/gson/src/main/java/com/google/gson/internal/GsonTypes.java b/gson/src/main/java/com/google/gson/internal/GsonTypes.java\nindex 09b62ff2dc..53f0918b24 100644\n--- a/gson/src/main/java/com/google/gson/internal/GsonTypes.java\n+++ b/gson/src/main/java/com/google/gson/internal/GsonTypes.java\n@@ -120,7 +120,7 @@ public static Type canonicalize(Type type) {\n       return new WildcardTypeImpl(w.getUpperBounds(), w.getLowerBounds());\n \n     } else {\n-      // type is either serializable as-is or unsupported\n+      // unsupported type, return as is\n       return type;\n     }\n   }\n",
+    "changed_files": [
+      "gson/src/main/java/com/google/gson/internal/GsonTypes.java"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/a74d6725b30c42ffda858599b3b0d38597c35bc86138124cc6975edf470c4285.json"
+}

@@ -1,0 +1,40 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "java",
+  "source": {
+    "repo": "google/gson",
+    "number": 3011,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-google-gson-3011",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "google",
+      "name": "gson",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 3011,
+    "title": "Remove `Serializable` from internal `Type` implementation classes.",
+    "body": "The nested classes `ParameterizedTypeImpl`, `GenericArrayTypeImpl`, and\r\n`WildcardTypeImpl` in `GsonTypes` are implementations of the\r\ncorresponding types (without `Impl`) in `java.lang.reflect`. For some\r\nreason, they have always implemented `Serializable`. They are even\r\ndocumented that way, though the documentation is not published since\r\n`GsonTypes` is an internal implementation class.\r\n\r\nThe implementations of these interfaces that are returned by\r\n`java.lang.reflect` methods such as `Method.getGenericReturnType()` do\r\n*not* implement `Serializable` so it seems gratuitous for Gson's\r\nimplementations to do so. Additionally, `Serializable` classes can\r\npotentially participate in exploits. I think it is highly unlikely that\r\nthere is any practical exploit using these classes, but if we can avoid\r\neven having to ask the question then we should.\r\n",
+    "author": {
+      "login": "eamonnmcmanus",
+      "account_age_days": 4675,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/gson/src/main/java/com/google/gson/internal/GsonTypes.java b/gson/src/main/java/com/google/gson/internal/GsonTypes.java\nindex 412c3bf98a..09b62ff2dc 100644\n--- a/gson/src/main/java/com/google/gson/internal/GsonTypes.java\n+++ b/gson/src/main/java/com/google/gson/internal/GsonTypes.java\n@@ -18,7 +18,6 @@\n \n import static java.util.Objects.requireNonNull;\n \n-import java.io.Serializable;\n import java.lang.reflect.Array;\n import java.lang.reflect.GenericArrayType;\n import java.lang.reflect.GenericDeclaration;\n@@ -52,7 +51,7 @@ private GsonTypes() {\n    * Returns a new parameterized type, applying {@code typeArguments} to {@code rawType} and\n    * enclosed by {@code ownerType}.\n    *\n-   * @return a {@link java.io.Serializable serializable} parameterized type.\n+   * @return a parameterized type.\n    */\n   public static ParameterizedType newParameterizedTypeWithOwner(\n       Type ownerType, Class<?> rawType, Type... typeArguments) {\n@@ -62,7 +61,7 @@ public static ParameterizedType newParameterizedTypeWithOwner(\n   /**\n    * Returns an array type whose elements are all instances of {@code componentType}.\n    *\n-   * @return a {@link java.io.Serializable serializable} generic array type.\n+   * @return a generic array type.\n    */\n   public static GenericArrayType arrayOf(Type componentType) {\n     return new GenericArrayTypeImpl(componentType);\n@@ -100,7 +99,7 @@ public static WildcardType supertypeOf(Type bound) {\n \n   /**\n    * Returns a type that is functionally equal but not necessarily equal according to {@link\n-   * Object#equals(Object) Object.equals()}. The returned type is {@link java.io.Serializable}.\n+   * Object#equals(Object) Object.equals()}.\n    */\n   public static Type canonicalize(Type type) {\n     if (type instanceof Class) {\n@@ -506,18 +505,11 @@ public static boolean requiresOwnerType(Type rawType) {\n     return false;\n   }\n \n-  // Here and below we put @SuppressWarnings(\"serial\") on fields of type `Type`. Recent Java\n-  // compilers complain that the declared type is not Serializable. But in this context we go out of\n-  // our way to ensure that the Type in question is either Class (which is serializable) or one of\n-  // the nested Type implementations here (which are also serializable).\n-  private static final class ParameterizedTypeImpl implements ParameterizedType, Serializable {\n-    @SuppressWarnings(\"serial\")\n+  private static final class ParameterizedTypeImpl implements ParameterizedType {\n     private final Type ownerType;\n \n-    @SuppressWarnings(\"serial\")\n     private final Type rawType;\n \n-    @SuppressWarnings(\"serial\")\n     private final Type[] typeArguments;\n \n     ParameterizedTypeImpl(Type ownerType, Class<?> rawType, Type... typeArguments) {\n@@ -584,12 +576,9 @@ public String toString() {\n       }\n       return stringBuilder.append(\">\").toString();\n     }\n-\n-    private static final long serialVersionUID = 0;\n   }\n \n-  private static final class GenericArrayTypeImpl implements GenericArrayType, Serializable {\n-    @SuppressWarnings(\"serial\")\n+  private static final class GenericArrayTypeImpl implements GenericArrayType {\n     private final Type componentType;\n \n     GenericArrayTypeImpl(Type componentType) {\n@@ -616,8 +605,6 @@ public int hashCode() {\n     public String toString() {\n       return typeToString(componentType) + \"[]\";\n     }\n-\n-    private static final long serialVersionUID = 0;\n   }\n \n   /**\n@@ -626,11 +613,9 @@ public String toString() {\n    * https://bugs.openjdk.java.net/browse/JDK-8250660. If a lower bound is set, the upper bound must\n    * be Object.class.\n    */\n-  private static final class WildcardTypeImpl implements WildcardType, Serializable {\n-    @SuppressWarnings(\"serial\")\n+  private static final class WildcardTypeImpl implements WildcardType {\n     private final Type upperBound;\n \n-    @SuppressWarnings(\"serial\")\n     private final Type lowerBound;\n \n     WildcardTypeImpl(Type[] upperBounds, Type[] lowerBounds) {\n@@ -690,7 +675,5 @@ public String toString() {\n         return \"? extends \" + typeToString(upperBound);\n       }\n     }\n-\n-    private static final long serialVersionUID = 0;\n   }\n }\n",
+    "changed_files": [
+      "gson/src/main/java/com/google/gson/internal/GsonTypes.java"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/a74d6725b30c42ffda858599b3b0d38597c35bc86138124cc6975edf470c4285.json"
+}

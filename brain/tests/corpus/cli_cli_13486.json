@@ -1,0 +1,41 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "go",
+  "source": {
+    "repo": "cli/cli",
+    "number": 13486,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-cli-cli-13486",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "cli",
+      "name": "cli",
+      "default_branch": "trunk",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 13486,
+    "title": "build: update golang.org/x/crypto",
+    "body": "## Summary\r\n\r\nUpdates `golang.org/x/crypto` to `v0.52.0` to address the `govulncheck` findings currently affecting `trunk`.\r\n\r\nThe Go module solver also updates related `golang.org/x` modules:\r\n\r\n- `golang.org/x/sys` to `v0.45.0`\r\n- `golang.org/x/net` to `v0.54.0`\r\n\r\n## Validation\r\n\r\n```text\r\ngo run golang.org/x/vuln/cmd/govulncheck@d1f380186385b4f64e00313f31743df8e4b89a77 ./...\r\nNo vulnerabilities found.\r\n```\r\n\r\n```text\r\ngo test ./internal/codespaces/... ./internal/docs/...\r\n```\r\n",
+    "author": {
+      "login": "tommaso-moro",
+      "account_age_days": 3007,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/go.mod b/go.mod\nindex 395aba966c3..abdca9e7fd3 100644\n--- a/go.mod\n+++ b/go.mod\n@@ -57,9 +57,9 @@ require (\n \tgithub.com/vmihailenco/msgpack/v5 v5.4.1\n \tgithub.com/yuin/goldmark v1.8.2\n \tgithub.com/zalando/go-keyring v0.2.8\n-\tgolang.org/x/crypto v0.51.0\n+\tgolang.org/x/crypto v0.52.0\n \tgolang.org/x/sync v0.20.0\n-\tgolang.org/x/sys v0.44.0\n+\tgolang.org/x/sys v0.45.0\n \tgolang.org/x/term v0.43.0\n \tgolang.org/x/text v0.37.0\n \tgoogle.golang.org/grpc v1.81.1\n@@ -183,7 +183,7 @@ require (\n \tgo.opentelemetry.io/otel/trace v1.43.0 // indirect\n \tgo.yaml.in/yaml/v3 v3.0.4 // indirect\n \tgolang.org/x/mod v0.35.0 // indirect\n-\tgolang.org/x/net v0.53.0 // indirect\n+\tgolang.org/x/net v0.54.0 // indirect\n \tgolang.org/x/tools v0.44.0 // indirect\n \tgoogle.golang.org/genproto/googleapis/api v0.0.0-20260316180232-0b37fe3546d5 // indirect\n \tgoogle.golang.org/genproto/googleapis/rpc v0.0.0-20260316180232-0b37fe3546d5 // indirect\ndiff --git a/go.sum b/go.sum\nindex 90f6a825319..9a85c07709f 100644\n--- a/go.sum\n+++ b/go.sum\n@@ -573,8 +573,8 @@ go.yaml.in/yaml/v3 v3.0.4 h1:tfq32ie2Jv2UxXFdLJdh3jXuOzWiL1fo0bu/FbuKpbc=\n go.yaml.in/yaml/v3 v3.0.4/go.mod h1:DhzuOOF2ATzADvBadXxruRBLzYTpT36CKvDb3+aBEFg=\n golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=\n golang.org/x/crypto v0.0.0-20210921155107-089bfa567519/go.mod h1:GvvjBRRGRdwPK5ydBHafDWAxML/pGHZbMvKqRZ5+Abc=\n-golang.org/x/crypto v0.51.0 h1:IBPXwPfKxY7cWQZ38ZCIRPI50YLeevDLlLnyC5wRGTI=\n-golang.org/x/crypto v0.51.0/go.mod h1:8AdwkbraGNABw2kOX6YFPs3WM22XqI4EXEd8g+x7Oc8=\n+golang.org/x/crypto v0.52.0 h1:RMs7fP2rXdep0CftQlK8Uf+kibLm7qkCcradZWYz988=\n+golang.org/x/crypto v0.52.0/go.mod h1:1QgfPxDqh0T2M/elOJtp9RvuR95kVjir0e6/BvEmGbc=\n golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b h1:M2rDM6z3Fhozi9O7NWsxAkg/yqS/lQJ6PmkyIV3YP+o=\n golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b/go.mod h1:3//PLf8L/X+8b4vuAfHzxeRUl04Adcb341+IGKfnqS8=\n golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4/go.mod h1:jJ57K6gSWd91VN4djpZkiMVwK6gcyfeH4XE8wZrZaV4=\n@@ -585,8 +585,8 @@ golang.org/x/net v0.0.0-20190620200207-3b0461eec859/go.mod h1:z5CRVTTTmAJ677TzLL\n golang.org/x/net v0.0.0-20210226172049-e18ecbb05110/go.mod h1:m0MpNAwzfU5UDzcl9v0D8zg8gWTRqZa9RBIspLL5mdg=\n golang.org/x/net v0.0.0-20220722155237-a158d28d115b/go.mod h1:XRhObCWvk6IyKnWLug+ECip1KBveYUHfp+8e9klMJ9c=\n golang.org/x/net v0.6.0/go.mod h1:2Tu9+aMcznHK/AK1HMvgo6xiTLG5rD5rZLDS+rp2Bjs=\n-golang.org/x/net v0.53.0 h1:d+qAbo5L0orcWAr0a9JweQpjXF19LMXJE8Ey7hwOdUA=\n-golang.org/x/net v0.53.0/go.mod h1:JvMuJH7rrdiCfbeHoo3fCQU24Lf5JJwT9W3sJFulfgs=\n+golang.org/x/net v0.54.0 h1:2zJIZAxAHV/OHCDTCOHAYehQzLfSXuf/5SoL/Dv6w/w=\n+golang.org/x/net v0.54.0/go.mod h1:Sj4oj8jK6XmHpBZU/zWHw3BV3abl4Kvi+Ut7cQcY+cQ=\n golang.org/x/oauth2 v0.36.0 h1:peZ/1z27fi9hUOFCAZaHyrpWG5lwe0RJEEEeH0ThlIs=\n golang.org/x/oauth2 v0.36.0/go.mod h1:YDBUJMTkDnJS+A4BP4eZBjCqtokkg1hODuPjwiGPO7Q=\n golang.org/x/sync v0.0.0-20190423024810-112230192c58/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=\n@@ -602,8 +602,8 @@ golang.org/x/sys v0.0.0-20210831042530-f4d43177bf5e/go.mod h1:oPkhp1MJrh7nUepCBc\n golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=\n golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=\n golang.org/x/sys v0.5.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=\n-golang.org/x/sys v0.44.0 h1:ildZl3J4uzeKP07r2F++Op7E9B29JRUy+a27EibtBTQ=\n-golang.org/x/sys v0.44.0/go.mod h1:4GL1E5IUh+htKOUEOaiffhrAeqysfVGipDYzABqnCmw=\n+golang.org/x/sys v0.45.0 h1:dO4czNzziLiiXplLQgBCEpCvXQ3dnkn0SdaZSYdQ+FY=\n+golang.org/x/sys v0.45.0/go.mod h1:4GL1E5IUh+htKOUEOaiffhrAeqysfVGipDYzABqnCmw=\n golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1/go.mod h1:bj7SfCRtBDWHUb9snDiAeCFNEtKQo2Wmx5Cou7ajbmo=\n golang.org/x/term v0.0.0-20210927222741-03fcf44c2211/go.mod h1:jbD1KX2456YbFQfuXm/mYQcufACuNUgVhRMnK/tPxf8=\n golang.org/x/term v0.5.0/go.mod h1:jMB1sMXY+tzblOD4FWmEbocvup2/aLOaQEp7JmGp78k=\n",
+    "changed_files": [
+      "go.mod",
+      "go.sum"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/7840c589458dc662f22478d608d238f9362aca7f3e294d6788f498ade693ad38.json"
+}

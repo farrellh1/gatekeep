@@ -1,0 +1,41 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "rust",
+  "source": {
+    "repo": "BurntSushi/ripgrep",
+    "number": 3212,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-BurntSushi-ripgrep-3212",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "BurntSushi",
+      "name": "ripgrep",
+      "default_branch": "master",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 3212,
+    "title": "ignore: only stat .jj if we actually care",
+    "body": "I was comparing the work being done by fd and find and noticed (with strace -f -c -S calls) that fd was doing a ton of failed statx calls. Upon closer inspection it was stating .jj even though I was passing --no-ignore. Eventually I turned up this check in Ignore::add_child_path that was doing stat on .jj regardless of whether the options request it.\r\n\r\nWith this patch it'll only stat .jj if that's relevant to the query.",
+    "author": {
+      "login": "ianloic",
+      "account_age_days": 6678,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/CHANGELOG.md b/CHANGELOG.md\nindex 2b17916042..ecb564d925 100644\n--- a/CHANGELOG.md\n+++ b/CHANGELOG.md\n@@ -2,6 +2,11 @@ TBD\n ===\n Unreleased changes. Release notes have not yet been written.\n \n+Bug fixes:\n+\n+* [BUG #3212](https://github.com/BurntSushi/ripgrep/pull/3212):\n+  Don't check for the existence of `.jj` when `--no-ignore` is used.\n+\n \n 15.1.0\n ======\ndiff --git a/crates/ignore/src/dir.rs b/crates/ignore/src/dir.rs\nindex 2591771edc..5939f32e84 100644\n--- a/crates/ignore/src/dir.rs\n+++ b/crates/ignore/src/dir.rs\n@@ -256,14 +256,15 @@ impl Ignore {\n \n     /// Like add_child, but takes a full path and returns an IgnoreInner.\n     fn add_child_path(&self, dir: &Path) -> (IgnoreInner, Option<Error>) {\n-        let git_type = if self.0.opts.require_git\n-            && (self.0.opts.git_ignore || self.0.opts.git_exclude)\n-        {\n+        let check_vcs_dir = self.0.opts.require_git\n+            && (self.0.opts.git_ignore || self.0.opts.git_exclude);\n+        let git_type = if check_vcs_dir {\n             dir.join(\".git\").metadata().ok().map(|md| md.file_type())\n         } else {\n             None\n         };\n-        let has_git = git_type.is_some() || dir.join(\".jj\").exists();\n+        let has_git =\n+            check_vcs_dir && (git_type.is_some() || dir.join(\".jj\").exists());\n \n         let mut errs = PartialErrorBuilder::default();\n         let custom_ig_matcher = if self.0.custom_ignore_filenames.is_empty() {\n",
+    "changed_files": [
+      "CHANGELOG.md",
+      "crates/ignore/src/dir.rs"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/bfc6845e4c549f1633a8f93bd0f54a3a62d8dc6a4139b8dcfddad1abea8f5e94.json"
+}

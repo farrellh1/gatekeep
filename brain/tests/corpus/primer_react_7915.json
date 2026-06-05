@@ -1,0 +1,42 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "tsx",
+  "source": {
+    "repo": "primer/react",
+    "number": 7915,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-primer-react-7915",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "primer",
+      "name": "react",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 7915,
+    "title": "fix(Dialog): close on first Escape press when close button is focused",
+    "body": "Closes https://github.com/github/primer/issues/2604\n\nWhen a `Dialog` opens, focus moves to its close button. Because icon buttons now render a tooltip by default, the tooltip's own `Escape` handler (registered on `document` via `useOnEscapePress`) runs first and calls `stopImmediatePropagation()` + `preventDefault()` to dismiss the tooltip \u2014 swallowing the first `Escape` keypress so the dialog doesn't close. Users had to press `Escape` twice (the previous test even worked around this), and in a multi-dialog setup the first `Escape` could shift focus to the wrong return-focus target instead of closing the dialog.\n\n### Fix\n\nIntercept the `Escape` keydown **on the close button itself**. React dispatches `onKeyDown` at the root container, which sits below `document` in the DOM, so calling `stopPropagation()` there prevents the event from reaching the tooltip's document-level handler. We close the dialog directly with the `'escape'` gesture, and the tooltip stays fully functional.\n\n#### Considered but rejected: disabling the tooltip\n\nThe simplest fix was to set `unsafeDisableTooltip` on the close button. We chose **not** to do this because the tooltip contributes to the button's discoverability/affordance and we didn't want to regress the accessibility/UX of the close button just to work around the event handling. Intercepting the event keeps the tooltip \u2014 and its behavior \u2014 intact while fixing the bug.\n\n### Changelog\n\n#### Changed\n\n- `Dialog` now closes on the first `Escape` keypress when the close button is focused, instead of requiring a second press.\n\n### Rollout strategy\n\n- [x] Patch release\n\n### Testing & Reviewing\n\n1. Render two buttons that each open their own `Dialog` (each with a `returnFocusRef`).\n2. Open the first dialog and press `Escape` once.\n3. The dialog should close on the first press and focus should return to its own trigger button.\n\nAdded a regression test in `Dialog.test.tsx` covering the single-`Escape` close and the multi-dialog scenario, and updated the existing Escape test to expect a single keypress. All 40 Dialog tests pass; type-check is clean.\n\n### Merge checklist\n\n- [x] Added/updated tests\n- [ ] Added/updated documentation\n- [ ] Added/updated previews (Storybook)\n- [x] Changes are [SSR compatible](https://github.com/primer/react/blob/main/contributor-docs/CONTRIBUTING.md#ssr-compatibility)\n- [ ] Tested in Chrome\n- [ ] Tested in Firefox\n- [ ] Tested in Safari\n- [ ] Tested in Edge\n- [ ] (GitHub staff only) Integration tests pass at github/github-ui",
+    "author": {
+      "login": "jonrohan",
+      "account_age_days": 6321,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/.changeset/dialog-escape-close-button-tooltip.md b/.changeset/dialog-escape-close-button-tooltip.md\nnew file mode 100644\nindex 00000000000..ba84ed77970\n--- /dev/null\n+++ b/.changeset/dialog-escape-close-button-tooltip.md\n@@ -0,0 +1,5 @@\n+---\n+'@primer/react': patch\n+---\n+\n+Dialog: Fix `Escape` key not closing the dialog on the first keypress when the close button is focused\ndiff --git a/packages/react/src/Dialog/Dialog.test.tsx b/packages/react/src/Dialog/Dialog.test.tsx\nindex b013a7399fc..0cdbac53645 100644\n--- a/packages/react/src/Dialog/Dialog.test.tsx\n+++ b/packages/react/src/Dialog/Dialog.test.tsx\n@@ -176,12 +176,54 @@ describe('Dialog', () => {\n \n     expect(onClose).not.toHaveBeenCalled()\n \n-    await user.keyboard('{Escape}') // escape once to remove focus from the close button\n-    await user.keyboard('{Escape}') // escape again to trigger the onClose\n+    await user.keyboard('{Escape}')\n \n     expect(onClose).toHaveBeenCalledWith('escape')\n   })\n \n+  it('calls `onClose` with a single \"Escape\" keypress when multiple dialogs can be opened', async () => {\n+    const user = userEvent.setup()\n+\n+    function ButtonWithDialog({label, onClose}: {label: string; onClose: () => void}) {\n+      const [isOpen, setIsOpen] = React.useState(false)\n+      const buttonRef = React.useRef<HTMLButtonElement>(null)\n+      return (\n+        <>\n+          <Button ref={buttonRef} onClick={() => setIsOpen(true)}>\n+            {label}\n+          </Button>\n+          {isOpen && (\n+            <Dialog\n+              title={label}\n+              onClose={() => {\n+                onClose()\n+                setIsOpen(false)\n+              }}\n+              returnFocusRef={buttonRef}\n+            >\n+              body\n+            </Dialog>\n+          )}\n+        </>\n+      )\n+    }\n+\n+    const onCloseFirst = vi.fn()\n+    const onCloseSecond = vi.fn()\n+    const {getByText} = render(\n+      <>\n+        <ButtonWithDialog label=\"Dialog 1\" onClose={onCloseFirst} />\n+        <ButtonWithDialog label=\"Dialog 2\" onClose={onCloseSecond} />\n+      </>,\n+    )\n+\n+    await user.click(getByText('Dialog 1'))\n+    await user.keyboard('{Escape}')\n+\n+    expect(onCloseFirst).toHaveBeenCalled()\n+    expect(onCloseSecond).not.toHaveBeenCalled()\n+  })\n+\n   it('changes the <body> style for `overflow` if it is not set to \"hidden\"', () => {\n     document.body.style.overflow = 'scroll'\n \ndiff --git a/packages/react/src/Dialog/Dialog.tsx b/packages/react/src/Dialog/Dialog.tsx\nindex 7015367bff9..a7634ab1739 100644\n--- a/packages/react/src/Dialog/Dialog.tsx\n+++ b/packages/react/src/Dialog/Dialog.tsx\n@@ -220,6 +220,20 @@ const DefaultHeader: React.FC<React.PropsWithChildren<DialogHeaderProps>> = ({\n   const onCloseClick = useCallback(() => {\n     onClose('close-button')\n   }, [onClose])\n+  const onCloseKeyDown = useCallback<React.KeyboardEventHandler>(\n+    event => {\n+      if (event.key === 'Escape') {\n+        // When the close button is focused its tooltip is open, and the\n+        // tooltip's own Escape handler (registered on `document`) would\n+        // otherwise swallow this keypress. Handle Escape here and stop it from\n+        // reaching the document-level handler so the dialog closes on the first\n+        // press while keeping the tooltip fully functional.\n+        event.stopPropagation()\n+        onClose('escape')\n+      }\n+    },\n+    [onClose],\n+  )\n   return (\n     <Dialog.Header>\n       <div className={classes.HeaderInner}>\n@@ -227,7 +241,7 @@ const DefaultHeader: React.FC<React.PropsWithChildren<DialogHeaderProps>> = ({\n           <Dialog.Title id={dialogLabelId}>{title ?? 'Dialog'}</Dialog.Title>\n           {subtitle && <Dialog.Subtitle id={dialogDescriptionId}>{subtitle}</Dialog.Subtitle>}\n         </div>\n-        <Dialog.CloseButton onClose={onCloseClick} />\n+        <Dialog.CloseButton onClose={onCloseClick} onKeyDown={onCloseKeyDown} />\n       </div>\n     </Dialog.Header>\n   )\n@@ -506,12 +520,16 @@ const Buttons: React.FC<React.PropsWithChildren<{buttons: DialogButtonProps[]}>>\n   )\n }\n \n-const CloseButton: React.FC<React.PropsWithChildren<{onClose: () => void}>> = ({onClose}) => {\n+const CloseButton: React.FC<React.PropsWithChildren<{onClose: () => void; onKeyDown?: React.KeyboardEventHandler}>> = ({\n+  onClose,\n+  onKeyDown,\n+}) => {\n   return (\n     <IconButton\n       icon={XIcon}\n       aria-label=\"Close\"\n       onClick={onClose}\n+      onKeyDown={onKeyDown}\n       variant=\"invisible\"\n       data-component=\"Dialog.CloseButton\"\n     />\n",
+    "changed_files": [
+      ".changeset/dialog-escape-close-button-tooltip.md",
+      "packages/react/src/Dialog/Dialog.test.tsx",
+      "packages/react/src/Dialog/Dialog.tsx"
+    ],
+    "ci_status": "success",
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/03856a4eb135e8b97e7412906668f1954d3b8b3ac2a1e8d350fed3bcda7589d6.json"
+}

@@ -1,0 +1,40 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "rust",
+  "source": {
+    "repo": "BurntSushi/ripgrep",
+    "number": 3271,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-BurntSushi-ripgrep-3271",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "BurntSushi",
+      "name": "ripgrep",
+      "default_branch": "master",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 3271,
+    "title": "ignore/types: add Containerfile",
+    "body": "This PR adds `Containerfile` as a synonym to `Dockerfile`.\r\n\r\n`Containerfile` is the preferred file name in [Podman](https://docs.podman.io/en/latest/markdown/podman-build.1.html#file-f-containerfile) and [Buildah](https://github.com/containers/buildah/blob/main/docs/buildah-build.1.md).\r\n\r\nIn hindsight, `docker` could be not the best name for the file type, but my thinking is that it's best to leave it as it is than to add a new type, let alone rename it. Also, `container` would have been too generalized, and `containerfile` would have been too long to type.",
+    "author": {
+      "login": "Pashugan",
+      "account_age_days": 4880,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/crates/ignore/src/default_types.rs b/crates/ignore/src/default_types.rs\nindex de639783e3..f3c2955920 100644\n--- a/crates/ignore/src/default_types.rs\n+++ b/crates/ignore/src/default_types.rs\n@@ -47,6 +47,7 @@ pub(crate) const DEFAULT_TYPES: &[(&[&str], &[&str])] = &[\n     (&[\"cml\"], &[\"*.cml\"]),\n     (&[\"coffeescript\"], &[\"*.coffee\"]),\n     (&[\"config\"], &[\"*.cfg\", \"*.conf\", \"*.config\", \"*.ini\"]),\n+    (&[\"container\"], &[\"*Containerfile*\", \"*Dockerfile*\"]),\n     (&[\"coq\"], &[\"*.v\"]),\n     (&[\"cpp\"], &[\n         \"*.[ChH]\", \"*.cc\", \"*.[ch]pp\", \"*.[ch]xx\", \"*.hh\",  \"*.inl\",\n",
+    "changed_files": [
+      "crates/ignore/src/default_types.rs"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/bfc6845e4c549f1633a8f93bd0f54a3a62d8dc6a4139b8dcfddad1abea8f5e94.json"
+}

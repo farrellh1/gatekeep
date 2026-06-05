@@ -1,0 +1,41 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "rust",
+  "source": {
+    "repo": "BurntSushi/ripgrep",
+    "number": 3279,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-BurntSushi-ripgrep-3279",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "BurntSushi",
+      "name": "ripgrep",
+      "default_branch": "master",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 3279,
+    "title": "docs: clarify half-boundary syntax for the -w/--word-regexp flag",
+    "body": "In [regex 1.10.0](https://github.com/rust-lang/regex/blob/master/CHANGELOG.md#1100-2023-10-09), the `\\b{start-half}` and `\\b{end-half}` assertions were introduced to improve how the `-w`/`--word-regexp` flag handles patterns containing non-word characters. While ripgrep's CLI help text was updated to mention this syntax during the lexopt transition (082245d), it omitted the rationale, potentially leaving users puzzled by this casual mention of a highly specific, non-standard regex feature.\n\nFurthermore, `GUIDE.md` was still outdated, incorrectly claiming that `-w` wraps patterns in standard `\\b` boundaries, further compounding the inconsistency and potential for confusion.\n\nThis patch updates `GUIDE.md` to reflect the actual underlying regex employed by ripgrep when the `-w`/`--word-regexp` flag is used.\nIt also adds a brief explanation to both the guide and the manpage acknowledging the non-standard nature of these half-boundary markers, and explaining what they're meant for.\n",
+    "author": {
+      "login": "waldyrious",
+      "account_age_days": 5684,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/GUIDE.md b/GUIDE.md\nindex 6d51e460ef..5f1378839c 100644\n--- a/GUIDE.md\n+++ b/GUIDE.md\n@@ -1004,7 +1004,11 @@ used options that will likely impact how you use ripgrep on a regular basis.\n    as a literal string.\n * `-w/--word-regexp`: Require that all matches of the pattern be surrounded\n   by word boundaries. That is, given `pattern`, the `--word-regexp` flag will\n-  cause ripgrep to behave as if `pattern` were actually `\\b(?:pattern)\\b`.\n+  cause ripgrep to behave as if `pattern` were actually\n+  `\\b{start-half}(?:pattern)\\b{end-half}`.\n+  (Unlike `\\b`, these half-boundaries don't require a word character on one\n+  side. For example, `rg -w -e -2` will match `-2` in `(-2)` but `rg '\\b-2\\b'`\n+  will not.)\n * `-c/--count`: Report a count of total matched lines.\n * `--files`: Print the files that ripgrep *would* search, but don't actually\n   search them.\ndiff --git a/crates/core/flags/defs.rs b/crates/core/flags/defs.rs\nindex 5ce9108697..b2fc68f49f 100644\n--- a/crates/core/flags/defs.rs\n+++ b/crates/core/flags/defs.rs\n@@ -7535,8 +7535,12 @@ impl Flag for WordRegexp {\n     fn doc_long(&self) -> &'static str {\n         r\"\n When enabled, ripgrep will only show matches surrounded by word boundaries.\n-This is equivalent to surrounding every pattern with \\fB\\\\b{start-half}\\fP\n-and \\fB\\\\b{end-half}\\fP.\n+This is equivalent to surrounding every pattern with \\fB\\\\b{start-half}\\fP and\n+\\fB\\\\b{end-half}\\fP. These are a custom syntax from ripgrep's default regex\n+engine that, unlike \\fB\\\\b\\fP, doesn't require matching a word character on one\n+side. That is, \\fB\\\\b{start-half}\\fP corresponds to matching \\fB\\\\W|\\\\A\\fP on\n+the left and \\fB\\\\b{end-half}\\fP corresponds to matching \\fB\\\\W|\\\\z\\fP on the\n+right.\n .sp\n This overrides the \\flag{line-regexp} flag.\n \"\n",
+    "changed_files": [
+      "GUIDE.md",
+      "crates/core/flags/defs.rs"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/bfc6845e4c549f1633a8f93bd0f54a3a62d8dc6a4139b8dcfddad1abea8f5e94.json"
+}

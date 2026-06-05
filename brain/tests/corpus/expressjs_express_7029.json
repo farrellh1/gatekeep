@@ -1,0 +1,40 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "javascript",
+  "source": {
+    "repo": "expressjs/express",
+    "number": 7029,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-expressjs-express-7029",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "expressjs",
+      "name": "express",
+      "default_branch": "master",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 7029,
+    "title": "docs: fix README security policy",
+    "body": "## Description\r\nThis PR fixes ~two~ one README issue:\r\n\r\n~Clarifies the Quick Start note about express-generator versioning: the generator\u2019s major version indicates which Express major it targets (implication, not equality). Also~ \r\nupdates the \u201cSecurity Issues\u201d link to the stable security policy URL: https://github.com/expressjs/express/security/policy\r\n\r\n## Certificate of Origin\r\nSigned-off-by: Pavan Shinde <pavann97@gmail.com>",
+    "author": {
+      "login": "pavan-sh",
+      "account_age_days": 4548,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/Readme.md b/Readme.md\nindex eedd4c69046..57dbc367aee 100644\n--- a/Readme.md\n+++ b/Readme.md\n@@ -154,7 +154,7 @@ See the [Contributing Guide] for more technical details on contributing.\n \n ### Security Issues\n \n-If you discover a security vulnerability in Express, please see [Security Policies and Procedures](https://github.com/expressjs/express?tab=security-ov-file).\n+If you discover a security vulnerability in Express, please see [Security Policies and Procedures](https://github.com/expressjs/express/security/policy).\n \n ### Running Tests\n \n",
+    "changed_files": [
+      "Readme.md"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/f015d1290c488b1031fb1254dc36e883b48c5c77239ddfe437307cc03f43d6c2.json"
+}

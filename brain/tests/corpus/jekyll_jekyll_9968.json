@@ -1,0 +1,40 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "ruby",
+  "source": {
+    "repo": "jekyll/jekyll",
+    "number": 9968,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-jekyll-jekyll-9968",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "jekyll",
+      "name": "jekyll",
+      "default_branch": "master",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 9968,
+    "title": "docs: update wsl installation procedure",
+    "body": "<!-- This is a \ud83d\udc1b bug fix. -->\r\n<!-- This is a \ud83d\ude4b feature or enhancement. -->\r\nThis is a \ud83d\udd26 documentation change.\r\n<!-- This is a \ud83d\udd28 code refactoring. -->\r\n\r\n## Summary\r\n\r\nThe install documentation for WSL offers to install Ruby through BrightBox. However, BrightBox does not support Ubuntu Jammy (which is the default for latest WSL builds). Instead, this commit just redirects the WSL user to the Ubuntu installation procedure to avoid duplicate documentation.\r\n",
+    "author": {
+      "login": "mariuslp",
+      "account_age_days": 4746,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/docs/_docs/installation/windows.md b/docs/_docs/installation/windows.md\nindex ae6e9b9fb09..587982ae521 100644\n--- a/docs/_docs/installation/windows.md\n+++ b/docs/_docs/installation/windows.md\n@@ -45,37 +45,9 @@ You must have [Windows Subsystem for Linux](https://msdn.microsoft.com/en-us/com\n \n Make sure all your packages and repositories are up to date. Open a new Command Prompt or PowerShell window and type `bash`.\n \n-Your terminal should now be a Bash instance. Next, update your repository lists and packages:\n+Your terminal should now be a Bash instance. Then, [follow the installation procedure for Ubuntu](https://jekyllrb.com/docs/installation/ubuntu/).\n \n-```sh\n-sudo apt-get update -y && sudo apt-get upgrade -y\n-```\n-\n-Next, install Ruby. To do this, let's use a repository from [BrightBox](https://www.brightbox.com/docs/ruby/ubuntu/),\n-which hosts optimized versions of Ruby for Ubuntu.\n-\n-```sh\n-sudo apt-add-repository ppa:brightbox/ruby-ng\n-sudo apt-get update\n-sudo apt-get install ruby2.5 ruby2.5-dev build-essential dh-autoreconf\n-```\n-\n-Next, update your Ruby gems:\n-\n-```sh\n-gem update\n-```\n-\n-Install Jekyll:\n-\n-```sh\n-gem install jekyll bundler\n-```\n-\n-{: .note .info}\n-  No `sudo` here.\n-\n-Check your Jekyll version:\n+Once this is done, check your Jekyll version:\n \n ```sh\n jekyll -v\n",
+    "changed_files": [
+      "docs/_docs/installation/windows.md"
+    ],
+    "ci_status": "success",
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/bc5b9a4e2c87e9e2ee71749edad9c07d08c2c7982b58a7747208c2294cb640eb.json"
+}

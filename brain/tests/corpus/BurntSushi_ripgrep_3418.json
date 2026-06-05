@@ -1,0 +1,40 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "rust",
+  "source": {
+    "repo": "BurntSushi/ripgrep",
+    "number": 3418,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-BurntSushi-ripgrep-3418",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "BurntSushi",
+      "name": "ripgrep",
+      "default_branch": "master",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 3418,
+    "title": "docs: s/our projects/this project in AI policy",
+    "body": "This was an artifact of using uv's policy. I thought I had changed most\nof these but didn't catch this one.\n",
+    "author": {
+      "login": "BurntSushi",
+      "account_age_days": 5699,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/AI_POLICY.md b/AI_POLICY.md\nindex e0ddbaaea..667026958 100644\n--- a/AI_POLICY.md\n+++ b/AI_POLICY.md\n@@ -17,9 +17,9 @@ proposed changes in your own words. This includes the pull request body and\n responses to questions. **Do not copy responses from the AI when replying to\n questions from maintainers.**\n \n-This project requires a human in the loop who understands the work produced\n-by AI. **Autonomous agents are not allowed to be used for contributing to our\n-projects**. Pull requests that appear in violation of this will be closed,\n+This project requires a human in the loop who understands the work produced by\n+AI. **Autonomous agents are not allowed to be used for contributing to this\n+project**. Pull requests that appear in violation of this will be closed,\n perhaps without notice.\n \n If you wish to include context from an interaction with AI in your comments, it\n",
+    "changed_files": [
+      "AI_POLICY.md"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/bfc6845e4c549f1633a8f93bd0f54a3a62d8dc6a4139b8dcfddad1abea8f5e94.json"
+}

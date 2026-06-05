@@ -1,0 +1,41 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "typescript",
+  "source": {
+    "repo": "honojs/hono",
+    "number": 4973,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-honojs-hono-4973",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "honojs",
+      "name": "hono",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 4973,
+    "title": "fix(utils/ipaddr): expand \"::\" to eight zero groups",
+    "body": "### What this fixes\n\n`expandIPv6('::')` returns **14** zero groups instead of 8:\n\n```ts\nexpandIPv6('::')\n// actual:   '0000:0000:0000:0000:0000:0000:0000:0000:0000:0000:0000:0000:0000:0000'\n// expected: '0000:0000:0000:0000:0000:0000:0000:0000'\n```\n\n`::` is the IPv6 unspecified / all-zeros address, so this is a valid input.\n\n### Cause\n\n`'::'.split(':')` produces three empty sections `['', '', '']`. In the expansion\nloop, the empty branch removed only a **single** adjacent empty section before\nfilling with zeros:\n\n```ts\nsections[i + 1] === '' && sections.splice(i + 1, 1)\n```\n\nFor `::` that leaves a second empty slot behind, which is then expanded again on\nthe next iteration, doubling the zero groups. Other inputs were unaffected\nbecause a single `::` elsewhere in an address yields at most two adjacent\nempties.\n\n### Fix\n\nDrain **all** consecutive empty sections before filling, so exactly one slot\nremains for the zero groups.\n\n### The author should do the following, if applicable\n\n- [x] Add tests\n- [x] Run tests\n- [x] `bun run format:fix && bun run lint:fix` to format the code\n- [x] Add [TSDoc](https://tsdoc.org/)/[JSDoc](https://jsdoc.app/about-getting-started) to document the code\n\n> Verified locally with `tsc --noEmit`, `vitest --run src/utils/ipaddr.test.ts` (41 passed), Prettier, and ESLint. Existing `expandIPv6` cases (`::1`, `2001:2::`, `2001:0:0:db8::1`, `::ffff:127.0.0.1`, \u2026) continue to pass; added regression tests for `::` and `fe80::`.\n",
+    "author": {
+      "login": "youcefzemmar",
+      "account_age_days": 1683,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/src/utils/ipaddr.test.ts b/src/utils/ipaddr.test.ts\nindex e5c55919d..c6372d693 100644\n--- a/src/utils/ipaddr.test.ts\n+++ b/src/utils/ipaddr.test.ts\n@@ -28,6 +28,10 @@ describe('expandIPv6', () => {\n     expect(expandIPv6('2001:0:0:db8::1')).toBe('2001:0000:0000:0db8:0000:0000:0000:0001')\n     expect(expandIPv6('::ffff:127.0.0.1')).toBe('0000:0000:0000:0000:0000:ffff:7f00:0001')\n   })\n+\n+  it('Should expand the unspecified address \"::\" to eight zero groups', () => {\n+    expect(expandIPv6('::')).toBe('0000:0000:0000:0000:0000:0000:0000:0000')\n+  })\n })\n describe('distinctRemoteAddr', () => {\n   it('Should result be valid', () => {\ndiff --git a/src/utils/ipaddr.ts b/src/utils/ipaddr.ts\nindex 6ff879f18..aea95dcd5 100644\n--- a/src/utils/ipaddr.ts\n+++ b/src/utils/ipaddr.ts\n@@ -26,7 +26,10 @@ export const expandIPv6 = (ipV6: string): string => {\n     if (node !== '') {\n       sections[i] = node.padStart(4, '0')\n     } else {\n-      sections[i + 1] === '' && sections.splice(i + 1, 1)\n+      // Keep a single empty slot for `::` zero expansion.\n+      while (sections[i + 1] === '') {\n+        sections.splice(i + 1, 1)\n+      }\n       sections[i] = new Array(8 - sections.length + 1).fill('0000').join(':')\n     }\n   }\n",
+    "changed_files": [
+      "src/utils/ipaddr.test.ts",
+      "src/utils/ipaddr.ts"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/24fe8d201003a171727a73bd7a755daa6d81aee7e008db7f561f6e254afa1d89.json"
+}

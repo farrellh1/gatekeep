@@ -1,0 +1,41 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "rust",
+  "source": {
+    "repo": "BurntSushi/ripgrep",
+    "number": 3416,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-BurntSushi-ripgrep-3416",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "BurntSushi",
+      "name": "ripgrep",
+      "default_branch": "master",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 3416,
+    "title": "docs: add AI policy for contributors",
+    "body": "I've shamlessly adapted this from [uv's AI policy].\n\n[uv's AI policy]: https://github.com/astral-sh/.github/blob/c5187e200db51bfe11d56e13053d29bd3793fdd8/AI_POLICY.md\n",
+    "author": {
+      "login": "BurntSushi",
+      "account_age_days": 5699,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/AI_POLICY.md b/AI_POLICY.md\nnew file mode 100644\nindex 0000000000..e0ddbaaea0\n--- /dev/null\n+++ b/AI_POLICY.md\n@@ -0,0 +1,38 @@\n+# AI Policy\n+\n+Using AI (i.e., LLMs) as tools for coding is welcome. A high bar is held for\n+all contributions to this project. Moreover, the project maintainers remain\n+responsible for any code that is published as part of a release. Contributors\n+are expected to be responsible for any code they publish.\n+\n+**AI should not be used to generate comments when communicating with\n+maintainers**. Comments are expected to be written by humans. Comments that are\n+believed to be written by AI may be hidden without notice.\n+\n+If you are opening an issue, you should be able to describe the problem in your\n+own words.\n+\n+If you are opening a pull request, you are expected to be able to explain the\n+proposed changes in your own words. This includes the pull request body and\n+responses to questions. **Do not copy responses from the AI when replying to\n+questions from maintainers.**\n+\n+This project requires a human in the loop who understands the work produced\n+by AI. **Autonomous agents are not allowed to be used for contributing to our\n+projects**. Pull requests that appear in violation of this will be closed,\n+perhaps without notice.\n+\n+If you wish to include context from an interaction with AI in your comments, it\n+must be in a quote block (e.g., using `>`) and disclosed as such. It must be\n+accompanied by human commentary explaining the relevance and implications of\n+the context. Do not share long snippets.\n+\n+AI is useful when communicating as a non-native English speaker. If you are\n+using AI to edit your comments for this purpose, please take the time to ensure\n+it reflects your own voice and ideas. If using AI for translation, we recommend\n+writing in your native language and including the AI translation in a quote\n+block.\n+\n+This policy was adapted from [uv's AI policy].\n+\n+[uv's AI policy]: https://github.com/astral-sh/.github/blob/c5187e200db51bfe11d56e13053d29bd3793fdd8/AI_POLICY.md\ndiff --git a/CONTRIBUTING.md b/CONTRIBUTING.md\nnew file mode 100644\nindex 0000000000..86cb4d02d7\n--- /dev/null\n+++ b/CONTRIBUTING.md\n@@ -0,0 +1,8 @@\n+# Contributing\n+\n+## Use of AI\n+\n+All use of AI in contributions must follow the\n+[AI Policy](https://github.com/BurntSushi/jiff/blob/master/AI_POLICY.md).\n+\n+Contributions not following the AI Policy will be closed.\n",
+    "changed_files": [
+      "AI_POLICY.md",
+      "CONTRIBUTING.md"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/bfc6845e4c549f1633a8f93bd0f54a3a62d8dc6a4139b8dcfddad1abea8f5e94.json"
+}

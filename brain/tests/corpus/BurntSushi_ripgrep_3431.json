@@ -1,0 +1,47 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "rust",
+  "source": {
+    "repo": "BurntSushi/ripgrep",
+    "number": 3431,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-BurntSushi-ripgrep-3431",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "BurntSushi",
+      "name": "ripgrep",
+      "default_branch": "master",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 3431,
+    "title": "ci: add support for `aarch64-unknown-linux-musl`",
+    "body": "This includes running tests and binary artifacts.\n\nFixes #2739\n",
+    "author": {
+      "login": "BurntSushi",
+      "account_age_days": 5699,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml\nindex 47d33a4a7b..2095280421 100644\n--- a/.github/workflows/ci.yml\n+++ b/.github/workflows/ci.yml\n@@ -75,6 +75,10 @@ jobs:\n           os: ubuntu-latest\n           rust: stable\n           target: aarch64-unknown-linux-gnu\n+        - build: stable-aarch64-musl\n+          os: ubuntu-latest\n+          rust: stable\n+          target: aarch64-unknown-linux-musl\n         - build: stable-arm-gnueabihf\n           os: ubuntu-latest\n           rust: stable\ndiff --git a/.github/workflows/release.yml b/.github/workflows/release.yml\nindex b11550ac43..e1b67bc092 100644\n--- a/.github/workflows/release.yml\n+++ b/.github/workflows/release.yml\n@@ -80,6 +80,12 @@ jobs:\n           target: aarch64-unknown-linux-gnu\n           strip: aarch64-linux-gnu-strip\n           qemu: qemu-aarch64\n+        - build: stable-aarch64-musl\n+          os: ubuntu-latest\n+          rust: stable\n+          target: aarch64-unknown-linux-musl\n+          strip: aarch64-linux-musl-strip\n+          qemu: qemu-aarch64\n         - build: stable-arm-gnueabihf\n           os: ubuntu-latest\n           rust: stable\n",
+    "changed_files": [
+      ".github/workflows/ci.yml",
+      ".github/workflows/release.yml"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": [
+      {
+        "number": 2739,
+        "title": "Provide Statically Compiled Binaries for (aarch64|arm64) Linux",
+        "body": "Hi, the current releases for arm64 Linux is based on gnu and not musl.\r\nAs a result, the binary is dynamically linked:\r\n```bash\r\n$ https://github.com/BurntSushi/ripgrep/releases/download/14.1.0/ripgrep-14.1.0-aarch64-unknown-linux-gnu.tar.gz\r\n$ file rg && ldd rg\r\nrg: ELF 64-bit LSB pie executable, ARM aarch64, version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux-aarch64.so.1, for GNU/Linux 3.7.0, BuildID[sha1]=62e25ad353379dfb4ddf3c94be5e00cd086d56d5, stripped\r\n        linux-vdso.so.1 (0x0000ffffa91df000)\r\n        libgcc_s.so.1 => /lib/aarch64-linux-gnu/libgcc_s.so.1 (0x0000ffffa8c40000)\r\n        libpthread.so.0 => /lib/aarch64-linux-gnu/libpthread.so.0 (0x0000ffffa8c20000)\r\n        libdl.so.2 => /lib/aarch64-linux-gnu/libdl.so.2 (0x0000ffffa8c00000)\r\n        libc.so.6 => /lib/aarch64-linux-gnu/libc.so.6 (0x0000ffffa8a50000)\r\n        /lib/ld-linux-aarch64.so.1 (0x0000ffffa91a6000)\r\n$ du -sh rg\r\n5.2M    rg\r\n```\r\n\r\nAdding target: `aarch64-unknown-linux-musl` in https://github.com/BurntSushi/ripgrep/blob/master/.github/workflows/release.yml should work.\r\n\r\nHowever, you can release an even more optimized & smaller binary, based on : https://github.com/Azathothas/Toolpacks/blob/main/.github/scripts/aarch64_Linux/bins/ripgrep.sh\r\n```bash\r\n$ file \"./target/$RUST_TARGET/release/rg\"\r\n./target/aarch64-unknown-linux-musl/release/rg: ELF 64-bit LSB executable, ARM aarch64, version 1 (SYSV), statically linked, stripped\r\n$ du -sh \"./target/$RUST_TARGET/release/rg\"\r\n4.0M    ./target/aarch64-unknown-linux-musl/release/rg\r\n```"
+      }
+    ]
+  },
+  "snapshot": "snapshots/bfc6845e4c549f1633a8f93bd0f54a3a62d8dc6a4139b8dcfddad1abea8f5e94.json"
+}

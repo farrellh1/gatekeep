@@ -1,0 +1,41 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "go",
+  "source": {
+    "repo": "cli/cli",
+    "number": 13510,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-cli-cli-13510",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "cli",
+      "name": "cli",
+      "default_branch": "trunk",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 13510,
+    "title": "chore(deps): bump golang.org/x/net from 0.54.0 to 0.55.0",
+    "body": "Upgraded `golang.org/x/net` from version `v0.54.0` to `v0.55.0`",
+    "author": {
+      "login": "BagToad",
+      "account_age_days": 2675,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/go.mod b/go.mod\nindex 89f960d62a4..1353e2ef65c 100644\n--- a/go.mod\n+++ b/go.mod\n@@ -180,7 +180,7 @@ require (\n \tgo.opentelemetry.io/otel/trace v1.43.0 // indirect\n \tgo.yaml.in/yaml/v3 v3.0.4 // indirect\n \tgolang.org/x/mod v0.36.0 // indirect\n-\tgolang.org/x/net v0.54.0 // indirect\n+\tgolang.org/x/net v0.55.0 // indirect\n \tgolang.org/x/tools v0.45.0 // indirect\n \tgoogle.golang.org/genproto/googleapis/api v0.0.0-20260316180232-0b37fe3546d5 // indirect\n \tgoogle.golang.org/genproto/googleapis/rpc v0.0.0-20260316180232-0b37fe3546d5 // indirect\ndiff --git a/go.sum b/go.sum\nindex f43b4a5501b..fafd9d6375f 100644\n--- a/go.sum\n+++ b/go.sum\n@@ -581,8 +581,8 @@ golang.org/x/net v0.0.0-20190620200207-3b0461eec859/go.mod h1:z5CRVTTTmAJ677TzLL\n golang.org/x/net v0.0.0-20210226172049-e18ecbb05110/go.mod h1:m0MpNAwzfU5UDzcl9v0D8zg8gWTRqZa9RBIspLL5mdg=\n golang.org/x/net v0.0.0-20220722155237-a158d28d115b/go.mod h1:XRhObCWvk6IyKnWLug+ECip1KBveYUHfp+8e9klMJ9c=\n golang.org/x/net v0.6.0/go.mod h1:2Tu9+aMcznHK/AK1HMvgo6xiTLG5rD5rZLDS+rp2Bjs=\n-golang.org/x/net v0.54.0 h1:2zJIZAxAHV/OHCDTCOHAYehQzLfSXuf/5SoL/Dv6w/w=\n-golang.org/x/net v0.54.0/go.mod h1:Sj4oj8jK6XmHpBZU/zWHw3BV3abl4Kvi+Ut7cQcY+cQ=\n+golang.org/x/net v0.55.0 h1:bcvxaJn3e1U6InsFWt1JUq1aSjnRxLzT2rtD2KfkDF8=\n+golang.org/x/net v0.55.0/go.mod h1:L5U2KuzuOe1lY7Z+aWVIKK6qEeJXnXV9yzGA+WCHJww=\n golang.org/x/oauth2 v0.36.0 h1:peZ/1z27fi9hUOFCAZaHyrpWG5lwe0RJEEEeH0ThlIs=\n golang.org/x/oauth2 v0.36.0/go.mod h1:YDBUJMTkDnJS+A4BP4eZBjCqtokkg1hODuPjwiGPO7Q=\n golang.org/x/sync v0.0.0-20190423024810-112230192c58/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=\n",
+    "changed_files": [
+      "go.mod",
+      "go.sum"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/7840c589458dc662f22478d608d238f9362aca7f3e294d6788f498ade693ad38.json"
+}

@@ -1,0 +1,40 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "java",
+  "source": {
+    "repo": "google/gson",
+    "number": 3005,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-google-gson-3005",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "google",
+      "name": "gson",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 3005,
+    "title": "Fix typo in README (JPMS dependencies section)",
+    "body": "Corrected \"without no-args constructor\" to \"without a no-args constructor\".",
+    "author": {
+      "login": "Eng-YasminKotb",
+      "account_age_days": 1241,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/README.md b/README.md\nindex f5eab3fe26..7bd2a7f5ec 100644\n--- a/README.md\n+++ b/README.md\n@@ -63,8 +63,8 @@ This only applies when running Java 9 or newer.\n - `java.sql` (optional since Gson 2.8.9)\\\n When this module is present, Gson provides default adapters for some SQL date and time classes.\n \n-- `jdk.unsupported`, respectively class `sun.misc.Unsafe` (optional)\\\n-When this module is present, Gson can use the `Unsafe` class to create instances of classes without no-args constructor.\n+- `jdk.unsupported`, respectively, class `sun.misc.Unsafe` (optional)\\\n+When this module is present, Gson can use the `Unsafe` class to create instances of classes without a no-args constructor.\n However, care should be taken when relying on this. `Unsafe` is not available in all environments and its usage has some pitfalls,\n see [`GsonBuilder.disableJdkUnsafe()`](https://javadoc.io/doc/com.google.code.gson/gson/latest/com.google.gson/com/google/gson/GsonBuilder.html#disableJdkUnsafe()).\n \n",
+    "changed_files": [
+      "README.md"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/a74d6725b30c42ffda858599b3b0d38597c35bc86138124cc6975edf470c4285.json"
+}

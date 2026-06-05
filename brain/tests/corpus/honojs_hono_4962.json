@@ -1,0 +1,41 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "typescript",
+  "source": {
+    "repo": "honojs/hono",
+    "number": 4962,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-honojs-hono-4962",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "honojs",
+      "name": "hono",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 4962,
+    "title": "fix(serve-static): normalize all backslashes in file paths, not just the first",
+    "body": "## What\n\n`getFilePathWithoutDefaultDocument` in `src/utils/filepath.ts` normalizes backslash path separators to forward slashes so a requested path resolves consistently regardless of separator style. The replacement uses a **non-global** regex:\n\n```ts\n// foo\\bar.txt => foo/bar.txt\nfilename = filename.replace(/\\\\/, '/')\n```\n\nWithout the `g` flag, only the **first** backslash is converted, so a path with more than one segment is left with mixed separators:\n\n| input | current | expected |\n|---|---|---|\n| `foo\\bar\\baz.txt` | `foo/bar\\baz.txt` | `foo/bar/baz.txt` |\n\nThe remaining `\\` then resolves to the wrong file (or a 404) on back-ends that don't treat `\\` as a path separator. The adjacent comment (`foo\\bar.txt => foo/bar.txt`) shows the intent was to normalize all of them.\n\n## Fix\n\nAdd the `g` flag:\n\n```ts\nfilename = filename.replace(/\\\\/g, '/')\n```\n\nBehaviour is unchanged for any path with zero or one backslash, so all existing tests pass. I also added a regression test covering a multi-segment path (with and without `root`), which returns the broken `foo/bar\\baz.txt` before this change.\n\n## Why it was easy to miss\n\nEvery existing `slashToBackslash(...)` test case contains only a single backslash after the leading-separator strip, so the suite stayed green and the missing flag was invisible on a skim.\n\n## Checks\n\n- `vitest run src/utils/filepath.test.ts` \u2014 green (incl. new regression test)\n- `tsc --noEmit` \u2014 clean\n- `eslint` + `prettier` \u2014 clean\n- Blast radius: one character + one test; no public API change.\n",
+    "author": {
+      "login": "francisjohnjohnston-web",
+      "account_age_days": 112,
+      "is_first_time_contributor": true
+    },
+    "diff": "diff --git a/src/utils/filepath.test.ts b/src/utils/filepath.test.ts\nindex 875ef8cb7..74386b943 100644\n--- a/src/utils/filepath.test.ts\n+++ b/src/utils/filepath.test.ts\n@@ -43,6 +43,17 @@ describe('getFilePathWithoutDefaultDocument', () => {\n     expect(\n       getFilePathWithoutDefaultDocument({ filename: slashToBackslash('./..foo../bar.txt') })\n     ).toBe('..foo../bar.txt')\n+\n+    // Multiple path segments: every backslash must be normalized, not just the first\n+    expect(\n+      getFilePathWithoutDefaultDocument({ filename: slashToBackslash('foo/bar/baz.txt') })\n+    ).toBe('foo/bar/baz.txt')\n+    expect(\n+      getFilePathWithoutDefaultDocument({\n+        filename: slashToBackslash('foo/bar/baz.txt'),\n+        root: 'assets',\n+      })\n+    ).toBe('assets/foo/bar/baz.txt')\n   })\n })\n \ndiff --git a/src/utils/filepath.ts b/src/utils/filepath.ts\nindex 614714831..8b58246b1 100644\n--- a/src/utils/filepath.ts\n+++ b/src/utils/filepath.ts\n@@ -43,7 +43,7 @@ export const getFilePathWithoutDefaultDocument = (\n   filename = filename.replace(/^\\.?[\\/\\\\]/, '')\n \n   // foo\\bar.txt => foo/bar.txt\n-  filename = filename.replace(/\\\\/, '/')\n+  filename = filename.replace(/\\\\/g, '/')\n \n   // assets/ => assets\n   root = root.replace(/\\/$/, '')\n",
+    "changed_files": [
+      "src/utils/filepath.test.ts",
+      "src/utils/filepath.ts"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/24fe8d201003a171727a73bd7a755daa6d81aee7e008db7f561f6e254afa1d89.json"
+}

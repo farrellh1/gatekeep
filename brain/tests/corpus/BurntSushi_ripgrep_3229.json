@@ -1,0 +1,40 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "rust",
+  "source": {
+    "repo": "BurntSushi/ripgrep",
+    "number": 3229,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-BurntSushi-ripgrep-3229",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "BurntSushi",
+      "name": "ripgrep",
+      "default_branch": "master",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 3229,
+    "title": "fix: clippy::derivable_impls",
+    "body": "https://rust-lang.github.io/rust-clippy/master/index.html#/derivable_impls",
+    "author": {
+      "login": "xtqqczze",
+      "account_age_days": 2737,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/crates/core/flags/lowargs.rs b/crates/core/flags/lowargs.rs\nindex 184c96ae81..1941cae45d 100644\n--- a/crates/core/flags/lowargs.rs\n+++ b/crates/core/flags/lowargs.rs\n@@ -229,13 +229,14 @@ pub(crate) enum GenerateMode {\n }\n \n /// Indicates how ripgrep should treat binary data.\n-#[derive(Debug, Eq, PartialEq)]\n+#[derive(Debug, Default, Eq, PartialEq)]\n pub(crate) enum BinaryMode {\n     /// Automatically determine the binary mode to use. Essentially, when\n     /// a file is searched explicitly, then it will be searched using the\n     /// `SearchAndSuppress` strategy. Otherwise, it will be searched in a way\n     /// that attempts to skip binary files as much as possible. That is, once\n     /// a file is classified as binary, searching will immediately stop.\n+    #[default]\n     Auto,\n     /// Search files even when they have binary data, but if a match is found,\n     /// suppress it and emit a warning.\n@@ -251,12 +252,6 @@ pub(crate) enum BinaryMode {\n     AsText,\n }\n \n-impl Default for BinaryMode {\n-    fn default() -> BinaryMode {\n-        BinaryMode::Auto\n-    }\n-}\n-\n /// Indicates what kind of boundary mode to use (line or word).\n #[derive(Debug, Eq, PartialEq)]\n pub(crate) enum BoundaryMode {\n@@ -269,10 +264,11 @@ pub(crate) enum BoundaryMode {\n /// Indicates the buffer mode that ripgrep should use when printing output.\n ///\n /// The default is `Auto`.\n-#[derive(Debug, Eq, PartialEq)]\n+#[derive(Debug, Default, Eq, PartialEq)]\n pub(crate) enum BufferMode {\n     /// Select the buffer mode, 'line' or 'block', automatically based on\n     /// whether stdout is connected to a tty.\n+    #[default]\n     Auto,\n     /// Flush the output buffer whenever a line terminator is seen.\n     ///\n@@ -287,18 +283,13 @@ pub(crate) enum BufferMode {\n     Block,\n }\n \n-impl Default for BufferMode {\n-    fn default() -> BufferMode {\n-        BufferMode::Auto\n-    }\n-}\n-\n /// Indicates the case mode for how to interpret all patterns given to ripgrep.\n ///\n /// The default is `Sensitive`.\n-#[derive(Debug, Eq, PartialEq)]\n+#[derive(Debug, Default, Eq, PartialEq)]\n pub(crate) enum CaseMode {\n     /// Patterns are matched case sensitively. i.e., `a` does not match `A`.\n+    #[default]\n     Sensitive,\n     /// Patterns are matched case insensitively. i.e., `a` does match `A`.\n     Insensitive,\n@@ -308,21 +299,16 @@ pub(crate) enum CaseMode {\n     Smart,\n }\n \n-impl Default for CaseMode {\n-    fn default() -> CaseMode {\n-        CaseMode::Sensitive\n-    }\n-}\n-\n /// Indicates whether ripgrep should include color/hyperlinks in its output.\n ///\n /// The default is `Auto`.\n-#[derive(Debug, Eq, PartialEq)]\n+#[derive(Debug, Default, Eq, PartialEq)]\n pub(crate) enum ColorChoice {\n     /// Color and hyperlinks will never be used.\n     Never,\n     /// Color and hyperlinks will be used only when stdout is connected to a\n     /// tty.\n+    #[default]\n     Auto,\n     /// Color will always be used.\n     Always,\n@@ -335,12 +321,6 @@ pub(crate) enum ColorChoice {\n     Ansi,\n }\n \n-impl Default for ColorChoice {\n-    fn default() -> ColorChoice {\n-        ColorChoice::Auto\n-    }\n-}\n-\n impl ColorChoice {\n     /// Convert this color choice to the corresponding termcolor type.\n     pub(crate) fn to_termcolor(&self) -> termcolor::ColorChoice {\n@@ -529,9 +509,10 @@ impl ContextSeparator {\n /// The encoding mode the searcher will use.\n ///\n /// The default is `Auto`.\n-#[derive(Debug, Eq, PartialEq)]\n+#[derive(Debug, Default, Eq, PartialEq)]\n pub(crate) enum EncodingMode {\n     /// Use only BOM sniffing to auto-detect an encoding.\n+    #[default]\n     Auto,\n     /// Use an explicit encoding forcefully, but let BOM sniffing override it.\n     Some(grep::searcher::Encoding),\n@@ -541,21 +522,16 @@ pub(crate) enum EncodingMode {\n     Disabled,\n }\n \n-impl Default for EncodingMode {\n-    fn default() -> EncodingMode {\n-        EncodingMode::Auto\n-    }\n-}\n-\n /// The regex engine to use.\n ///\n /// The default is `Default`.\n-#[derive(Debug, Eq, PartialEq)]\n+#[derive(Debug, Default, Eq, PartialEq)]\n pub(crate) enum EngineChoice {\n     /// Uses the default regex engine: Rust's `regex` crate.\n     ///\n     /// (Well, technically it uses `regex-automata`, but `regex-automata` is\n     /// the implementation of the `regex` crate.)\n+    #[default]\n     Default,\n     /// Dynamically select the right engine to use.\n     ///\n@@ -566,12 +542,6 @@ pub(crate) enum EngineChoice {\n     PCRE2,\n }\n \n-impl Default for EngineChoice {\n-    fn default() -> EngineChoice {\n-        EngineChoice::Default\n-    }\n-}\n-\n /// The field context separator to use to between metadata for each contextual\n /// line.\n ///\n@@ -651,10 +621,11 @@ pub(crate) enum LoggingMode {\n /// Indicates when to use memory maps.\n ///\n /// The default is `Auto`.\n-#[derive(Debug, Eq, PartialEq)]\n+#[derive(Debug, Default, Eq, PartialEq)]\n pub(crate) enum MmapMode {\n     /// This instructs ripgrep to use heuristics for selecting when to and not\n     /// to use memory maps for searching.\n+    #[default]\n     Auto,\n     /// This instructs ripgrep to always try memory maps when possible. (Memory\n     /// maps are not possible to use in all circumstances, for example, for\n@@ -666,12 +637,6 @@ pub(crate) enum MmapMode {\n     Never,\n }\n \n-impl Default for MmapMode {\n-    fn default() -> MmapMode {\n-        MmapMode::Auto\n-    }\n-}\n-\n /// Represents a source of patterns that ripgrep should search for.\n ///\n /// The reason to unify these is so that we can retain the order of `-f/--flag`\n",
+    "changed_files": [
+      "crates/core/flags/lowargs.rs"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/bfc6845e4c549f1633a8f93bd0f54a3a62d8dc6a4139b8dcfddad1abea8f5e94.json"
+}

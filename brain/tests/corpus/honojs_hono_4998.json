@@ -1,0 +1,41 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "typescript",
+  "source": {
+    "repo": "honojs/hono",
+    "number": 4998,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-honojs-hono-4998",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "honojs",
+      "name": "hono",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 4998,
+    "title": "fix(utils/ipaddr): render the unspecified address binary as \"::\"",
+    "body": "## What this fixes\n\n`convertIPv6BinaryToString(0n)` returns a single `\":\"` instead of the canonical `\"::\"` for the IPv6 unspecified address (all-zero groups).\n\n```ts\nimport { convertIPv6BinaryToString, convertIPv6ToBinary } from './src/utils/ipaddr'\n\nconvertIPv6BinaryToString(0n) // => \":\"   (expected \"::\")\n```\n\nThe resulting string is not a valid IPv6 address (`net.isIP(':')` is `0`) and it does not round-trip: feeding it back into `convertIPv6ToBinary` throws `Invalid IPv6 address: :`.\n\n## Root cause\n\nFor the all-zero value every one of the 8 groups is `\"0\"`, so the longest zero-run spans the whole address. The compression logic replaces that run with a single `\":\"` placeholder via `sections.splice(0, 8, ':')`, leaving `sections === [':']`. Joining that with `\":\"` yields `\":\"`, and the trailing `value.replace(/:{2,}/, '::')` cannot help because there is only one colon to collapse \u2014 the regex only matches runs of two or more colons.\n\nThe existing IPv4-mapped case is already handled with an early return at the top of the function; the all-zero case has the same \"every group compresses\" property and needs the same treatment. The recently merged RFC 5952 work (#4971 for single zero groups, #4973 for expanding `::`) guards `maxZeroEnd - maxZeroStart > 1`, which still routes the all-zero value through the broken 8-group splice.\n\n## The fix\n\nAdd a 5-line early return for `0n` in `convertIPv6BinaryToString`, mirroring the existing IPv4-mapped early return:\n\n```ts\nif (ipV6 === 0n) {\n  return '::'\n}\n```\n\nThis also keeps the ip-restriction middleware's string rule map consistent: the unspecified address now canonicalizes to `\"::\"` rather than the bogus key `\":\"`, so a rule such as `denyList: ['::']` is registered under the correct key.\n\n## Tests\n\nAdded a focused regression test asserting `\"::\"` output and a successful round-trip:\n\n```ts\nit('Should compress the unspecified address (all zero groups) to \"::\"', () => {\n  expect(convertIPv6BinaryToString(0n)).toBe('::')\n  expect(convertIPv6BinaryToString(convertIPv6ToBinary('::'))).toBe('::')\n  expect(convertIPv6ToBinary(convertIPv6BinaryToString(0n))).toBe(0n)\n})\n```\n\nVerified locally:\n\n- `tsc --noEmit` \u2014 exit 0\n- `vitest run src/utils/ipaddr.test.ts` \u2014 41 passed\n- `prettier --check` on the touched files \u2014 clean\n- `eslint` on the touched files \u2014 clean\n\n### The author should do the following, if applicable\n\n- [x] Add tests\n- [x] Run tests\n- [x] `bun run format:fix && bun run lint:fix` to format the code\n- [x] Add [TSDoc](https://tsdoc.org/)/[JSDoc](https://jsdoc.app/about-getting-started) to document the code",
+    "author": {
+      "login": "sarathfrancis90",
+      "account_age_days": 4248,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/src/utils/ipaddr.test.ts b/src/utils/ipaddr.test.ts\nindex c6372d693..fd3f56cf2 100644\n--- a/src/utils/ipaddr.test.ts\n+++ b/src/utils/ipaddr.test.ts\n@@ -136,4 +136,11 @@ describe('convertIPv6ToString', () => {\n   `('convertIPv6ToString($input) === $expected', ({ input, expected }) => {\n     expect(convertIPv6BinaryToString(convertIPv6ToBinary(input))).toBe(expected)\n   })\n+\n+  it('Should compress the unspecified address (all zero groups) to \"::\"', () => {\n+    expect(convertIPv6BinaryToString(0n)).toBe('::')\n+    expect(convertIPv6BinaryToString(convertIPv6ToBinary('::'))).toBe('::')\n+    // The output must round-trip back to the same binary value.\n+    expect(convertIPv6ToBinary(convertIPv6BinaryToString(0n))).toBe(0n)\n+  })\n })\ndiff --git a/src/utils/ipaddr.ts b/src/utils/ipaddr.ts\nindex aea95dcd5..3617aa7d5 100644\n--- a/src/utils/ipaddr.ts\n+++ b/src/utils/ipaddr.ts\n@@ -325,6 +325,12 @@ export const convertIPv4MappedIPv6ToIPv4 = (ipv6binary: bigint): bigint => ipv6b\n  * @return normalized IPv6 Address in string\n  */\n export const convertIPv6BinaryToString = (ipV6: bigint): string => {\n+  if (ipV6 === 0n) {\n+    // The unspecified address compresses every group, which the generic\n+    // logic below would render as a single \":\". Handle it explicitly.\n+    return '::'\n+  }\n+\n   if (isIPv4MappedIPv6(ipV6)) {\n     return `::ffff:${convertIPv4BinaryToString(convertIPv4MappedIPv6ToIPv4(ipV6))}`\n   }\n",
+    "changed_files": [
+      "src/utils/ipaddr.test.ts",
+      "src/utils/ipaddr.ts"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/24fe8d201003a171727a73bd7a755daa6d81aee7e008db7f561f6e254afa1d89.json"
+}

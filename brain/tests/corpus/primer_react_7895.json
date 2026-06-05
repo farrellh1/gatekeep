@@ -1,0 +1,41 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "typescript",
+  "source": {
+    "repo": "primer/react",
+    "number": 7895,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-primer-react-7895",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "primer",
+      "name": "react",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 7895,
+    "title": "Bump @primer/live-region-element to 0.8.0",
+    "body": "<!-- Provide the GitHub issue that this issue closes. Start typing the number or name of the issue after the # below. -->\r\n\r\nBumps @primer/live-region-element to 0.8.0\r\n\r\n<!-- Provide an overview of the changes, including before/after screenshots, videos, or graphs when helpful -->\r\n\r\n### Changelog\r\n\r\n<!-- Under the headings below, list out relevant API changes that this Pull Request introduces -->\r\n\r\n#### Changed\r\n\r\n* Bumps `@primer/live-region-element` from 0.7.1 to 0.8.0\r\n\r\n### Rollout strategy\r\n\r\n<!-- How do you recommend this change to be rolled out? Refer to [contributor docs on Versioning](https://github.com/primer/react/blob/main/contributor-docs/versioning.md) for details. -->\r\n\r\n- [ ] Patch release\r\n- [ ] Minor release\r\n- [ ] Major release; if selected, include a written rollout or migration plan\r\n- [x] None; if selected, include a brief description as to why\r\n\r\n### Testing & Reviewing\r\n\r\n<!-- Describe any specific details to help reviewers test or review this Pull Request -->\r\n<!-- To publish a canary release for integration testing, apply the \"Canary Release\" label to this PR -->\r\n\r\n### Merge checklist\r\n\r\n- [ ] Added/updated tests\r\n- [ ] Added/updated documentation\r\n- [ ] Added/updated previews (Storybook)\r\n- [ ] Changes are [SSR compatible](https://github.com/primer/react/blob/main/contributor-docs/CONTRIBUTING.md#ssr-compatibility)\r\n- [ ] Tested in Chrome\r\n- [ ] Tested in Firefox\r\n- [ ] Tested in Safari\r\n- [ ] Tested in Edge\r\n- [ ] (GitHub staff only) Integration tests pass at github/github-ui ([Learn more about how to run integration tests](https://github.com/github/primer-engineering/blob/main/how-we-work/testing-primer-react-pr-at-dotcom.md))\r\n\r\n<!-- Take a look at the [What we look for in reviews](https://github.com/primer/react/blob/main/contributor-docs/CONTRIBUTING.md#what-we-look-for-in-reviews) section of the contributing guidelines for more information on how we review PRs. -->\r\n",
+    "author": {
+      "login": "TylerJDev",
+      "account_age_days": 3355,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/package-lock.json b/package-lock.json\nindex 48afeb20b36..e5d14d40046 100644\n--- a/package-lock.json\n+++ b/package-lock.json\n@@ -5770,10 +5770,6 @@\n       \"version\": \"1.2.1\",\n       \"license\": \"BSD-3-Clause\"\n     },\n-    \"node_modules/@lit-labs/ssr-dom-shim\": {\n-      \"version\": \"1.2.0\",\n-      \"license\": \"BSD-3-Clause\"\n-    },\n     \"node_modules/@manypkg/find-root\": {\n       \"version\": \"1.1.0\",\n       \"dev\": true,\n@@ -6759,13 +6755,6 @@\n       \"resolved\": \"packages/doc-gen\",\n       \"link\": true\n     },\n-    \"node_modules/@primer/live-region-element\": {\n-      \"version\": \"0.7.1\",\n-      \"license\": \"MIT\",\n-      \"dependencies\": {\n-        \"@lit-labs/ssr-dom-shim\": \"^1.2.0\"\n-      }\n-    },\n     \"node_modules/@primer/mcp\": {\n       \"resolved\": \"packages/mcp\",\n       \"link\": true\n@@ -27720,7 +27709,7 @@\n         \"@lit-labs/react\": \"1.2.1\",\n         \"@oddbird/popover-polyfill\": \"^0.5.2\",\n         \"@primer/behaviors\": \"^1.10.3\",\n-        \"@primer/live-region-element\": \"^0.7.1\",\n+        \"@primer/live-region-element\": \"^0.8.0\",\n         \"@primer/octicons-react\": \"^19.24.1\",\n         \"@primer/primitives\": \"10.x || 11.x\",\n         \"@tanstack/react-virtual\": \"^3.13.18\",\n@@ -27849,10 +27838,25 @@\n         }\n       }\n     },\n+    \"packages/react/node_modules/@lit-labs/ssr-dom-shim\": {\n+      \"version\": \"1.6.0\",\n+      \"resolved\": \"https://registry.npmjs.org/@lit-labs/ssr-dom-shim/-/ssr-dom-shim-1.6.0.tgz\",\n+      \"integrity\": \"sha512-VHb0ALPMTlgKjM6yIxxoQNnpKyUKLD04VzeQdsiXkMqkvYlAHxq9glGLmgbb889/1GsohSOAjvQYoiBppXFqrQ==\",\n+      \"license\": \"BSD-3-Clause\"\n+    },\n     \"packages/react/node_modules/@oddbird/popover-polyfill\": {\n       \"version\": \"0.5.2\",\n       \"license\": \"BSD-3-Clause\"\n     },\n+    \"packages/react/node_modules/@primer/live-region-element\": {\n+      \"version\": \"0.8.0\",\n+      \"resolved\": \"https://registry.npmjs.org/@primer/live-region-element/-/live-region-element-0.8.0.tgz\",\n+      \"integrity\": \"sha512-DIp04IeZvZ+gwCUcBchIvRwJA2PikP/6hnFhcLKgwttcg5OYjBH9t0cZjLnv10Aq1jN0rAFFG+WPMd3bw4hXcA==\",\n+      \"license\": \"MIT\",\n+      \"dependencies\": {\n+        \"@lit-labs/ssr-dom-shim\": \"^1.2.1\"\n+      }\n+    },\n     \"packages/react/node_modules/dotenv\": {\n       \"version\": \"16.6.1\",\n       \"dev\": true,\ndiff --git a/packages/react/package.json b/packages/react/package.json\nindex 42f7a478972..4bf95aa9fa2 100644\n--- a/packages/react/package.json\n+++ b/packages/react/package.json\n@@ -80,7 +80,7 @@\n     \"@lit-labs/react\": \"1.2.1\",\n     \"@oddbird/popover-polyfill\": \"^0.5.2\",\n     \"@primer/behaviors\": \"^1.10.3\",\n-    \"@primer/live-region-element\": \"^0.7.1\",\n+    \"@primer/live-region-element\": \"^0.8.0\",\n     \"@primer/octicons-react\": \"^19.24.1\",\n     \"@primer/primitives\": \"10.x || 11.x\",\n     \"@tanstack/react-virtual\": \"^3.13.18\",\n@@ -204,4 +204,4 @@\n       \"optional\": true\n     }\n   }\n-}\n+}\n\\ No newline at end of file\n",
+    "changed_files": [
+      "package-lock.json",
+      "packages/react/package.json"
+    ],
+    "ci_status": "failure",
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/03856a4eb135e8b97e7412906668f1954d3b8b3ac2a1e8d350fed3bcda7589d6.json"
+}

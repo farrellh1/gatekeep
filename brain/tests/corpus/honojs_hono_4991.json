@@ -1,0 +1,41 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "typescript",
+  "source": {
+    "repo": "honojs/hono",
+    "number": 4991,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-honojs-hono-4991",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "honojs",
+      "name": "hono",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 4991,
+    "title": "refactor(timing): Test/add test for middleware timing",
+    "body": "### The author should do the following, if applicable\r\n\r\n- [x] Add tests\r\n- [x] Run tests\r\n- [x] `bun run format:fix && bun run lint:fix` to format the code\r\n- [x] Add [TSDoc](https://tsdoc.org/)/[JSDoc](https://jsdoc.app/about-getting-started) to document the code\r\n\r\nHello,\r\n\r\n- I add some tests on timing middleware\r\n- prevent return in forEach\r\n",
+    "author": {
+      "login": "iNeoO",
+      "account_age_days": 4264,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/src/middleware/timing/index.test.ts b/src/middleware/timing/index.test.ts\nindex 8b71c428a0..ab928b88aa 100644\n--- a/src/middleware/timing/index.test.ts\n+++ b/src/middleware/timing/index.test.ts\n@@ -103,6 +103,65 @@ describe('Server-Timing API', () => {\n     consoleWarnSpy.mockRestore()\n   })\n \n+  describe('Should handle timing options', async () => {\n+    it('Should handle autoEnd option', async () => {\n+      const autoEndApp = new Hono()\n+\n+      autoEndApp.use('*', timing())\n+      autoEndApp.get('/', (c) => {\n+        startTime(c, 'test')\n+        return c.text('/')\n+      })\n+\n+      const res = await autoEndApp.request('/')\n+\n+      expect(res.status).toBe(200)\n+      expect(res.headers.get('server-timing')).toContain('test;dur=')\n+\n+      const disabledAutoEndApp = new Hono()\n+\n+      disabledAutoEndApp.use('*', timing({ autoEnd: false }))\n+      disabledAutoEndApp.get('/', (c) => {\n+        startTime(c, 'test')\n+        return c.text('/')\n+      })\n+\n+      const disabledRes = await disabledAutoEndApp.request('/')\n+\n+      expect(disabledRes.status).toBe(200)\n+      expect(disabledRes.headers.get('server-timing')).not.toContain('test;dur=')\n+    })\n+\n+    it('Should use enabled function return value', async () => {\n+      const enabledApp = new Hono()\n+      const enabled = vi.fn(() => false)\n+\n+      enabledApp.use('*', timing({ enabled }))\n+      enabledApp.get('/', (c) => c.text('/'))\n+\n+      const res = await enabledApp.request('/')\n+\n+      expect(res.status).toBe(200)\n+      expect(enabled).toHaveBeenCalled()\n+      expect(res.headers.has('server-timing')).toBeFalsy()\n+    })\n+\n+    it('Should handle total false and value-less metrics without description', async () => {\n+      const metricApp = new Hono()\n+\n+      metricApp.use('*', timing({ total: false }))\n+      metricApp.get('/', (c) => {\n+        setMetric(c, 'test')\n+        return c.text('/')\n+      })\n+\n+      const res = await metricApp.request('/')\n+\n+      expect(res.status).toBe(200)\n+      expect(res.headers.get('server-timing')).toBe('test')\n+    })\n+  })\n+\n   describe('Should handle crossOrigin setting', async () => {\n     it('Should do nothing when crossOrigin is falsy', async () => {\n       const crossOriginApp = new Hono()\n@@ -186,5 +245,66 @@ describe('Server-Timing API', () => {\n       expect(res.headers.has('timing-allow-origin')).toBeTruthy()\n       expect(res.headers.get('timing-allow-origin')).toBe('https://example.com')\n     })\n+\n+    it(\"Should use Date.now as backup if performance API isn't available\", async () => {\n+      const originalPerformance = globalThis.performance\n+      // @ts-expect-error disable performance API for testing\n+      delete globalThis.performance\n+      const DateNowSpy = vi.spyOn(Date, 'now').mockReturnValue(123456789)\n+\n+      const app = new Hono().use(timing()).get('/', (c) => {\n+        startTime(c, 'test')\n+        endTime(c, 'test')\n+        return c.text('hello')\n+      })\n+\n+      const res = await app.request('/')\n+      expect(res.status).toBe(200)\n+\n+      expect(DateNowSpy).toHaveBeenCalled()\n+\n+      DateNowSpy.mockRestore()\n+      globalThis.performance = originalPerformance\n+    })\n+  })\n+\n+  describe('Configuration validation', async () => {\n+    it('Should silently warn when no timing metrics are available', async () => {\n+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})\n+\n+      const app = new Hono().get('/', (c) => {\n+        setMetric(c, 'test', 123)\n+        startTime(c, 'test')\n+        endTime(c, 'test')\n+        return c.text('hello')\n+      })\n+\n+      const res = await app.request('/')\n+      expect(res.status).toBe(200)\n+\n+      expect(consoleWarnSpy).toHaveBeenNthCalledWith(\n+        2,\n+        'Metrics not initialized! Please add the `timing()` middleware to this route!'\n+      )\n+\n+      consoleWarnSpy.mockRestore()\n+    })\n+\n+    it('Should silently warn when trying to end a non-existent timer', async () => {\n+      const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})\n+\n+      const app = new Hono().use(timing()).get('/', (c) => {\n+        setMetric(c, 'region', 'europe-west3')\n+        endTime(c, 'nonExistentTimer')\n+        return c.text('hello')\n+      })\n+\n+      const res = await app.request('/')\n+      expect(res.status).toBe(200)\n+\n+      expect(consoleWarnSpy).toHaveBeenCalledWith('Timer \"nonExistentTimer\" does not exist!')\n+\n+      consoleWarnSpy.mockRestore()\n+    })\n   })\n })\ndiff --git a/src/middleware/timing/timing.ts b/src/middleware/timing/timing.ts\nindex 02fa87bbe9..bae9b5a6d9 100644\n--- a/src/middleware/timing/timing.ts\n+++ b/src/middleware/timing/timing.ts\n@@ -102,7 +102,9 @@ export const timing = (config?: TimingOptions): MiddlewareHandler => {\n     }\n \n     if (options.autoEnd) {\n-      timers.forEach((_, key) => endTime(c, key))\n+      timers.forEach((_, key) => {\n+        endTime(c, key)\n+      })\n     }\n \n     const enabled = typeof options.enabled === 'function' ? options.enabled(c) : options.enabled\n",
+    "changed_files": [
+      "src/middleware/timing/index.test.ts",
+      "src/middleware/timing/timing.ts"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/24fe8d201003a171727a73bd7a755daa6d81aee7e008db7f561f6e254afa1d89.json"
+}

@@ -1,0 +1,40 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "go",
+  "source": {
+    "repo": "cli/cli",
+    "number": 13481,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-cli-cli-13481",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "cli",
+      "name": "cli",
+      "default_branch": "trunk",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 13481,
+    "title": "Link to Accessibility category for community discussions instead of ACR",
+    "body": "The Accessibility Conformance Report (ACR) is only valuable in that it\noutlines how GitHub CLI measures up against the accessibility standards.\nHowever, it's confusing to link to that when the CTA in `gh a11y` is to\n\"join the conversation\" and share feedback. In this case, it's more\nappropriate to route users directly to the community discussions instead.\n",
+    "author": {
+      "login": "mxie",
+      "account_age_days": 5598,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/pkg/cmd/accessibility/accessibility.go b/pkg/cmd/accessibility/accessibility.go\nindex c5de6c1a481..98105ec14b1 100644\n--- a/pkg/cmd/accessibility/accessibility.go\n+++ b/pkg/cmd/accessibility/accessibility.go\n@@ -12,7 +12,8 @@ import (\n )\n \n const (\n-\twebURL = \"https://accessibility.github.com/conformance/cli/\"\n+\tacrURL             = \"https://accessibility.github.com/conformance/cli/\"\n+\ta11yDiscussionsURL = \"https://github.com/orgs/community/discussions/categories/accessibility\"\n )\n \n type AccessibilityOptions struct {\n@@ -36,9 +37,9 @@ func NewCmdAccessibility(f *cmdutil.Factory) *cobra.Command {\n \t\tRunE: func(cmd *cobra.Command, args []string) error {\n \t\t\tif opts.Web {\n \t\t\t\tif opts.IO.IsStdoutTTY() {\n-\t\t\t\t\tfmt.Fprintf(opts.IO.ErrOut, \"Opening %s in your browser.\\n\", text.DisplayURL(webURL))\n+\t\t\t\t\tfmt.Fprintf(opts.IO.ErrOut, \"Opening %s in your browser.\\n\", text.DisplayURL(acrURL))\n \t\t\t\t}\n-\t\t\t\treturn opts.Browser.Browse(webURL)\n+\t\t\t\treturn opts.Browser.Browse(acrURL)\n \t\t\t}\n \n \t\t\treturn cmd.Help()\n@@ -138,5 +139,5 @@ func longDescription(io *iostreams.IOStreams) string {\n \t\tfeedback and ideas through GitHub Accessibility feedback channels:\n \n \t\t%[7]s\n-\t`, \"`\", title, color, prompter, spinner, feedback, webURL)\n+\t`, \"`\", title, color, prompter, spinner, feedback, a11yDiscussionsURL)\n }\n",
+    "changed_files": [
+      "pkg/cmd/accessibility/accessibility.go"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/7840c589458dc662f22478d608d238f9362aca7f3e294d6788f498ade693ad38.json"
+}

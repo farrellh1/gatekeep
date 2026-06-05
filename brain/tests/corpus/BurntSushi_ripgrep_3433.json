@@ -1,0 +1,40 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "rust",
+  "source": {
+    "repo": "BurntSushi/ripgrep",
+    "number": 3433,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-BurntSushi-ripgrep-3433",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "BurntSushi",
+      "name": "ripgrep",
+      "default_branch": "master",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 3433,
+    "title": "docs: update GUIDE to use `lexopt`",
+    "body": "... we migrated off of `clap` long ago.\n",
+    "author": {
+      "login": "BurntSushi",
+      "account_age_days": 5699,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/GUIDE.md b/GUIDE.md\nindex 5f1378839..ca951123a 100644\n--- a/GUIDE.md\n+++ b/GUIDE.md\n@@ -269,24 +269,23 @@ patterns while the next section covers file type filtering.\n \n In our ripgrep source code (see [Basics](#basics) for instructions on how to\n get a source archive to search), let's say we wanted to see which things depend\n-on `clap`, our argument parser.\n+on `lexopt`, our argument parser.\n \n We could do this:\n \n ```\n-$ rg clap\n+$ rg lexopt\n [lots of results]\n ```\n \n But this shows us many things, and we're only interested in where we wrote\n-`clap` as a dependency. Instead, we could limit ourselves to TOML files, which\n-is how dependencies are communicated to Rust's build tool, Cargo:\n+`lexopt` as a dependency. Instead, we could limit ourselves to TOML files,\n+which is how dependencies are communicated to Rust's build tool, Cargo:\n \n ```\n-$ rg clap -g '*.toml'\n+$ rg lexopt -g '*.toml'\n Cargo.toml\n-35:clap = \"2.26\"\n-51:clap = \"2.26\"\n+57:lexopt = \"0.3.0\"\n ```\n \n The `-g '*.toml'` syntax says, \"make sure every file searched matches this\n@@ -296,7 +295,7 @@ shell from expanding the `*`.\n If we wanted, we could tell ripgrep to search anything *but* `*.toml` files:\n \n ```\n-$ rg clap -g '!*.toml'\n+$ rg lexopt -g '!*.toml'\n [lots of results]\n ```\n \n@@ -312,7 +311,7 @@ is, later globs will override earlier globs. For example, the following command\n will search only `*.toml` files:\n \n ```\n-$ rg clap -g '!*.toml' -g '*.toml'\n+$ rg lexopt -g '!*.toml' -g '*.toml'\n ```\n \n Interestingly, reversing the order of the globs in this case will match\n@@ -364,13 +363,13 @@ $ rg 'int main' -tc\n Just as you can write blacklist globs, you can blacklist file types too:\n \n ```\n-$ rg clap --type-not rust\n+$ rg lexopt --type-not rust\n ```\n \n or, more succinctly,\n \n ```\n-$ rg clap -Trust\n+$ rg lexopt -Trust\n ```\n \n That is, `-t` means \"include files of this type\" where as `-T` means \"exclude\n",
+    "changed_files": [
+      "GUIDE.md"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/bfc6845e4c549f1633a8f93bd0f54a3a62d8dc6a4139b8dcfddad1abea8f5e94.json"
+}

@@ -1,0 +1,40 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "java",
+  "source": {
+    "repo": "google/gson",
+    "number": 3026,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-google-gson-3026",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "google",
+      "name": "gson",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 3026,
+    "title": "Remove obsolete native-maven-plugin JUnit workaround",
+    "body": "[Version 1.1.0](https://github.com/graalvm/native-build-tools/releases/tag/1.1.0) (which is used since #3032) added the missing built-in configuration for `--initialize-at-build-time=...MethodSegmentResolver` which was added as workaround in #2969; therefore I have removed that workaround again.\r\n",
+    "author": {
+      "login": "Marcono1234",
+      "account_age_days": 4087,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/test-graal-native-image/pom.xml b/test-graal-native-image/pom.xml\nindex 3689fc54bc..1b165ab05d 100644\n--- a/test-graal-native-image/pom.xml\n+++ b/test-graal-native-image/pom.xml\n@@ -150,7 +150,6 @@\n                   <buildArgs>\n                     <!-- Show stack traces to make troubleshooting build issues easier -->\n                     <buildArg>-H:+ReportExceptionStackTraces</buildArg>\n-                    <buildArg>--initialize-at-build-time=org.junit.jupiter.engine.discovery.MethodSegmentResolver</buildArg>\n                   </buildArgs>\n                 </configuration>\n               </execution>\n",
+    "changed_files": [
+      "test-graal-native-image/pom.xml"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/a74d6725b30c42ffda858599b3b0d38597c35bc86138124cc6975edf470c4285.json"
+}

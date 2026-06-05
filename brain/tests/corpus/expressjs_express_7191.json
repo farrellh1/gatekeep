@@ -1,0 +1,40 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "javascript",
+  "source": {
+    "repo": "expressjs/express",
+    "number": 7191,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-expressjs-express-7191",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "expressjs",
+      "name": "express",
+      "default_branch": "master",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 7191,
+    "title": "fixed typo in history.md",
+    "body": "This pull request fixes two small typos in history.md file\r\nThank you",
+    "author": {
+      "login": "opensourcezeal",
+      "account_age_days": 79,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/History.md b/History.md\nindex 571cd0e47c5..5edd589a78f 100644\n--- a/History.md\n+++ b/History.md\n@@ -571,7 +571,7 @@ This is the first Express 5.0 alpha release, based off 4.10.1.\n   * deps: utils-merge@1.0.1\n   * deps: vary@~1.1.2\n     - perf: improve header token parsing speed\n-  * perf: re-use options object when generating ETags\n+  * perf: reuse options object when generating ETags\n   * perf: remove dead `.charset` set in `res.jsonp`\n \n 4.15.5 / 2017-09-24\n@@ -3290,7 +3290,7 @@ Closes #805\n   * Added options support to `res.clearCookie()`\n   * Added `res.helpers()` as alias of `res.locals()`\n   * Added; json defaults to UTF-8 with `res.send()`. Closes #632. [Daniel   * Dependency `connect >= 1.4.0`\n-  * Changed; auto set Content-Type in res.attachement [Aaron Heckmann]\n+  * Changed; auto set Content-Type in res.attachment [Aaron Heckmann]\n   * Renamed \"cache views\" to \"view cache\". Closes #628\n   * Fixed caching of views when using several apps. Closes #637\n   * Fixed gotcha invoking `app.param()` callbacks once per route middleware.\n",
+    "changed_files": [
+      "History.md"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/f015d1290c488b1031fb1254dc36e883b48c5c77239ddfe437307cc03f43d6c2.json"
+}

@@ -1,0 +1,41 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "java",
+  "source": {
+    "repo": "google/gson",
+    "number": 3034,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-google-gson-3034",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "google",
+      "name": "gson",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 3034,
+    "title": "Fix: peekNumber rejects some numerals like 2^64 + \"0\"",
+    "body": "Issue: the \"leading zero\" logic in `peekNumber`, which tries to reject octal representations, does not account for long overflows. This results in valid numeric literals like \"184467440737095516160\" (2^64 + \"0\") being rejected in `STRICT` parsing mode.\r\n\r\nThe easiest way to reproduce this is to serialize and deserialize a `BigInteger` with the value above.\r\n\r\nThis is a minimal fix which adds an overflow check to the leading zero condition.",
+    "author": {
+      "login": "ogolberg",
+      "account_age_days": 5508,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/gson/src/main/java/com/google/gson/stream/JsonReader.java b/gson/src/main/java/com/google/gson/stream/JsonReader.java\nindex eaed974527..8a15271df6 100644\n--- a/gson/src/main/java/com/google/gson/stream/JsonReader.java\n+++ b/gson/src/main/java/com/google/gson/stream/JsonReader.java\n@@ -853,7 +853,7 @@ private int peekNumber() throws IOException {\n             value = -(c - '0');\n             last = NUMBER_CHAR_DIGIT;\n           } else if (last == NUMBER_CHAR_DIGIT) {\n-            if (value == 0) {\n+            if (fitsInLong && value == 0) {\n               return PEEKED_NONE; // Leading '0' prefix is not allowed (since it could be octal).\n             }\n             long newValue = value * 10 - (c - '0');\ndiff --git a/gson/src/test/java/com/google/gson/stream/JsonReaderTest.java b/gson/src/test/java/com/google/gson/stream/JsonReaderTest.java\nindex e7916ecf37..e8d546b577 100644\n--- a/gson/src/test/java/com/google/gson/stream/JsonReaderTest.java\n+++ b/gson/src/test/java/com/google/gson/stream/JsonReaderTest.java\n@@ -820,6 +820,20 @@ public void testNumberWithOctalPrefix() throws IOException {\n     assertStrictError(e, expectedLocation);\n   }\n \n+  /**\n+   * Regression test for a bug where {@code peekNumber} rejected a valid numeric literal whose\n+   * prefix happened to be a multiple of 2<sup>64</sup>. The {@code long} accumulator wraps to\n+   * exactly zero in that case, which the old \"leading zero\" guard misread as an octal prefix.\n+   */\n+  @Test\n+  public void testNumberLongAccumulatorOverflowsToZero() throws IOException {\n+    String number = \"184467440737095516160\";\n+    JsonReader reader = new JsonReader(reader(number));\n+    reader.setStrictness(Strictness.STRICT);\n+    assertThat(reader.peek()).isEqualTo(NUMBER);\n+    assertThat(reader.nextString()).isEqualTo(number);\n+  }\n+\n   @Test\n   public void testBooleans() throws IOException {\n     JsonReader reader = new JsonReader(reader(\"[true,false]\"));\n",
+    "changed_files": [
+      "gson/src/main/java/com/google/gson/stream/JsonReader.java",
+      "gson/src/test/java/com/google/gson/stream/JsonReaderTest.java"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/a74d6725b30c42ffda858599b3b0d38597c35bc86138124cc6975edf470c4285.json"
+}

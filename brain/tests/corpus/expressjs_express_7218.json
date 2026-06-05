@@ -1,0 +1,41 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "javascript",
+  "source": {
+    "repo": "expressjs/express",
+    "number": 7218,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-expressjs-express-7218",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "expressjs",
+      "name": "express",
+      "default_branch": "master",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 7218,
+    "title": "ci: build express with node.js v26",
+    "body": "",
+    "author": {
+      "login": "shivarm",
+      "account_age_days": 1712,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml\nindex 3c9ad9cc12e..6e10eaa7189 100644\n--- a/.github/workflows/ci.yml\n+++ b/.github/workflows/ci.yml\n@@ -46,7 +46,7 @@ jobs:\n       fail-fast: false\n       matrix:\n         os: [ubuntu-latest, windows-latest]\n-        node-version: [18, 19, 20, 21, 22, 23, 24, 25]\n+        node-version: [18, 19, 20, 21, 22, 23, 24, 25, 26]\n         # Node.js release schedule: https://nodejs.org/en/about/releases/\n \n     name: Node.js ${{ matrix.node-version }} - ${{matrix.os}}\ndiff --git a/package.json b/package.json\nindex 8c9efb5609d..16012b61c4f 100644\n--- a/package.json\n+++ b/package.json\n@@ -72,7 +72,7 @@\n     \"hbs\": \"4.2.0\",\n     \"marked\": \"^15.0.3\",\n     \"method-override\": \"3.0.0\",\n-    \"mocha\": \"^10.7.3\",\n+    \"mocha\": \"^11.7.5\",\n     \"morgan\": \"1.10.1\",\n     \"nyc\": \"^17.1.0\",\n     \"pbkdf2-password\": \"1.2.1\",\n",
+    "changed_files": [
+      ".github/workflows/ci.yml",
+      "package.json"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/f015d1290c488b1031fb1254dc36e883b48c5c77239ddfe437307cc03f43d6c2.json"
+}

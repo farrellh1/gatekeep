@@ -1,0 +1,41 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "ruby",
+  "source": {
+    "repo": "jekyll/jekyll",
+    "number": 9889,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-jekyll-jekyll-9889",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "jekyll",
+      "name": "jekyll",
+      "default_branch": "master",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 9889,
+    "title": "Fix flaky test that depends on current minute",
+    "body": "<!--\r\n  Thanks for creating a Pull Request! Before you submit, please make sure\r\n  you've done the following:\r\n\r\n  - I read the contributing document at https://jekyllrb.com/docs/contributing/\r\n-->\r\n\r\n<!--\r\n  Make our lives easier! Choose one of the following by uncommenting it:\r\n-->\r\n\r\nThis is a test fix.\r\n\r\n<!-- This is a \ud83d\udc1b bug fix. -->\r\n<!-- This is a \ud83d\ude4b feature or enhancement. -->\r\n<!-- This is a \ud83d\udd26 documentation change. -->\r\n<!-- This is a \ud83d\udd28 code refactoring. -->\r\n\r\n<!--\r\n  Before you submit this pull request, make sure to have a look at the following\r\n  checklist. If you don't know how to do some of these, that's fine! Submit\r\n  your pull request and we will help you out on the way.\r\n\r\n  - I've added tests (if it's a bug, feature or enhancement)\r\n  - I've adjusted the documentation (if it's a feature or enhancement)\r\n  - The test suite passes locally (run `script/cibuild` to verify this)\r\n-->\r\n\r\n## Summary\r\n\r\nFix flaky test that depends on current minute number. \r\n\r\n## Context\r\n\r\nSometimes, the Cucumber tests suite fails on GitHub Actions at the scenario `Use site.time variable`. For example, see this run: https://github.com/jekyll/jekyll/actions/runs/17277324576/job/49037269833#step:5:473\r\n\r\nI've tracked down the problem and can reproduce it locally executing:\r\n\r\n```bash\r\nwhile bash script/cucumber features/site_data.feature:34; do :; done\r\n```\r\n\r\nIn one or two minutes at most, the test eventually fails.\r\n\r\nIt's flaky because it depends on the concordance of the current minute before and after the build. The build takes, in my local environment, from ~150 ms to 1s, so the medium probablity of failure is ~1%.\r\n\r\nThe fix proposes the usage of a time range with 3 seconds of tolerance. The unused helper functions have been removed.",
+    "author": {
+      "login": "mondeja",
+      "account_age_days": 3509,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/features/step_definitions.rb b/features/step_definitions.rb\nindex b8c0e35b42a..7530de9c1dd 100644\n--- a/features/step_definitions.rb\n+++ b/features/step_definitions.rb\n@@ -363,7 +363,21 @@\n #\n \n Then(%r!^I should see today's time in \"(.*)\"$!) do |file|\n-  step %(I should see \"#{seconds_agnostic_time(Time.now)}\" in \"#{file}\")\n+  seconds = 3\n+  build_time = Time.now\n+  content = file_contents(file)\n+  date_time_pattern = /(\\d{4}-\\d{2}-\\d{2}\\s\\d+:\\d{2}:\\d{2})/\n+  match_data = content.match(date_time_pattern)\n+  expect(match_data).not_to be_nil, \"No date-time pattern found in #{file}\"\n+  date_time_str = match_data.captures\n+  file_time = Time.parse(\"#{date_time_str}\")\n+  time_difference = (build_time - file_time).abs\n+  expect(time_difference).to be <= seconds, <<~MSG\n+    Expected time in #{file} to be within #{seconds} seconds of build time.\n+    Build time: #{build_time}\n+    File time:  #{file_time}\n+    Difference: #{time_difference} seconds\n+  MSG\n end\n \n #\ndiff --git a/features/support/helpers.rb b/features/support/helpers.rb\nindex 66e690afe02..e7724f4c36e 100644\n--- a/features/support/helpers.rb\n+++ b/features/support/helpers.rb\n@@ -145,25 +145,6 @@ def file_contents(path)\n \n #\n \n-def seconds_agnostic_datetime(datetime = Time.now)\n-  date, time, zone = datetime.to_s.split(\" \")\n-  time = seconds_agnostic_time(time)\n-\n-  [\n-    Regexp.escape(date),\n-    \"#{time}:\\\\d{2}\",\n-    Regexp.escape(zone),\n-  ].join(\"\\\\ \")\n-end\n-\n-#\n-\n-def seconds_agnostic_time(time)\n-  time = time.strftime(\"%H:%M:%S\") if time.is_a?(Time)\n-  hour, minutes, = time.split(\":\")\n-  \"#{hour}:#{minutes}\"\n-end\n-\n # Helper method for Windows\n def dst_active?\n   config = Jekyll.configuration(\"quiet\" => true)\n",
+    "changed_files": [
+      "features/step_definitions.rb",
+      "features/support/helpers.rb"
+    ],
+    "ci_status": "success",
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/bc5b9a4e2c87e9e2ee71749edad9c07d08c2c7982b58a7747208c2294cb640eb.json"
+}

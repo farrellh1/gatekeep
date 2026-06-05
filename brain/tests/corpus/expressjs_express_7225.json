@@ -1,0 +1,41 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "javascript",
+  "source": {
+    "repo": "expressjs/express",
+    "number": 7225,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-expressjs-express-7225",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "expressjs",
+      "name": "express",
+      "default_branch": "master",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 7225,
+    "title": "release: 4.22.2",
+    "body": "## What's Changed\r\n- Closes the `req.query` array parsing regression introduced in 4.22.0 once qs 6.14.1 was published. The fix sets `arrayLimit: 1000` on the extended query parser. https://github.com/expressjs/express/commit/8d09bfe6d88983da5c3e12cfdd54782c4dc675db\r\n- Coordinated `body-parser@~1.20.5` + `qs@~6.15.1` bumps so express and body-parser dedup to a single qs install.\r\n\r\n**Full Changelog**: https://github.com/expressjs/express/compare/v4.22.1...4.x\r\n",
+    "author": {
+      "login": "jonchurch",
+      "account_age_days": 4006,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/History.md b/History.md\nindex 2567fea9074..8a8443d87a3 100644\n--- a/History.md\n+++ b/History.md\n@@ -1,7 +1,7 @@\n-unreleased\n+4.22.2 / 2026-05-011\n ==========\n \n-* fix: restore >20 array parsing for req.query repeated keys (8d09bfe6)\n+* fix: restore >20 array parsing for `req.query` repeated keys ([`8d09bfe6`](https://github.com/expressjs/express/commit/8d09bfe6d88983da5c3e12cfdd54782c4dc675db))\n   * This also unifies array-cap behavior across notations. Indexed notation (`a[0]=...`) was historically capped at qs's default `arrayLimit` of 20 even in older qs versions; after this change it also allows up to 1000 items.\n * deps: qs@~6.15.1\n * deps: body-parser@~1.20.5\ndiff --git a/package.json b/package.json\nindex fab5f2484cf..041af8856cc 100644\n--- a/package.json\n+++ b/package.json\n@@ -1,7 +1,7 @@\n {\n   \"name\": \"express\",\n   \"description\": \"Fast, unopinionated, minimalist web framework\",\n-  \"version\": \"4.22.1\",\n+  \"version\": \"4.22.2\",\n   \"author\": \"TJ Holowaychuk <tj@vision-media.ca>\",\n   \"contributors\": [\n     \"Aaron Heckmann <aaron.heckmann+github@gmail.com>\",\n",
+    "changed_files": [
+      "History.md",
+      "package.json"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/5ab03e3dd8fdbf4b263559d69b6d42e465321c2fe3e7889859ca2fde699b60a1.json"
+}

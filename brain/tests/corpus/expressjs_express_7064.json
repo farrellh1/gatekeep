@@ -1,0 +1,42 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "javascript",
+  "source": {
+    "repo": "expressjs/express",
+    "number": 7064,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-expressjs-express-7064",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "expressjs",
+      "name": "express",
+      "default_branch": "master",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 7064,
+    "title": "docs: replace dummy with placeholder in example comments",
+    "body": "## Summary\n\n- Replaces the term dummy with placeholder in three example file comments\n- No functional changes - these are comment-only updates\n- Aligns with inclusive language best practices\n\n### Files changed\n\n- examples/ejs/index.js: Dummy users to Placeholder users\n- examples/route-middleware/index.js: Dummy users to Placeholder users\n- examples/auth/index.js: dummy database to placeholder database\n\n## Context\n\nThe Inclusive Naming Initiative lists dummy as a Tier 3 term to replace when possible. Placeholder is a more precise and neutral alternative that better describes the purpose of the test data in these examples.\n\n## Test plan\n\n- No tests affected - changes are limited to code comments in example files\n- Verified no other occurrences of dummy exist in the examples directory",
+    "author": {
+      "login": "samtuckerdavis",
+      "account_age_days": 1195,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/examples/auth/index.js b/examples/auth/index.js\nindex 40b73e6de16..7c4a572f9d3 100644\n--- a/examples/auth/index.js\n+++ b/examples/auth/index.js\n@@ -38,7 +38,7 @@ app.use(function(req, res, next){\n   next();\n });\n \n-// dummy database\n+// placeholder database\n \n var users = {\n   tj: { name: 'tj' }\ndiff --git a/examples/ejs/index.js b/examples/ejs/index.js\nindex 0940d0624fb..05b451b664b 100644\n--- a/examples/ejs/index.js\n+++ b/examples/ejs/index.js\n@@ -35,7 +35,7 @@ app.use(express.static(path.join(__dirname, 'public')));\n // ex: res.render('users.html').\n app.set('view engine', 'html');\n \n-// Dummy users\n+// Placeholder users\n var users = [\n   { name: 'tobi', email: 'tobi@learnboost.com' },\n   { name: 'loki', email: 'loki@learnboost.com' },\ndiff --git a/examples/route-middleware/index.js b/examples/route-middleware/index.js\nindex 44ec13a95b8..66df511347b 100644\n--- a/examples/route-middleware/index.js\n+++ b/examples/route-middleware/index.js\n@@ -15,7 +15,7 @@ var app = express();\n //     curl http://localhost:3000/user/1/edit (unauthorized since this is not you)\n //     curl -X DELETE http://localhost:3000/user/0 (unauthorized since you are not an admin)\n \n-// Dummy users\n+// Placeholder users\n var users = [\n   { id: 0, name: 'tj', email: 'tj@vision-media.ca', role: 'member' }\n   , { id: 1, name: 'ciaran', email: 'ciaranj@gmail.com', role: 'member' }\n",
+    "changed_files": [
+      "examples/auth/index.js",
+      "examples/ejs/index.js",
+      "examples/route-middleware/index.js"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/f015d1290c488b1031fb1254dc36e883b48c5c77239ddfe437307cc03f43d6c2.json"
+}

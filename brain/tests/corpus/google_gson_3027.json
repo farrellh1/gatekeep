@@ -1,0 +1,41 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "java",
+  "source": {
+    "repo": "google/gson",
+    "number": 3027,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-google-gson-3027",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "google",
+      "name": "gson",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 3027,
+    "title": "fix(proto): cap bitFieldXXX_ index to prevent OOM in LegacyProtoTypeAdapterFactory",
+    "body": "## Summary\n\n`LegacyProtoTypeAdapterFactory.buildPresenceMaskFromBitFields()` reads `bitField<N>_` entries from the JSON stream to reconstruct a presence bitmask. The index `N` was previously used without bound checks: calling `BigInteger.shiftLeft(N * 32)` with a large attacker-controlled `N` allocates `N / 8` bytes on the heap, making it trivial to OOM the JVM with a small JSON payload (e.g. `{\"bitField67108863_\": 1}`).\n\n## Fix\n\nCompute `maxGroupIndex = ceil(fieldWithPresenceToBitIndex.size() / 32)`, which is the largest bit-field group index that can influence any presence bit actually checked by this adapter. Any `bitField<N>_` entry with `N > maxGroupIndex` is silently skipped \u2014 it cannot affect deserialization correctness and only exists to exhaust memory.\n\n## Test\n\nAdded `deserialize_oversizedBitFieldIndex_doesNotCauseOom` to `LegacyProtoTypeAdapterFactoryTest`, which feeds a crafted JSON with `bitField67108863_` and asserts that the valid field `optionalInt32_` is still correctly deserialized without any heap pressure.\n\n## Impact\n\nAny application that deserializes untrusted JSON using `LegacyProtoTypeAdapterFactory` is vulnerable. A single JSON field with a large index is enough to trigger the OOM.",
+    "author": {
+      "login": "adilburaksen",
+      "account_age_days": 2429,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/proto/src/main/java/com/google/gson/protobuf/LegacyProtoTypeAdapterFactory.java b/proto/src/main/java/com/google/gson/protobuf/LegacyProtoTypeAdapterFactory.java\nindex 2bc28f2a5f..66b45e0aa1 100644\n--- a/proto/src/main/java/com/google/gson/protobuf/LegacyProtoTypeAdapterFactory.java\n+++ b/proto/src/main/java/com/google/gson/protobuf/LegacyProtoTypeAdapterFactory.java\n@@ -203,7 +203,7 @@ private static String javaName(String name) {\n     // The field `private int bitField0_` tracks presence for the first 32 fields that have\n     // presence, with bit 0 corresponding to the first field, and so on. The field `private int\n     // bitField1_` tracks presence for the next 32 fields with presence, and so on.\n-    private static final Pattern BIT_FIELD_PATTERN = Pattern.compile(\"bitField(\\\\d{1,9})_\");\n+    private static final Pattern BIT_FIELD_PATTERN = Pattern.compile(\"bitField(\\\\d{1,4})_\");\n \n     @Override\n     public T read(JsonReader in) throws IOException {\ndiff --git a/proto/src/test/java/com/google/gson/protobuf/functional/LegacyProtoTypeAdapterFactoryTest.java b/proto/src/test/java/com/google/gson/protobuf/functional/LegacyProtoTypeAdapterFactoryTest.java\nindex 349bb84c37..447304d770 100644\n--- a/proto/src/test/java/com/google/gson/protobuf/functional/LegacyProtoTypeAdapterFactoryTest.java\n+++ b/proto/src/test/java/com/google/gson/protobuf/functional/LegacyProtoTypeAdapterFactoryTest.java\n@@ -430,6 +430,16 @@ public void deserializeNull() {\n     assertThat(GSON_WITH_LEGACY_ADAPTER.fromJson(\"null\", TestAllTypes.class)).isNull();\n   }\n \n+  @Test\n+  public void deserialize_oversizedBitFieldIndex_doesNotCauseOom() {\n+    // A crafted JSON with a large bitFieldXXX_ index (>4 digits) previously caused\n+    // BigInteger.shiftLeft() to allocate hundreds of MB. The fix tightens BIT_FIELD_PATTERN\n+    // to \\d{1,4}, so indices beyond 9999 no longer match and are treated as unknown fields.\n+    String json = \"{\\\"bitField67108863_\\\": 1, \\\"optionalInt32_\\\": 42}\";\n+    TestAllTypes result = GSON_WITH_LEGACY_ADAPTER.fromJson(json, TestAllTypes.class);\n+    assertThat(result.getOptionalInt32()).isEqualTo(42);\n+  }\n+\n   private static Gson applyFieldNamingPolicy(Gson gson, FieldNamingPolicy fieldNamingPolicy) {\n     return gson.newBuilder().setFieldNamingPolicy(fieldNamingPolicy).create();\n   }\n",
+    "changed_files": [
+      "proto/src/main/java/com/google/gson/protobuf/LegacyProtoTypeAdapterFactory.java",
+      "proto/src/test/java/com/google/gson/protobuf/functional/LegacyProtoTypeAdapterFactoryTest.java"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/a74d6725b30c42ffda858599b3b0d38597c35bc86138124cc6975edf470c4285.json"
+}

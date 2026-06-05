@@ -1,0 +1,40 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "rust",
+  "source": {
+    "repo": "BurntSushi/ripgrep",
+    "number": 3193,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-BurntSushi-ripgrep-3193",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "BurntSushi",
+      "name": "ripgrep",
+      "default_branch": "master",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 3193,
+    "title": "ignore/types: add ssa",
+    "body": "This PR adds support for [.ssa](https://en.wikipedia.org/wiki/Static_single-assignment_form) files as read by [qbe](https://c9x.me/compile/):\r\n\r\nSee: https://c9x.me/compile/doc/il.html#Input-Files",
+    "author": {
+      "login": "jgarte",
+      "account_age_days": 2663,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/crates/ignore/src/default_types.rs b/crates/ignore/src/default_types.rs\nindex 4e060b76ae..de639783e3 100644\n--- a/crates/ignore/src/default_types.rs\n+++ b/crates/ignore/src/default_types.rs\n@@ -274,6 +274,7 @@ pub(crate) const DEFAULT_TYPES: &[(&[&str], &[&str])] = &[\n     (&[\"spark\"], &[\"*.spark\"]),\n     (&[\"spec\"], &[\"*.spec\"]),\n     (&[\"sql\"], &[\"*.sql\", \"*.psql\"]),\n+    (&[\"ssa\"], &[\"*.ssa\"]),\n     (&[\"stylus\"], &[\"*.styl\"]),\n     (&[\"sv\"], &[\"*.v\", \"*.vg\", \"*.sv\", \"*.svh\", \"*.h\"]),\n     (&[\"svelte\"], &[\"*.svelte\", \"*.svelte.ts\"]),\n",
+    "changed_files": [
+      "crates/ignore/src/default_types.rs"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/bfc6845e4c549f1633a8f93bd0f54a3a62d8dc6a4139b8dcfddad1abea8f5e94.json"
+}

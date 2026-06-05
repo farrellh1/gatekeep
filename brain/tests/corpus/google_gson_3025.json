@@ -1,0 +1,40 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "java",
+  "source": {
+    "repo": "google/gson",
+    "number": 3025,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-google-gson-3025",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "google",
+      "name": "gson",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 3025,
+    "title": "docs: update Gson jar download link in README",
+    "body": "**Purpose:-**\r\n\r\nFixes an outdated and potentially misleading link in the README for Gson JAR downloads.\r\n\r\n**Description:-**\r\n\r\nThe current README includes a link to:\r\n\r\n```\r\nhttps://maven-badges.herokuapp.com/maven-central/com.google.code.gson/gson\r\n```\r\n\r\nThis is a third-party badge service and not an official Maven Central page, which may confuse users looking for reliable dependency or download information.\r\n\r\nThis pull request updates the link to the official Maven Central page maintained by Sonatype:\r\n\r\n```\r\nhttps://central.sonatype.com/artifact/com.google.code.gson/gson\r\n```\r\n\r\nThis ensures users are directed to up-to-date source for Gson artifacts.",
+    "author": {
+      "login": "anish-anantharaman",
+      "account_age_days": 1110,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/README.md b/README.md\nindex 87d02f508e..4484a31e43 100644\n--- a/README.md\n+++ b/README.md\n@@ -44,7 +44,7 @@ Maven:\n </dependency>\n ```\n \n-[Gson jar downloads](https://maven-badges.herokuapp.com/maven-central/com.google.code.gson/gson) are available from Maven Central.\n+[Gson jar downloads](https://central.sonatype.com/artifact/com.google.code.gson/gson) are available from Maven Central.\n \n ![Build Status](https://github.com/google/gson/actions/workflows/build.yml/badge.svg)\n \n",
+    "changed_files": [
+      "README.md"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/a74d6725b30c42ffda858599b3b0d38597c35bc86138124cc6975edf470c4285.json"
+}

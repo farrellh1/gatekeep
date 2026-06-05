@@ -1,0 +1,40 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "typescript",
+  "source": {
+    "repo": "primer/react",
+    "number": 7916,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-primer-react-7916",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "primer",
+      "name": "react",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 7916,
+    "title": "ci: add npm workflow to pack packages",
+    "body": "<!-- Provide the GitHub issue that this issue closes. Start typing the number or name of the issue after the # below. -->\r\n\r\nPart of https://github.com/github/primer/issues/6480\r\n\r\n<!-- Provide an overview of the changes, including before/after screenshots, videos, or graphs when helpful -->\r\n\r\nAdd a new workflow, `npm`, that will upload the `npm pack` artifacts for public packages. This can then be consumed by repos where we would like to test instead of us needing to publish a canary version\r\n\r\n### Changelog\r\n\r\n<!-- Under the headings below, list out relevant API changes that this Pull Request introduces -->\r\n\r\n#### New\r\n\r\n<!-- List of things added in this PR -->\r\n\r\n- Add a new workflow, `npm`, for uploading `npm pack` package artifacts\r\n\r\n#### Changed\r\n\r\n<!-- List of things changed in this PR -->\r\n\r\n#### Removed\r\n\r\n<!-- List of things removed in this PR -->\r\n\r\n### Rollout strategy\r\n\r\n<!-- How do you recommend this change to be rolled out? Refer to [contributor docs on Versioning](https://github.com/primer/react/blob/main/contributor-docs/versioning.md) for details. -->\r\n\r\n- [x] None; if selected, include a brief description as to why\r\n\r\nThis is adding a workflow for GitHub Actions",
+    "author": {
+      "login": "joshblack",
+      "account_age_days": 4826,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/.github/workflows/npm.yml b/.github/workflows/npm.yml\nnew file mode 100644\nindex 00000000000..ff8736542eb\n--- /dev/null\n+++ b/.github/workflows/npm.yml\n@@ -0,0 +1,75 @@\n+name: npm\n+on:\n+  pull_request:\n+  workflow_dispatch:\n+\n+concurrency:\n+  group: ${{ github.workflow }}-${{ github.ref }}\n+  cancel-in-progress: true\n+\n+jobs:\n+  pack:\n+    runs-on: ubuntu-latest\n+    steps:\n+      - name: Checkout repository\n+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd\n+      - name: Set up Node.js\n+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e\n+        with:\n+          node-version-file: '.nvmrc'\n+          cache: 'npm'\n+      - name: Set up turbo cache\n+        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb\n+        with:\n+          path: .turbo\n+          key: ${{ runner.os }}-turbo-${{ github.job }}-default-${{ github.run_id }}-${{ github.run_attempt }}\n+          restore-keys: |\n+            ${{ runner.os }}-turbo-${{ github.job }}-default-\n+            ${{ runner.os }}-turbo-${{ github.job }}-\n+            ${{ runner.os }}-turbo-\n+      - name: Install dependencies\n+        run: npm ci\n+      - name: Build\n+        run: npm run build\n+      - name: Pack public packages\n+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0\n+        with:\n+          script: |\n+            const fs = require('node:fs');\n+            const path = require('node:path');\n+\n+            const directory = path.resolve('packed');\n+            fs.mkdirSync(directory, {recursive: true});\n+\n+            core.startGroup('Packing npm packages');\n+\n+            const {stdout: queryOutput} = await exec.getExecOutput('npm', ['query', '.workspace']);\n+            const workspaces = JSON.parse(queryOutput);\n+            const packages = workspaces.filter(pkg => pkg.private !== true).map(pkg => pkg.name);\n+            core.info(`Packing: ${packages.join(' ')}`);\n+\n+            const args = ['pack', ...packages.map(name => `--workspace=${name}`), '--pack-destination', directory, '--json'];\n+            const {stdout: packOutput} = await exec.getExecOutput('npm', args);\n+            const result = JSON.parse(packOutput);\n+\n+            core.endGroup();\n+\n+            const metadata = {\n+              packages: result.map(pkg => ({\n+                name: pkg.name,\n+                version: pkg.version,\n+                path: path.join('packed', pkg.filename),\n+              })),\n+            };\n+\n+            fs.writeFileSync(path.join(directory, 'metadata.json'), JSON.stringify(metadata, null, 2));\n+\n+            core.info(JSON.stringify(metadata, null, 2));\n+      - name: Upload packed npm packages\n+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a\n+        with:\n+          name: npm-packages\n+          path: |\n+            packed/*.tgz\n+            packed/metadata.json\n+          if-no-files-found: error\n",
+    "changed_files": [
+      ".github/workflows/npm.yml"
+    ],
+    "ci_status": "success",
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/03856a4eb135e8b97e7412906668f1954d3b8b3ac2a1e8d350fed3bcda7589d6.json"
+}

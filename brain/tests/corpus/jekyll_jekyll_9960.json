@@ -1,0 +1,46 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "ruby",
+  "source": {
+    "repo": "jekyll/jekyll",
+    "number": 9960,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-jekyll-jekyll-9960",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "jekyll",
+      "name": "jekyll",
+      "default_branch": "master",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 9960,
+    "title": "Add GitCMS to resources docs",
+    "body": "This is a \ud83d\udd26 documentation change.\r\n\r\n<!--\r\n  Thanks for creating a Pull Request! Before you submit, please make sure\r\n  you've done the following:\r\n\r\n  - I read the contributing document at https://jekyllrb.com/docs/contributing/\r\n-->\r\n\r\n<!--\r\n  Make our lives easier! Choose one of the following by uncommenting it:\r\n-->\r\n\r\n<!-- This is a \ud83d\udc1b bug fix. -->\r\n<!-- This is a \ud83d\ude4b feature or enhancement. -->\r\n<!-- This is a \ud83d\udd26 documentation change. -->\r\n<!-- This is a \ud83d\udd28 code refactoring. -->\r\n\r\n<!--\r\n  Before you submit this pull request, make sure to have a look at the following\r\n  checklist. If you don't know how to do some of these, that's fine! Submit\r\n  your pull request and we will help you out on the way.\r\n\r\n  - I've added tests (if it's a bug, feature or enhancement)\r\n  - I've adjusted the documentation (if it's a feature or enhancement)\r\n  - The test suite passes locally (run `script/cibuild` to verify this)\r\n-->\r\n\r\n## Summary\r\n\r\nAdd GitCMS to the `Content Management` section on the Jekyll resources page.\r\n\r\n\r\n<!--\r\n  Provide a description of what your pull request changes.\r\n-->\r\n\r\n## Context\r\n\r\nLast year I built GitCMS's first version as chrome version but it was just a small project, now it has improved a lot and has become a much more stable and complete product, it grown into a more serious tool, with an MCP app that allows ChatGPT and Claude to act as content agents (conversational UX), along with a web app that gives non-technical team members such as marketers and writers a Notion-like interface for editing markdown content.\r\n\r\nI have also worked on making the product easier to adopt by abstracting away Git-related terminology and shaping the workflow around a more approachable Content Board experience.\r\n\r\nI am opening this PR again because GitCMS is now in a much better state, and I believe it could be genuinely useful for the Jekyll community, especially for teams that want a simpler way to manage content in Git-based workflows.\r\n\r\nYou can try the editor with the changes in this PR here:\r\n[GitCMS editor preview](https://gitcms.dev/waishnav/jekyll?path=docs%2Fpages%2Fresources.md&ref=adding-gitcms)\r\n\r\nOr, if you want to try it on any public open-source project, you can use it here:\r\nhttps://gitcms.dev/tools/github-markdown-editor\r\n<!--\r\n  Is this related to any GitHub issue(s)?\r\n\r\n  You can use keywords to automatically close the related issue.\r\n  For example, (all of) the following will close issue #4567 when your PR is merged.\r\n\r\n  Closes #4567\r\n  Fixes #4567\r\n  Resolves #4567\r\n\r\n  Use any one of the above as applicable.\r\n-->\r\n",
+    "author": {
+      "login": "Waishnav",
+      "account_age_days": 1806,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/docs/pages/resources.md b/docs/pages/resources.md\nindex d34cebc79d7..5f08a1a5eb4 100644\n--- a/docs/pages/resources.md\n+++ b/docs/pages/resources.md\n@@ -44,6 +44,7 @@ Use a SaaS service as a backend for functionality on your Jekyll site\n   - [Contentful](https://github.com/contentful/jekyll-contentful-data-import): Content infrastructure for digital teams\n   - [TinaCMS.io](https://tina.io/): Tina is an open-source, Git-backed headless content management system (CMS) that empowers both developers and content creators to collaborate seamlessly on a single platform\n   - [Decap CMS](https://decapcms.org/): Decap CMS (formerly Netlify CMS) is an open source content management system for your Git workflow that enables you to provide editors with a friendly UI and intuitive workflows\n+  - [GitCMS](https://gitcms.dev/): Built for markdown-first content sites with a friendly Notion-like interface, a structured editorial publishing workflow, and MCP support which turns ChatGPT/Claude into content agent.\n   - [Siteleaf](https://www.siteleaf.com/): Built for developers, Loved by everyone\n   - [Kentico Kontent](https://rubygems.org/gems/kontent-jekyll/): A headless CMS with full control over content presentation\n \n",
+    "changed_files": [
+      "docs/pages/resources.md"
+    ],
+    "ci_status": "success",
+    "existing_issues": null,
+    "linked_issues": [
+      {
+        "number": 4567,
+        "title": "Issue with highlighting load tags for Django code ",
+        "body": "###### I am using Jekyll 3.1.1 on Mac OS X 10.11.2 and I am using Rouge for syntax highlighting.\n\nIn my markdown file, I am intend to highlight the following code\n\n``` jinja\n{% load pipeline %}\n<!DOCTYPE html>  \n<html lang=\"en\">  \n  <head>\n    <meta charset=\"utf-8\">\n    <title>{% block title %}Build with the Github API{% endblock %}</title>\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <meta name=\"description\" content=\"Building with the Github API\">\n    <meta name=\"author\" content=\"Ray Besiga\">\n\n    <!-- Styles -->\n    {% stylesheet 'yokogao' %}\n  </head>\n  <body>\n    <div class=\"container\">\n      {% block content %}\n\n      {% endblock %}\n    </div>\n    <!-- Javascript -->\n    {% block extra_scripts %}\n    {% endblock %}\n\n  </body>\n</html>\n```\n\nWhen I run `jekyll serve` it returns the following error:\n\n```\n\u279c  test-site git:(master) \u2717 jekyll serve --profile\nConfiguration file: /Users/raybesiga/Projects/test-site/_config.yml\n            Source: /Users/raybesiga/Projects/test-site\n       Destination: /Users/raybesiga/Projects/test-site/_site\n Incremental build: disabled. Enable with --incremental\n      Generating...\n  Liquid Exception: Liquid syntax error: Unknown tag 'load' in /Users/raybesiga/Projects/test-site/_posts/2016-02-23-basic-django-app-github-api.markdown\njekyll 3.1.1 | Error:  Liquid syntax error: Unknown tag 'load'\n```\n\nI expected this to work as expected but not sure why it is raising an error. Any advise and help will be highly appreciated\n"
+      }
+    ]
+  },
+  "snapshot": "snapshots/bc5b9a4e2c87e9e2ee71749edad9c07d08c2c7982b58a7747208c2294cb640eb.json"
+}

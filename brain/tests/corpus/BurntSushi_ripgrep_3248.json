@@ -1,0 +1,41 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "rust",
+  "source": {
+    "repo": "BurntSushi/ripgrep",
+    "number": 3248,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-BurntSushi-ripgrep-3248",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "BurntSushi",
+      "name": "ripgrep",
+      "default_branch": "master",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 3248,
+    "title": "Fix compression tests in QEMU cross-compilation environments",
+    "body": "## Problem\r\nCompression tests (lz4, brotli, zstd) fail on `riscv64` when running under QEMU user-mode emulation. The tests attempt to execute compression commands even when the required tools are missing, instead of skipping as expected.\r\n\r\n## Root Cause\r\nThis is caused by a known limitation in QEMU user-mode's `posix_spawn` implementation. When spawning a non-existent command:\r\n- **Expected:** `posix_spawn` returns `ENOENT` (Error).\r\n- **QEMU:** `posix_spawn` returns `0` (Success), but the child process silently fails with exit code `127`.\r\n\r\n**Technical Details:**\r\n1. glibc 2.34+ attempts `clone3()`, which QEMU rejects with `ENOSYS`.\r\n2. It falls back to `clone(CLONE_VM | CLONE_VFORK | ...)`.\r\n3. QEMU silently strips `CLONE_VM` because it cannot share address spaces in process-based emulation ([syscall.c:6729-6731](https://gitlab.com/qemu-project/qemu/-/blob/master/linux-user/syscall.c#L6729-6731)).\r\n4. Consequently, `fork()` is used (Copy-on-Write).\r\n5. When the child writes the error code (`errno`) to the memory, it writes to its *own* copy. The parent reads the original memory (where error is 0) and assumes success.\r\n\r\nThis issue specifically affects newer environments (glibc 2.34+, e.g., Ubuntu 22.04+). Older environments like Ubuntu 20.04 (glibc 2.31) are unaffected because they handle `vfork` fallbacks differently, masking the QEMU bug.\r\n\r\n## Why this fix is needed\r\nCurrently, `aarch64` tests pass only because the CI uses Ubuntu 20.04 (glibc 2.31). Once `cross-rs` or CI images update to Ubuntu 22.04+ (glibc 2.35+), `aarch64` and other architectures will start failing too. This PR prevents future breakages across all architectures.\r\n\r\n## The Fix\r\nUpdated `cmd_exists()` to verify that the command **executed successfully** (exit code 0), rather than just checking if the spawn call itself returned `Ok`.\r\n\r\n* **Native / Normal:** Returns `Err(NotFound)` -> function returns `false`.\r\n* **QEMU (Bugged):** Returns `Ok(ExitStatus(127))` -> `status.success()` is `false` -> function returns `false`.\r\n\r\nI also removed the `#[cfg(not(target_arch = \"riscv64\"))]` guards from the compression tests as they are no longer needed.\r\n\r\n## Verification\r\n\r\nVerified on an x86_64 host cross-compiling to `riscv64` and `aarch64` (via QEMU user-mode). Tests now correctly skip when compression tools are missing, and pass when they are present.\r\n\r\n## Reference\r\n\r\n* Related Rust issue: https://github.com/rust-lang/rust/issues/90825",
+    "author": {
+      "login": "OctopusET",
+      "account_age_days": 3700,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/tests/misc.rs b/tests/misc.rs\nindex df79e95655..aae84da8d4 100644\n--- a/tests/misc.rs\n+++ b/tests/misc.rs\n@@ -922,8 +922,6 @@ be, to a very large extent, the result of luck. Sherlock Holmes\n     eqnice!(expected, cmd.stdout());\n });\n \n-// lz4 decompression tool doesn't work under RISC-V QEMU emulation in CI\n-#[cfg(not(target_arch = \"riscv64\"))]\n rgtest!(compressed_lz4, |dir: Dir, mut cmd: TestCommand| {\n     if !cmd_exists(\"lz4\") {\n         return;\n@@ -954,8 +952,6 @@ be, to a very large extent, the result of luck. Sherlock Holmes\n     eqnice!(expected, cmd.stdout());\n });\n \n-// brotli decompression tool doesn't work under RISC-V QEMU emulation in CI\n-#[cfg(not(target_arch = \"riscv64\"))]\n rgtest!(compressed_brotli, |dir: Dir, mut cmd: TestCommand| {\n     if !cmd_exists(\"brotli\") {\n         return;\n@@ -971,8 +967,6 @@ be, to a very large extent, the result of luck. Sherlock Holmes\n     eqnice!(expected, cmd.stdout());\n });\n \n-// zstd decompression tool doesn't work under RISC-V QEMU emulation in CI\n-#[cfg(not(target_arch = \"riscv64\"))]\n rgtest!(compressed_zstd, |dir: Dir, mut cmd: TestCommand| {\n     if !cmd_exists(\"zstd\") {\n         return;\ndiff --git a/tests/util.rs b/tests/util.rs\nindex e5fb8a62fb..44d0a51df3 100644\n--- a/tests/util.rs\n+++ b/tests/util.rs\n@@ -45,7 +45,10 @@ pub fn sort_lines(lines: &str) -> String {\n /// Returns true if and only if the given program can be successfully executed\n /// with a `--help` flag.\n pub fn cmd_exists(program: &str) -> bool {\n-    Command::new(program).arg(\"--help\").output().is_ok()\n+    match Command::new(program).arg(\"--help\").output() {\n+        Ok(output) => output.status.success(),\n+        Err(_) => false,\n+    }\n }\n \n /// Dir represents a directory in which tests should be run.\n",
+    "changed_files": [
+      "tests/misc.rs",
+      "tests/util.rs"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/bfc6845e4c549f1633a8f93bd0f54a3a62d8dc6a4139b8dcfddad1abea8f5e94.json"
+}

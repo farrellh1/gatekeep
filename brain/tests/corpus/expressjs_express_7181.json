@@ -1,0 +1,47 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "javascript",
+  "source": {
+    "repo": "expressjs/express",
+    "number": 7181,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-expressjs-express-7181",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "expressjs",
+      "name": "express",
+      "default_branch": "master",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 7181,
+    "title": "fix: restore array parsing for req.query repeated keys (#7147)",
+    "body": "Closes #7147.\r\n\r\nThe bump to `qs@~6.14.1` in 4.22.0 (#6972) pulled in qs's new default `arrayLimit` of 20, which causes the extended query parser to silently collapse repeated-key query strings with more than 20 values into an object (e.g. `{ \"0\": \"a\", \"1\": \"b\", ... }`) instead of producing an array. This broke consumers that had been passing larger batches of repeated parameters through `req.query.ids` (the issue reporter hits it with ~20 tenancy IDs).\r\n\r\n`body-parser` already got an opt-out path for the extended URL-encoded middleware, but the `parseExtendedQueryString` used by `req.query` for the `'extended'` query parser still only passes `allowPrototypes: true` and otherwise inherits qs defaults \u2014 so the regression is only visible on `req.query`, which is what #7147 reports.\r\n\r\nThis PR restores the pre-6.14 behavior by passing ~`arrayLimit: Infinity`~ `arrayLimit: 1000` to `qs.parse` inside `parseExtendedQueryString`. Repeated-key values of any length round-trip back to an array, matching Express <= 4.21.x.\r\n\r\n**Test plan**\r\n- Added a regression test in `test/req.query.js` that sends 25 repeated `ids` values and asserts `req.query.ids` is an array of 25 strings. Verified the test fails on `4.x` without the fix and passes with it.\r\n- Full `test/req.query.js` suite: 11 passing.\r\n\r\nIf it would help, I'm happy to open a matching PR against `5.x` \u2014 the same `parseExtendedQueryString` lives there with the same defaults.",
+    "author": {
+      "login": "SAY-5",
+      "account_age_days": 218,
+      "is_first_time_contributor": true
+    },
+    "diff": "diff --git a/lib/utils.js b/lib/utils.js\nindex 56e12b9b541..1dc7dcc27cd 100644\n--- a/lib/utils.js\n+++ b/lib/utils.js\n@@ -287,7 +287,8 @@ function createETagGenerator (options) {\n \n function parseExtendedQueryString(str) {\n   return qs.parse(str, {\n-    allowPrototypes: true\n+    allowPrototypes: true,\n+    arrayLimit: 1000\n   });\n }\n \ndiff --git a/test/req.query.js b/test/req.query.js\nindex 6fae592dccc..474b49bea9b 100644\n--- a/test/req.query.js\n+++ b/test/req.query.js\n@@ -38,6 +38,20 @@ describe('req', function(){\n         .get('/?user.name=tj')\n         .expect(200, '{\"user.name\":\"tj\"}', done);\n       });\n+\n+      it('should parse more than 20 repeated values as an array', function (done) {\n+        var app = createApp('extended');\n+        var ids = [];\n+        var expected = [];\n+        for (var i = 0; i < 25; i++) {\n+          ids.push('ids=' + i);\n+          expected.push(String(i));\n+        }\n+\n+        request(app)\n+        .get('/?' + ids.join('&'))\n+        .expect(200, JSON.stringify({ ids: expected }), done);\n+      });\n     });\n \n     describe('when \"query parser\" is simple', function () {\n",
+    "changed_files": [
+      "lib/utils.js",
+      "test/req.query.js"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": [
+      {
+        "number": 7147,
+        "title": "req.query will produce object instead of array when it contains more than 20 values in v4.22.X",
+        "body": "<!-- The process for bug fixing is:\n\n- We will first assess if the behavior is different from what should occur\n- Confirm the bug is reproducible\n- Discuss how to best fix the bug\n- Work towards a fix\n-->\n\n## Environment information\n\n**Version**: 4.22.1 / 4.22.X\n<!-- \nTo find the installed version of a package, you can check the `package.json` file in the root directory of your project. The version will be listed under `dependencies` or `devDependencies`, like this:\n\n```json\n\"dependencies\": {\n  \"express\": \"4.18.2\"\n}\n-->\n\n**Platform**: MacOS / Linux\n<!-- \nUNIX: output of uname -a\nWindows: output of \"$([Environment]::OSVersion.VersionString) $(('x86', 'x64')[[Environment]::Is64BitOperatingSystem])\" in PowerShell console \n-->\n\n**Node.js version**: 24.14.1\n<!-- \nOutput of node -v.\n-->\n\n**Any other relevant information**:\n\n## What steps will reproduce the bug?\n\nConsider following API query:\n\n`GET /reports/download?tenancyIds=35&tenancyIds=28&tenancyIds=149&tenancyIds=157&tenancyIds=158&tenancyIds=159&tenancyIds=161&tenancyIds=160&tenancyIds=162&tenancyIds=163&tenancyIds=164&tenancyIds=165&tenancyIds=166&tenancyIds=167&tenancyIds=7&tenancyIds=196&tenancyIds=195&tenancyIds=198&tenancyIds=70&tenancyIds=6` \n\nPrior to version 4.22.X, when calling with query regardless of numbers, `req.query.tenancyIds` will always produce as array:\n```\n[\n  '35',  '28',  '149', '157',\n  '158', '159', '161', '160',\n  '162', '163', '164', '165',\n  '166', '167', '7',   '196',\n   '195', '198', '70',  '6'\n] \n```\n\nHowever, in version 4.22.X, when calling with query more than 20, `req.query.tenancyIds` will produce as object instead (but produce as array if it's 20 or less)\n```\n// 20 or less\n[\n  '35',  '28',  '149', '157',\n  '158', '159', '161', '160',\n  '162', '163', '164', '165',\n  '166', '167', '7',   '196',\n   '195', '198', '70',  '6'\n] \n\n// more than 20\n{\n  '0': '35',\n  '1': '28',\n  '2': '149',\n  '3': '157',\n  '4': '158',\n  '5': '159',\n  '6': '161',\n  '7': '160',\n  '8': '162',\n  '9': '163',\n  '10': '164',\n  '11': '165',\n  '12': '166',\n  '13': '167',\n  '14': '7',\n  '15': '196',\n  '16': '195',\n  '17': '198',\n  '18': '70',\n  '19': '6',\n  '20': '75'\n}\n```"
+      }
+    ]
+  },
+  "snapshot": "snapshots/5ab03e3dd8fdbf4b263559d69b6d42e465321c2fe3e7889859ca2fde699b60a1.json"
+}

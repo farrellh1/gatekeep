@@ -1,0 +1,40 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "javascript",
+  "source": {
+    "repo": "expressjs/express",
+    "number": 7136,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-expressjs-express-7136",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "expressjs",
+      "name": "express",
+      "default_branch": "master",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 7136,
+    "title": "docs: remove dead link from Readme",
+    "body": "The GitHub account for import-brain appears to be deleted/renamed resulting in a 404 in the README. Removed the hyperlink while retaining the name.",
+    "author": {
+      "login": "ayushshukla1807",
+      "account_age_days": 620,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/Readme.md b/Readme.md\nindex 57dbc367aee..74f5fbcd264 100644\n--- a/Readme.md\n+++ b/Readme.md\n@@ -249,7 +249,7 @@ The original author of Express is [TJ Holowaychuk](https://github.com/tj)\n   * [tunniclm](https://github.com/tunniclm) - **Mike Tunnicliffe**\n   * [enyoghasim](https://github.com/enyoghasim) - **David Enyoghasim**\n   * [0ss](https://github.com/0ss) - **Salah**\n-  * [import-brain](https://github.com/import-brain) - **Eric Cheng** (he/him)\n+  * [ejcheng](https://github.com/ejcheng)- **Eric Cheng** (he/him)\n   * [dakshkhetan](https://github.com/dakshkhetan) - **Daksh Khetan** (he/him)\n   * [lucasraziel](https://github.com/lucasraziel) - **Lucas Soares Do Rego**\n   * [mertcanaltin](https://github.com/mertcanaltin) - **Mert Can Altin**\n",
+    "changed_files": [
+      "Readme.md"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/f015d1290c488b1031fb1254dc36e883b48c5c77239ddfe437307cc03f43d6c2.json"
+}

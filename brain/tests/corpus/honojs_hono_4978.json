@@ -1,0 +1,41 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "typescript",
+  "source": {
+    "repo": "honojs/hono",
+    "number": 4978,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-honojs-hono-4978",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "honojs",
+      "name": "hono",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 4978,
+    "title": "chore: remove @types/glob",
+    "body": "`@types/glob` dependency was deprecated because `glob` types where introduced to Glob from v10 ([source](https://www.npmjs.com/package/@types/glob)).\r\nCurrent repository uses glob v11 (types already included), so `@types/glob` dependency can be removed.\r\n\r\n### The author should do the following, if applicable\r\n\r\n- [ ] Add tests\r\n- [ ] Run tests\r\n- [ ] `bun run format:fix && bun run lint:fix` to format the code\r\n- [ ] Add [TSDoc](https://tsdoc.org/)/[JSDoc](https://jsdoc.app/about-getting-started) to document the code",
+    "author": {
+      "login": "rtritto",
+      "account_age_days": 2913,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/bun.lock b/bun.lock\nindex d6650f7ab..d916627d1 100644\n--- a/bun.lock\n+++ b/bun.lock\n@@ -7,7 +7,6 @@\n       \"devDependencies\": {\n         \"@hono/eslint-config\": \"^2.1.0\",\n         \"@hono/node-server\": \"^2.0.2\",\n-        \"@types/glob\": \"^9.0.0\",\n         \"@types/jsdom\": \"^21.1.7\",\n         \"@types/node\": \"^24.3.0\",\n         \"@types/ws\": \"^8.18.1\",\n@@ -467,8 +466,6 @@\n \n     \"@types/estree\": [\"@types/estree@1.0.6\", \"\", {}, \"sha512-AYnb1nQyY49te+VRAVgmzfcgjYS91mY5P0TKUDCLEM+gNnA+3T6rWITXRLYCpahpqSQbN5cE+gHpnPyXjHWxcw==\"],\n \n-    \"@types/glob\": [\"@types/glob@9.0.0\", \"\", { \"dependencies\": { \"glob\": \"*\" } }, \"sha512-00UxlRaIUvYm4R4W9WYkN8/J+kV8fmOQ7okeH6YFtGWFMt3odD45tpG5yA5wnL7HE6lLgjaTW5n14ju2hl2NNA==\"],\n-\n     \"@types/jsdom\": [\"@types/jsdom@21.1.7\", \"\", { \"dependencies\": { \"@types/node\": \"*\", \"@types/tough-cookie\": \"*\", \"parse5\": \"^7.0.0\" } }, \"sha512-yOriVnggzrnQ3a9OKOCxaVuSug3w3/SbOj5i7VwXWZEyUNl3bLF9V3MfxGbZKuwqJOQyRfqXyROBB1CoZLFWzA==\"],\n \n     \"@types/json-schema\": [\"@types/json-schema@7.0.15\", \"\", {}, \"sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==\"],\ndiff --git a/package.json b/package.json\nindex 04ab6456e..660403b2b 100644\n--- a/package.json\n+++ b/package.json\n@@ -658,7 +658,6 @@\n   \"devDependencies\": {\n     \"@hono/eslint-config\": \"^2.1.0\",\n     \"@hono/node-server\": \"^2.0.2\",\n-    \"@types/glob\": \"^9.0.0\",\n     \"@types/jsdom\": \"^21.1.7\",\n     \"@types/node\": \"^24.3.0\",\n     \"@types/ws\": \"^8.18.1\",\n",
+    "changed_files": [
+      "bun.lock",
+      "package.json"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/24fe8d201003a171727a73bd7a755daa6d81aee7e008db7f561f6e254afa1d89.json"
+}

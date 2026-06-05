@@ -1,0 +1,40 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "go",
+  "source": {
+    "repo": "cli/cli",
+    "number": 13518,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-cli-cli-13518",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "cli",
+      "name": "cli",
+      "default_branch": "trunk",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 13518,
+    "title": "docs: note immutable releases starting v2.93.0",
+    "body": "We have enabled immutable releases on `gh` for our future releases.\n\nThis adds a short note to the \"Verification of binaries\" section of the README letting users know that releases of `gh` will be immutable starting with v2.93.0.",
+    "author": {
+      "login": "BagToad",
+      "account_age_days": 2675,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/README.md b/README.md\nindex e67a7effc04..f0961571b10 100644\n--- a/README.md\n+++ b/README.md\n@@ -65,6 +65,8 @@ For information on all pre-installed tools, see [`actions/runner-images`](https:\n \n ### Verification of binaries\n \n+Starting with v2.93.0, releases of `gh` are published as immutable releases. For more information, see [Immutable releases](https://docs.github.com/en/code-security/concepts/supply-chain-security/immutable-releases).\n+\n Since version 2.50.0, `gh` has been producing [Build Provenance Attestation](https://github.blog/changelog/2024-06-25-artifact-attestations-is-generally-available/), enabling a cryptographically verifiable paper-trail back to the origin GitHub repository, git revision, and build instructions used. The build provenance attestations are signed and rely on Public Good [Sigstore](https://www.sigstore.dev/) for PKI.\n \n There are two common ways to verify a downloaded release, depending on whether `gh` is already installed or not. If `gh` is installed, it's trivial to verify a new release:\n",
+    "changed_files": [
+      "README.md"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/7840c589458dc662f22478d608d238f9362aca7f3e294d6788f498ade693ad38.json"
+}

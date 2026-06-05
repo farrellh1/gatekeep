@@ -1,0 +1,40 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "ruby",
+  "source": {
+    "repo": "jekyll/jekyll",
+    "number": 9882,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-jekyll-jekyll-9882",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "jekyll",
+      "name": "jekyll",
+      "default_branch": "master",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 9882,
+    "title": "Add jekyllup.com to themes documentation",
+    "body": "<!--\r\n  Thanks for creating a Pull Request! Before you submit, please make sure\r\n  you've done the following:\r\n\r\n  - I read the contributing document at https://jekyllrb.com/docs/contributing/\r\n-->\r\n\r\n<!--\r\n  Make our lives easier! Choose one of the following by uncommenting it:\r\n-->\r\n\r\n<!-- This is a \ud83d\udc1b bug fix. -->\r\n<!-- This is a \ud83d\ude4b feature or enhancement. -->\r\nThis is a \ud83d\udd26 documentation change.\r\n<!-- This is a \ud83d\udd28 code refactoring. -->\r\n\r\n<!--\r\n  Before you submit this pull request, make sure to have a look at the following\r\n  checklist. If you don't know how to do some of these, that's fine! Submit\r\n  your pull request and we will help you out on the way.\r\n\r\n  - I've added tests (if it's a bug, feature or enhancement)\r\n  - I've adjusted the documentation (if it's a feature or enhancement)\r\n  - The test suite passes locally (run `script/cibuild` to verify this)\r\n-->\r\n\r\n## Summary\r\n\r\nA small modification to the documentation to introduce [JekyllUp.com](https://www.jekyllup.com/) to Jekyll users. It is a curated & free Jekyll theme site.\r\n\r\n## Context\r\n\r\nPicking a Jekyll theme should be fun and easy, especially for people new to Jekyll. I hope this curation helps some new people get started as easily as possible!",
+    "author": {
+      "login": "ianwieds",
+      "account_age_days": 4406,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/docs/_docs/themes.md b/docs/_docs/themes.md\nindex 61916cc9b67..13be0651403 100644\n--- a/docs/_docs/themes.md\n+++ b/docs/_docs/themes.md\n@@ -14,6 +14,7 @@ You can find and preview themes on different galleries:\n - [jekyllthemes.org](http://jekyllthemes.org/)\n - [jekyllthemes.io](https://jekyllthemes.io/)\n - [jekyll-themes.com](https://jekyll-themes.com/)\n+- [jekyllup.com](https://jekyllup.com/)\n \n See also: [resources](/resources/).\n \n",
+    "changed_files": [
+      "docs/_docs/themes.md"
+    ],
+    "ci_status": "success",
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/bc5b9a4e2c87e9e2ee71749edad9c07d08c2c7982b58a7747208c2294cb640eb.json"
+}

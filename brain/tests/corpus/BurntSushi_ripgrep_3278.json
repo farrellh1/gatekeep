@@ -1,0 +1,40 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "rust",
+  "source": {
+    "repo": "BurntSushi/ripgrep",
+    "number": 3278,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-BurntSushi-ripgrep-3278",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "BurntSushi",
+      "name": "ripgrep",
+      "default_branch": "master",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 3278,
+    "title": "core: bleat a DEBUG message when RIPGREP_CONFIG_PATH is not set",
+    "body": "It seems to be common that folks either don't understand how to set\nenvironment variables in a way that propagates to subprocesses, or just\nforget to include `export` and think ripgrep is somehow broken.\n\nWhile `RIPGREP_CONFIG_PATH` not being set is not an error, it still\nseems useful to log a debug message when it isn't. This should hopefully\nprovide a clue that, no, ripgrep isn't broken. It just doesn't see the\nenvironment variable.\n\nRef #3277\n",
+    "author": {
+      "login": "BurntSushi",
+      "account_age_days": 5699,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/crates/core/flags/config.rs b/crates/core/flags/config.rs\nindex 313244f5da..c49716e60a 100644\n--- a/crates/core/flags/config.rs\n+++ b/crates/core/flags/config.rs\n@@ -15,7 +15,13 @@ use bstr::{ByteSlice, io::BufReadExt};\n /// Return a sequence of arguments derived from ripgrep rc configuration files.\n pub fn args() -> Vec<OsString> {\n     let config_path = match std::env::var_os(\"RIPGREP_CONFIG_PATH\") {\n-        None => return vec![],\n+        None => {\n+            log::debug!(\n+                \"RIPGREP_CONFIG_PATH environment variable is not set, \\\n+                 therefore not reading any config file\"\n+            );\n+            return vec![];\n+        }\n         Some(config_path) => {\n             if config_path.is_empty() {\n                 return vec![];\n",
+    "changed_files": [
+      "crates/core/flags/config.rs"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/bfc6845e4c549f1633a8f93bd0f54a3a62d8dc6a4139b8dcfddad1abea8f5e94.json"
+}

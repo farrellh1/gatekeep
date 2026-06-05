@@ -1,0 +1,41 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "typescript",
+  "source": {
+    "repo": "primer/react",
+    "number": 7905,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-primer-react-7905",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "primer",
+      "name": "react",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 7905,
+    "title": "docs: terse changeset descriptions + re-evaluation instructions",
+    "body": "### Changelog\n\nImproves the guidance the agent and contributors follow when writing changesets, so release notes stay concise.\n\n#### New\n\n- Add `.github/instructions/changesets.instructions.md` that directs the agent to re-evaluate changeset accuracy and necessity whenever changes are made (whether a changeset is still needed, newly required, has the correct bump type, and a still-accurate terse description).\n\n#### Changed\n\n- Update the `changesets` skill (`.github/skills/changesets/SKILL.md`) to require terse, consumer-facing descriptions (one or two sentences), ban implementation detail and nested bullet lists, and add a Good vs. Avoid example pair.\n\n#### Removed\n\n- N/A\n\n### Rollout strategy\n\n- [x] None; documentation/instructions-only change. No published package code is affected, so no changeset is required (`skip changeset` label applied).\n\n### Testing & Reviewing\n\nReview the updated skill and the new instructions file for clarity. No build or test impact \u2014 these are agent customization/docs files only.\n\n### Merge checklist\n\n- [ ] Added/updated tests\n- [x] Added/updated documentation\n- [ ] Added/updated previews (Storybook)\n- [ ] Changes are [SSR compatible](https://github.com/primer/react/blob/main/contributor-docs/CONTRIBUTING.md#ssr-compatibility)\n- [ ] Tested in Chrome\n- [ ] Tested in Firefox\n- [ ] Tested in Safari\n- [ ] Tested in Edge\n- [ ] (GitHub staff only) Integration tests pass at github/github-ui\n",
+    "author": {
+      "login": "jonrohan",
+      "account_age_days": 6321,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/.github/instructions/changesets.instructions.md b/.github/instructions/changesets.instructions.md\nnew file mode 100644\nindex 00000000000..d488543f64f\n--- /dev/null\n+++ b/.github/instructions/changesets.instructions.md\n@@ -0,0 +1,30 @@\n+---\n+applyTo: '**'\n+---\n+\n+# Keeping changesets accurate\n+\n+When you change source code in a package during a task, re-evaluate any existing\n+changeset files in `.changeset/` so they stay accurate and necessary.\n+\n+## Re-evaluate after every change\n+\n+After adding, editing, or reverting changes in this PR, check the following:\n+\n+- **Does a changeset still need to exist?** If your latest changes removed the\n+  only consumer-facing impact (the work is now docs-only, test-only, or\n+  CI/infra-only), delete the now-unnecessary changeset and add the\n+  `skip changeset` label instead.\n+- **Is a changeset now required?** If you introduced new consumer-facing\n+  behavior that no existing changeset covers, add one.\n+- **Is the bump type still correct?** If the scope grew (e.g. a `patch` became a\n+  breaking change) or shrank, update the semver bump in the changeset frontmatter.\n+- **Is the description still accurate and terse?** Update the description to\n+  match the final change, and keep it to one or two high-level, consumer-facing\n+  sentences with no implementation detail.\n+\n+## Guidance\n+\n+For changeset format, semver bump selection, when a changeset is not needed, and\n+how to write terse descriptions, follow the `changesets` skill at\n+`.github/skills/changesets/SKILL.md`.\ndiff --git a/.github/skills/changesets/SKILL.md b/.github/skills/changesets/SKILL.md\nindex 23d10790d14..d3db5d68f78 100644\n--- a/.github/skills/changesets/SKILL.md\n+++ b/.github/skills/changesets/SKILL.md\n@@ -27,11 +27,41 @@ Changeset files live in `.changeset/` and have a random name with a `.md` extens\n ActionMenu: Fix focus management when menu is closed with Escape key\n ```\n \n-The description should be concise and follow this pattern:\n+The description becomes a single line item in the public changelog and release\n+notes, so keep it **terse**. Follow this pattern:\n \n - Start with the component or module name followed by a colon\n-- Describe WHAT changed and WHY\n-- Write from the consumer's perspective\n+- Use **one or two sentences** describing WHAT changed at a high level\n+- Write from the consumer's perspective \u2014 focus on the consumer-facing impact\n+- Do **not** include implementation details, file paths, CSS selector or symbol\n+  names, internal rationale, or before/after explanations\n+- Do **not** use nested bullet lists or multi-paragraph walkthroughs. If a change\n+  has several distinct parts, split it into\n+  [separate changesets](#multiple-changesets-in-one-pr) instead\n+\n+### Writing good descriptions\n+\n+Aim for a description a consumer can scan in a few seconds.\n+\n+**Good** \u2014 terse and consumer-facing:\n+\n+```markdown\n+UnderlinePanels: Improve rendering performance when toggling tab icons\n+```\n+\n+**Avoid** \u2014 verbose, implementation-focused, multi-clause:\n+\n+```markdown\n+UnderlinePanels: Eliminate the empty-tablist frame on mount and the cascading\n+re-render when icons toggle. Tabs and panels are now derived in render\n+(previously stored in state synced via `useEffect`), the list width is kept in a\n+ref instead of state, and `iconsVisible` / `loadingCounters` flow to each tab\n+via context \u2014 combined with `React.memo(Tab)`...\n+```\n+\n+The \"Avoid\" example reads like a commit message or PR body. Save that level of\n+detail for the pull request description; the changeset should summarize the\n+consumer-facing effect only.\n \n ## How to create a changeset\n \n",
+    "changed_files": [
+      ".github/instructions/changesets.instructions.md",
+      ".github/skills/changesets/SKILL.md"
+    ],
+    "ci_status": "success",
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/03856a4eb135e8b97e7412906668f1954d3b8b3ac2a1e8d350fed3bcda7589d6.json"
+}

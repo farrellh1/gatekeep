@@ -1,0 +1,40 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "javascript",
+  "source": {
+    "repo": "expressjs/express",
+    "number": 7037,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-expressjs-express-7037",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "expressjs",
+      "name": "express",
+      "default_branch": "master",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 7037,
+    "title": "include edge case tests for `res.type()`",
+    "body": "Description:-\r\nThis PR adds edge case tests for `res.type()` to improve test coverage for the response type-setting functionality.\r\n\r\nMotivation:-\r\nWhile reviewing the test coverage for `res.type()`, I noticed that several edge cases weren't being tested. These edge cases could lead to unexpected behaviour or bugs in production.\r\n\r\nChanges:-\r\nAdded 5 new test cases under a new `describe('edge cases')` block:\r\n\r\n1. **Empty string handling** - Ensures the function defaults gracefully to `application/octet-stream`\r\n2. **Extensions with leading dot** - Tests `.json` vs `json` handling\r\n3. **Multiple file extensions** - Tests compound extensions like `.tar.gz`\r\n4. **Case-insensitive extensions** - Ensures `FILE.JSON` works like `file.json`\r\n5. **Special characters in filenames** - Tests filenames like `file@test.json`\r\n\r\nTesting:-\r\n```bash\r\nnpm test\r\n```\r\n\r\nAll tests passing: **1249 passing (1s)** \r\n\r\nImpact:-\r\n- Improves test coverage for `res.type()`\r\n- Documents expected behaviour for edge cases\r\n- Helps prevent future bugs with unusual input\r\n- No breaking changes to existing functionality",
+    "author": {
+      "login": "IshitaSingh0822",
+      "account_age_days": 1185,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/test/res.type.js b/test/res.type.js\nindex 09285af3914..e438956313a 100644\n--- a/test/res.type.js\n+++ b/test/res.type.js\n@@ -42,5 +42,74 @@ describe('res', function(){\n       .get('/')\n       .expect('Content-Type', 'application/vnd.amazon.ebook', done);\n     })\n+\n+    describe('edge cases', function(){\n+      it('should handle empty string gracefully', function(done){\n+        var app = express();\n+\n+        app.use(function(req, res){\n+          res.type('').end('test');\n+        });\n+\n+        request(app)\n+        .get('/')\n+        .expect('Content-Type', 'application/octet-stream')\n+        .end(done);\n+      })\n+\n+      it('should handle file extension with dots', function(done){\n+        var app = express();\n+\n+        app.use(function(req, res){\n+          res.type('.json').end('{\"test\": true}');\n+        });\n+\n+        request(app)\n+        .get('/')\n+        .expect('Content-Type', 'application/json; charset=utf-8')\n+        .end(done);\n+      })\n+\n+      it('should handle multiple file extensions', function(done){\n+        var app = express();\n+\n+        app.use(function(req, res){\n+          res.type('file.tar.gz').end('compressed');\n+        });\n+\n+        request(app)\n+        .get('/')\n+        .expect('Content-Type', 'application/gzip')\n+        .end(done);\n+      })\n+\n+      it('should handle uppercase extensions', function(done){\n+        var app = express();\n+\n+        app.use(function(req, res){\n+          res.type('FILE.JSON').end('{\"test\": true}');\n+        });\n+\n+        request(app)\n+        .get('/')\n+        .expect('Content-Type', 'application/json; charset=utf-8')\n+        .end(done);\n+      })\n+\n+      it('should handle extension with special characters', function(done){\n+        var app = express();\n+\n+        app.use(function(req, res){\n+          res.type('file@test.json').end('{\"test\": true}');\n+        });\n+\n+        request(app)\n+        .get('/')\n+        .expect('Content-Type', 'application/json; charset=utf-8')\n+        .end(done);\n+      })\n+    })\n   })\n })\n+\n+\n",
+    "changed_files": [
+      "test/res.type.js"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/f015d1290c488b1031fb1254dc36e883b48c5c77239ddfe437307cc03f43d6c2.json"
+}

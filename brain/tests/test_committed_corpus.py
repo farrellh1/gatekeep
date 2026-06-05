@@ -1,7 +1,11 @@
 """Tests that the verified Corpus lives in the committed corpus directory the eval reads.
 
-These tests are the red phase: they fail until the 16 verified cases, their
-snapshots, and the dropped directory are all committed into the right paths.
+These tests pin the committed Corpus so a future change that silently drops or
+corrupts a persisted case fails loudly. The persisted baseline (the original 16
+hand-verified cases, their snapshots, and the dropped directory) is frozen by
+exact identity; the scaled legit population is pinned by invariant (every
+acted-on language covered, every case verified) so harvesting more legit cases
+does not require editing a count.
 
 Every test states the premise it relies on at the top of the function body.
 """
@@ -12,6 +16,7 @@ import json
 from pathlib import Path
 
 from eval_corpus import load_corpus
+from eval_replay import ACTED_ON_LANGUAGES
 
 # The corpus directory eval_replay and eval_corpus both read, derived from the
 # eval_corpus loader's own path constant (CORPUS in test_replay.py and test_corpus.py).
@@ -19,10 +24,11 @@ CORPUS = Path(__file__).parent / "corpus"
 SNAPSHOTS = CORPUS / "snapshots"
 DROPPED = CORPUS / "dropped"
 
-# The 16 verified delivery IDs that must live in CORPUS after migration.
-# Derived from the backup case JSONs; each ID follows the pattern
+# The original 16 hand-verified delivery IDs: the persisted baseline that must
+# remain present no matter how far the legit population is later scaled. Derived
+# from the backup case JSONs; each ID follows the pattern
 # "harvest-<owner>-<repo>-<number>".
-EXPECTED_DELIVERY_IDS = frozenset(
+BASELINE_DELIVERY_IDS = frozenset(
     {
         "harvest-openclaw-openclaw-90081",
         "harvest-openclaw-openclaw-90183",
@@ -73,33 +79,33 @@ EXPECTED_SNAPSHOT_FILENAMES = frozenset(
 # ---------------------------------------------------------------------------
 
 
-def test_corpus_directory_contains_exactly_the_expected_number_of_cases():
-    """Premise: CORPUS/*.json globs exactly the 16 verified cases; the
-    existing 3 toy cases are replaced or the 16 are appended alongside them.
-    The spec says 16 verified cases live in the committed corpus directory.
+def test_every_globbed_case_file_loads_as_a_valid_case():
+    """Premise: load_corpus globs CORPUS/*.json, so every json at the corpus
+    root must be a loadable case — no stray artifact (a replay results.json,
+    an editor scratch file) may sit there, or the loader counts it as a case.
     References: brain/tests/corpus/ (glob target), eval_corpus.load_corpus.
     """
     case_files = sorted(CORPUS.glob("*.json"))
-    # The toy fixtures (legit_01_bugfix.json, legit_02_unverified.json,
-    # slop_01_hallucinated_symbol.json) may stay or go — the spec replaces
-    # the ephemeral set with the committed verified set.  The test enforces
-    # the post-migration count.
-    assert len(case_files) == 16, (
-        f"Expected 16 case JSON files in {CORPUS}, found {len(case_files)}: "
-        + ", ".join(f.name for f in case_files)
+    cases = load_corpus(CORPUS)
+    assert len(cases) == len(case_files), (
+        "every json at the corpus root must load as a case; "
+        f"globbed {len(case_files)} files but only {len(cases)} parsed"
     )
+    # The persisted baseline plus the scaled population: never fewer than the
+    # original 16, the floor below which a silent loss has occurred.
+    assert len(cases) >= len(BASELINE_DELIVERY_IDS)
 
 
-def test_all_16_verified_cases_are_present_by_delivery_id():
+def test_baseline_verified_cases_are_present_by_delivery_id():
     """Premise: every committed case JSON carries the delivery_id from which
     its identity is derived, following the 'harvest-<owner>-<repo>-<number>'
-    pattern.
+    pattern. The original 16 must survive any later scaling.
     References: eval_corpus.load_corpus, CorpusCase.event['delivery_id'].
     """
     cases = load_corpus(CORPUS)
     found_ids = {c.event["delivery_id"] for c in cases}
-    missing = EXPECTED_DELIVERY_IDS - found_ids
-    assert not missing, f"Missing delivery IDs in committed corpus: {missing}"
+    missing = BASELINE_DELIVERY_IDS - found_ids
+    assert not missing, f"Missing baseline delivery IDs in committed corpus: {missing}"
 
 
 def test_every_case_passes_the_eval_corpus_loader_contract():
@@ -110,7 +116,7 @@ def test_every_case_passes_the_eval_corpus_loader_contract():
     # load_corpus raises on the first bad case with the filename embedded in
     # the error; this test surfaces any malformed committed case immediately.
     cases = load_corpus(CORPUS)
-    assert len(cases) == 16
+    assert len(cases) >= len(BASELINE_DELIVERY_IDS)
 
 
 # ---------------------------------------------------------------------------
@@ -118,16 +124,18 @@ def test_every_case_passes_the_eval_corpus_loader_contract():
 # ---------------------------------------------------------------------------
 
 
-def test_corpus_contains_12_legit_and_4_slop_cases():
-    """Premise: the spec states the verified Slice is 12 legit / 4 slop;
-    every committed case carries verified=true.
+def test_corpus_holds_the_frozen_slop_set_and_a_grown_legit_set():
+    """Premise: this slice scales the legit population only; the 4 verified slop
+    cases are the frozen slop set (a later slice scales slop). So slop is pinned
+    at 4 while legit is free to grow above the original 12.
     References: eval_corpus.CorpusCase.label, eval_corpus.CorpusCase.verified.
     """
     cases = load_corpus(CORPUS)
     legit = [c for c in cases if c.label == "legit"]
     slop = [c for c in cases if c.label == "slop"]
-    assert len(legit) == 12, f"Expected 12 legit, got {len(legit)}"
-    assert len(slop) == 4, f"Expected 4 slop, got {len(slop)}"
+    assert len(slop) == 4, f"Expected the frozen 4 slop, got {len(slop)}"
+    assert len(legit) >= 12, f"Expected at least the original 12 legit, got {len(legit)}"
+    assert len(legit) + len(slop) == len(cases)
 
 
 def test_all_committed_cases_are_verified():
@@ -159,15 +167,27 @@ def test_slop_cases_have_correct_slop_kind_distribution():
 # ---------------------------------------------------------------------------
 
 
-def test_legit_cases_are_python_and_slop_cases_are_typescript():
-    """Premise: the 12 legit cases are from psf/requests and pallets/flask
-    (Python repos); the 4 slop cases are from openclaw/openclaw (TypeScript).
-    References: eval_corpus.CorpusCase.language.
+def test_legit_cases_cover_every_acted_on_language():
+    """Premise: the go-public gate fails when any acted-on language has zero
+    verified legit cases, so the do-no-harm claim cannot silently extend to a
+    language the Slice never exercised. This slice closes that gap: every
+    acted-on language must carry at least one legit case.
+    References: eval_corpus.CorpusCase.language, eval_replay.legit_coverage.
     """
     cases = load_corpus(CORPUS)
     legit_langs = {c.language for c in cases if c.label == "legit"}
+    gaps = ACTED_ON_LANGUAGES - legit_langs
+    assert not gaps, f"Acted-on languages with no verified legit case: {sorted(gaps)}"
+
+
+def test_slop_cases_are_typescript():
+    """Premise: the frozen slop set is the four openclaw/openclaw (TypeScript)
+    cases. Slop language skew is acceptable (the coverage gate is on the legit
+    population), but the persisted slop set is pinned until slop is scaled.
+    References: eval_corpus.CorpusCase.language.
+    """
+    cases = load_corpus(CORPUS)
     slop_langs = {c.language for c in cases if c.label == "slop"}
-    assert legit_langs == {"python"}, f"Unexpected legit languages: {legit_langs}"
     assert slop_langs == {"typescript"}, f"Unexpected slop languages: {slop_langs}"
 
 
@@ -323,10 +343,10 @@ def test_load_corpus_does_not_load_dropped_cases():
 # ---------------------------------------------------------------------------
 
 
-def test_slice_counts_match_known_result():
-    """Premise: all 16 committed cases carry verified=true, so the verified
-    Slice equals the full corpus; the known result from the spec is 12 legit /
-    4 slop with hard FPR 0% (no legit case is labelled slop).
+def test_slice_equals_full_corpus_with_the_frozen_slop_count():
+    """Premise: every committed case carries verified=true, so the verified
+    Slice equals the full corpus. The slop count is the frozen 4; the rest is
+    the grown legit population.
     References: eval_replay.slice_verified, eval_corpus.load_corpus.
     """
     from eval_replay import slice_verified
@@ -344,9 +364,9 @@ def test_slice_counts_match_known_result():
         for c in cases
     ]
     sl = slice_verified(records)
-    assert len(sl) == 16, f"Expected 16 in Slice (all verified), got {len(sl)}"
+    assert len(sl) == len(cases), f"Expected all {len(cases)} cases in Slice, got {len(sl)}"
 
     legit_in_slice = [r for r in sl if not r["expected_positive"]]
     slop_in_slice = [r for r in sl if r["expected_positive"]]
-    assert len(legit_in_slice) == 12
     assert len(slop_in_slice) == 4
+    assert len(legit_in_slice) == len(sl) - 4

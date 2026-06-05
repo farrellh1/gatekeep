@@ -1,0 +1,52 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "tsx",
+  "source": {
+    "repo": "primer/react",
+    "number": 7906,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-primer-react-7906",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "primer",
+      "name": "react",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 7906,
+    "title": "Text: add whiteSpace prop to control CSS white-space property",
+    "body": "Closes #7607\n\nThe docs for `Text` listed `whiteSpace` as a supported prop, but the component did not actually accept it, resulting in a type error when used. This PR adds first-class support for the `whiteSpace` prop so the implementation matches the documentation.\n\nThe prop maps to the CSS `white-space` property via a `data-white-space` attribute and supports the values `pre`, `normal`, `nowrap`, `pre-wrap`, and `pre-line`.\n\n### Changelog\n\n#### New\n\n- Added a `whiteSpace` prop to the `Text` component that controls the CSS `white-space` property. Supported values: `pre`, `normal`, `nowrap`, `pre-wrap`, `pre-line`.\n- Added Storybook feature stories for each `whiteSpace` value and a `whiteSpace` control to the Text playground.\n\n#### Changed\n\n- `Text` now renders a `data-white-space` attribute and applies the corresponding `white-space` styling in `Text.module.css`.\n\n#### Removed\n\n- N/A\n\n### Rollout strategy\n\n- [ ] Patch release\n- [x] Minor release\n- [ ] Major release; if selected, include a written rollout or migration plan\n- [ ] None; if selected, include a brief description as to why\n\n### Testing & Reviewing\n\n- Added unit tests verifying the `data-white-space` attribute is set for each supported value and is omitted when the prop is not provided.\n- Verify the new `whiteSpace` stories in Storybook (Components \u2192 Text \u2192 Features) render the expected `white-space` behavior.\n\n### Merge checklist\n\n- [x] Added/updated tests\n- [x] Added/updated documentation\n- [x] Added/updated previews (Storybook)\n- [ ] Changes are [SSR compatible](https://github.com/primer/react/blob/main/contributor-docs/CONTRIBUTING.md#ssr-compatibility)\n- [ ] Tested in Chrome\n- [ ] Tested in Firefox\n- [ ] Tested in Safari\n- [ ] Tested in Edge\n- [ ] (GitHub staff only) Integration tests pass at github/github-ui ([Learn more about how to run integration tests](https://github.com/github/primer-engineering/blob/main/how-we-work/testing-primer-react-pr-at-dotcom.md))\n",
+    "author": {
+      "login": "jonrohan",
+      "account_age_days": 6321,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/.changeset/text-white-space-prop.md b/.changeset/text-white-space-prop.md\nnew file mode 100644\nindex 00000000000..eb44f170e05\n--- /dev/null\n+++ b/.changeset/text-white-space-prop.md\n@@ -0,0 +1,5 @@\n+---\n+'@primer/react': minor\n+---\n+\n+Text: Add `whiteSpace` prop to control the CSS `white-space` property\ndiff --git a/packages/react/src/Text/Text.docs.json b/packages/react/src/Text/Text.docs.json\nindex bc7eceb7ffe..8786d9c1cd5 100644\n--- a/packages/react/src/Text/Text.docs.json\n+++ b/packages/react/src/Text/Text.docs.json\n@@ -33,6 +33,21 @@\n     },\n     {\n       \"id\": \"components-text-features--semibold-weight\"\n+    },\n+    {\n+      \"id\": \"components-text-features--pre-white-space\"\n+    },\n+    {\n+      \"id\": \"components-text-features--normal-white-space\"\n+    },\n+    {\n+      \"id\": \"components-text-features--nowrap-white-space\"\n+    },\n+    {\n+      \"id\": \"components-text-features--pre-wrap-white-space\"\n+    },\n+    {\n+      \"id\": \"components-text-features--pre-line-white-space\"\n     }\n   ],\n   \"importPath\": \"@primer/react\",\n@@ -41,7 +56,7 @@\n       \"name\": \"as\",\n       \"defaultValue\": \"'span'\",\n       \"type\": \"React.ElementType\"\n-    }, \n+    },\n     {\n       \"name\": \"size\",\n       \"type\": \"'large' | 'medium' | 'small'\"\n@@ -56,4 +71,4 @@\n     }\n   ],\n   \"subcomponents\": []\n-}\n\\ No newline at end of file\n+}\ndiff --git a/packages/react/src/Text/Text.features.stories.tsx b/packages/react/src/Text/Text.features.stories.tsx\nindex 2f96033076f..cbe5b656916 100644\n--- a/packages/react/src/Text/Text.features.stories.tsx\n+++ b/packages/react/src/Text/Text.features.stories.tsx\n@@ -64,3 +64,33 @@ export const SemiboldWeight = () => (\n     Stylized text\n   </Text>\n )\n+\n+export const PreWhiteSpace = () => (\n+  <Text as=\"span\" whiteSpace=\"pre\">\n+    Stylized text\n+  </Text>\n+)\n+\n+export const NormalWhiteSpace = () => (\n+  <Text as=\"span\" whiteSpace=\"normal\">\n+    Stylized text\n+  </Text>\n+)\n+\n+export const NowrapWhiteSpace = () => (\n+  <Text as=\"span\" whiteSpace=\"nowrap\">\n+    Stylized text\n+  </Text>\n+)\n+\n+export const PreWrapWhiteSpace = () => (\n+  <Text as=\"span\" whiteSpace=\"pre-wrap\">\n+    Stylized text\n+  </Text>\n+)\n+\n+export const PreLineWhiteSpace = () => (\n+  <Text as=\"span\" whiteSpace=\"pre-line\">\n+    Stylized text\n+  </Text>\n+)\ndiff --git a/packages/react/src/Text/Text.module.css b/packages/react/src/Text/Text.module.css\nindex 6b7b5552bcc..66ea88707dd 100644\n--- a/packages/react/src/Text/Text.module.css\n+++ b/packages/react/src/Text/Text.module.css\n@@ -29,4 +29,24 @@\n   &:where([data-weight='semibold']) {\n     font-weight: var(--base-text-weight-semibold);\n   }\n+\n+  &:where([data-white-space='pre']) {\n+    white-space: pre;\n+  }\n+\n+  &:where([data-white-space='normal']) {\n+    white-space: normal;\n+  }\n+\n+  &:where([data-white-space='nowrap']) {\n+    white-space: nowrap;\n+  }\n+\n+  &:where([data-white-space='pre-wrap']) {\n+    white-space: pre-wrap;\n+  }\n+\n+  &:where([data-white-space='pre-line']) {\n+    white-space: pre-line;\n+  }\n }\ndiff --git a/packages/react/src/Text/Text.stories.tsx b/packages/react/src/Text/Text.stories.tsx\nindex 36f2bab2566..77881a38f5f 100644\n--- a/packages/react/src/Text/Text.stories.tsx\n+++ b/packages/react/src/Text/Text.stories.tsx\n@@ -38,4 +38,10 @@ Playground.argTypes = {\n     },\n     options: ['light', 'normal', 'medium', 'semibold'],\n   },\n+  whiteSpace: {\n+    control: {\n+      type: 'radio',\n+    },\n+    options: ['pre', 'normal', 'nowrap', 'pre-wrap', 'pre-line'],\n+  },\n }\ndiff --git a/packages/react/src/Text/Text.test.tsx b/packages/react/src/Text/Text.test.tsx\nindex f6ed9002d77..5b640cf5c14 100644\n--- a/packages/react/src/Text/Text.test.tsx\n+++ b/packages/react/src/Text/Text.test.tsx\n@@ -114,4 +114,17 @@ describe('Text', () => {\n     expect(textElement).toBeInTheDocument()\n     expect(textElement).toHaveClass(testClasses.ResponsiveLine)\n   })\n+\n+  it.each(['pre', 'normal', 'nowrap', 'pre-wrap', 'pre-line'] as const)(\n+    'sets the data-white-space attribute when whiteSpace is %s',\n+    whiteSpace => {\n+      const {container} = render(<Text whiteSpace={whiteSpace}>Hello</Text>)\n+      expect(container.firstChild).toHaveAttribute('data-white-space', whiteSpace)\n+    },\n+  )\n+\n+  it('does not set the data-white-space attribute when whiteSpace is not provided', () => {\n+    const {container} = render(<Text>Hello</Text>)\n+    expect(container.firstChild).not.toHaveAttribute('data-white-space')\n+  })\n })\ndiff --git a/packages/react/src/Text/Text.tsx b/packages/react/src/Text/Text.tsx\nindex 530c30ae8d1..9f27baf8323 100644\n--- a/packages/react/src/Text/Text.tsx\n+++ b/packages/react/src/Text/Text.tsx\n@@ -10,16 +10,24 @@ export type TextProps<As extends React.ElementType = 'span'> = PolymorphicProps<\n   {\n     size?: 'large' | 'medium' | 'small'\n     weight?: 'light' | 'normal' | 'medium' | 'semibold'\n+    whiteSpace?: 'pre' | 'normal' | 'nowrap' | 'pre-wrap' | 'pre-line'\n     className?: string\n   }\n >\n \n // eslint-disable-next-line @typescript-eslint/no-explicit-any\n function Text<As extends React.ElementType>(props: TextProps<As>, ref: ForwardedRef<any>) {\n-  const {as: Component = 'span', className, size, weight, ...rest} = props\n+  const {as: Component = 'span', className, size, weight, whiteSpace, ...rest} = props\n \n   return (\n-    <Component className={clsx(className, classes.Text)} data-size={size} data-weight={weight} {...rest} ref={ref} />\n+    <Component\n+      className={clsx(className, classes.Text)}\n+      data-size={size}\n+      data-weight={weight}\n+      data-white-space={whiteSpace}\n+      {...rest}\n+      ref={ref}\n+    />\n   )\n }\n \n",
+    "changed_files": [
+      ".changeset/text-white-space-prop.md",
+      "packages/react/src/Text/Text.docs.json",
+      "packages/react/src/Text/Text.features.stories.tsx",
+      "packages/react/src/Text/Text.module.css",
+      "packages/react/src/Text/Text.stories.tsx",
+      "packages/react/src/Text/Text.test.tsx",
+      "packages/react/src/Text/Text.tsx"
+    ],
+    "ci_status": "success",
+    "existing_issues": null,
+    "linked_issues": [
+      {
+        "number": 7607,
+        "title": "[Text] `whiteSpace` prop is documented but not supported",
+        "body": "### Description\n\nHi \ud83d\udc4b \n\nI'm using the library for a pet project, and I just noticed a discrepancy:\n- Currently the docs list `whiteSpace` as a supported prop:\n  - https://github.com/primer/react/blob/4f9e435e58ff50a3d07a74a2f1cf855977d5dcea/packages/react/src/Text/Text.docs.json#L53-L56\n- But the component does not support it:\n  - https://github.com/primer/react/blob/4f9e435e58ff50a3d07a74a2f1cf855977d5dcea/packages/react/src/Text/Text.tsx#L7-L15\n\nI'm not sure if `Text` should support `whiteSpace` or the docs need updating.\n\n\n\n### Steps to reproduce\n\nUsing `whiteSpace` results a type error:\n\n<img width=\"1002\" height=\"220\" alt=\"screenshot of the error\" src=\"https://github.com/user-attachments/assets/4003d821-75b1-487b-8bab-1c31111d93d6\" />\n\n### Version\n\nv38.13.0\n\n### Browser\n\n_No response_"
+      }
+    ]
+  },
+  "snapshot": "snapshots/03856a4eb135e8b97e7412906668f1954d3b8b3ac2a1e8d350fed3bcda7589d6.json"
+}

@@ -1,0 +1,47 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "ruby",
+  "source": {
+    "repo": "jekyll/jekyll",
+    "number": 9914,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-jekyll-jekyll-9914",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "jekyll",
+      "name": "jekyll",
+      "default_branch": "master",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 9914,
+    "title": "Add .ruby-lsp to default excludes",
+    "body": "Fixes #9612",
+    "author": {
+      "login": "andrew",
+      "account_age_days": 6672,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/lib/jekyll/configuration.rb b/lib/jekyll/configuration.rb\nindex 9b2fbffc2c2..9f3d2fa730b 100644\n--- a/lib/jekyll/configuration.rb\n+++ b/lib/jekyll/configuration.rb\n@@ -253,7 +253,7 @@ def add_default_collections\n     end\n \n     DEFAULT_EXCLUDES = %w(\n-      .sass-cache .jekyll-cache\n+      .sass-cache .jekyll-cache .ruby-lsp\n       gemfiles Gemfile Gemfile.lock\n       node_modules\n       vendor/bundle/ vendor/cache/ vendor/gems/ vendor/ruby/\ndiff --git a/test/test_configuration.rb b/test/test_configuration.rb\nindex 344cecb363c..b74523da823 100644\n--- a/test/test_configuration.rb\n+++ b/test/test_configuration.rb\n@@ -73,6 +73,7 @@ class TestConfiguration < JekyllUnitTest\n       exclude = @config[\"exclude\"]\n       assert_includes exclude, \".sass-cache\"\n       assert_includes exclude, \".jekyll-cache\"\n+      assert_includes exclude, \".ruby-lsp\"\n     end\n   end\n \n",
+    "changed_files": [
+      "lib/jekyll/configuration.rb",
+      "test/test_configuration.rb"
+    ],
+    "ci_status": "success",
+    "existing_issues": null,
+    "linked_issues": [
+      {
+        "number": 9612,
+        "title": "[Bug]: Serve should ignore .ruby-lsp directory",
+        "body": "### Operating System\r\n\r\nWSL\r\n\r\n### Ruby Version\r\n\r\nruby 3.0.2p107 (2021-07-07 revision 0db68f0233) [x86_64-linux-gnu]\r\n\r\n### Jekyll Version\r\n\r\njekyll 3.9 and 4.2\r\n\r\n### GitHub Pages Version\r\n\r\n_No response_\r\n\r\n### Expected Behavior\r\n\r\nThe build and serve commands should ignore the hidden directory .ruby-lsp since it is only for assitance in the IDE with Ruby and not for generating content.\r\n\r\nThe watch feature should also\r\n\r\n### Current Behavior\r\n\r\nI have Ruby LSP extension installed for VS Code and then https://github.com/Shopify/ruby-lsp is running behind that.\r\n\r\nThe Jekyll watch feature displays a ton of changes to .ruby-lsp directory when I am not making any changes and this makes output noisy. And there's a chance some content like .md files might be picked up incorrectly.\r\n\r\n### Relevant log output\r\n\r\n```console\r\n...\r\n                    .ruby-lsp/vendor/bundle/ruby/3.0.0/gems/rouge-4.2.1/lib/rouge/demos/graphql\r\n                    .ruby-lsp/vendor/bundle/ruby/3.0.0/gems/rouge-4.2.1/lib/rouge/demos/groovy\r\n                    .ruby-lsp/vendor/bundle/ruby/3.0.0/gems/rouge-4.2.1/lib/rouge/demos/hack\r\n       Jekyll Feed: Generating feed for posts\r\nRun in verbose mode to see all warnings.\r\n                    ...done in 0.237940707 seconds.\r\n                    \r\n      Regenerating: 385 file(s) changed at 2024-06-05 07:55:21\r\n                    .ruby-lsp/vendor/bundle/ruby/3.0.0/gems/rouge-4.2.1/lib/rouge/demos/hack\r\n                    .ruby-lsp/vendor/bundle/ruby/3.0.0/gems/rouge-4.2.1/lib/rouge/demos/haml\r\n                    .ruby-lsp/vendor/bundle/ruby/3.0.0/gems/rouge-4.2.1/lib/rouge/demos/handlebars\r\n                    .ruby-lsp/vendor/bundle/ruby/3.0.0/gems/rouge-4.2.1/lib/rouge/demos/haskell\r\n                    .ruby-lsp/vendor/bundle/ruby/3.0.0/gems/rouge-4.2.1/lib/rouge/demos/haxe\r\n...\r\n```\r\n\r\n\r\n### Code Sample\r\n\r\n_No response_"
+      }
+    ]
+  },
+  "snapshot": "snapshots/bc5b9a4e2c87e9e2ee71749edad9c07d08c2c7982b58a7747208c2294cb640eb.json"
+}

@@ -1,0 +1,40 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "java",
+  "source": {
+    "repo": "google/gson",
+    "number": 3021,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-google-gson-3021",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "google",
+      "name": "gson",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 3021,
+    "title": "docs: Fix copy-paste @return in JsonArray.getAsCharacter javadoc",
+    "body": "## Problem\n\nThe `@return` tag on `JsonArray.getAsCharacter()` reads:\n\n```\n@return this element as a primitive short if it is single element array.\n```\n\nThis is a copy-paste from `getAsShort()` and is wrong. The method returns a `char`, not a primitive short, and every other line of the same javadoc block (the description, the `@deprecated` note, and the method signature) talks about a character.\n\n## Root Cause\n\nWhen the per-method getters were templated, the `getAsCharacter` block reused the `@return` text from `getAsShort` without updating the type description.\n\n## Fix\n\nReplace `primitive short` with `character` in the `@return` tag of `JsonArray.getAsCharacter`. No behavior change; javadoc only.\n\n## Tests\n\nNo new tests are required because this is a documentation-only fix. The full test suite still passes:\n\n```\nmvn -pl gson test\n...\nTests run: 4592, Failures: 0, Errors: 0, Skipped: 19\nBUILD SUCCESS\n```",
+    "author": {
+      "login": "daguimu",
+      "account_age_days": 3228,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/gson/src/main/java/com/google/gson/JsonArray.java b/gson/src/main/java/com/google/gson/JsonArray.java\nindex 10b94c0dc1..e5698e80e7 100644\n--- a/gson/src/main/java/com/google/gson/JsonArray.java\n+++ b/gson/src/main/java/com/google/gson/JsonArray.java\n@@ -364,7 +364,7 @@ public byte getAsByte() {\n    * method calls {@link JsonElement#getAsCharacter()} on the element, therefore any of the\n    * exceptions declared by that method can occur.\n    *\n-   * @return this element as a primitive short if it is single element array.\n+   * @return this element as a character if it is single element array.\n    * @throws IllegalStateException if the array is empty or has more than one element.\n    * @deprecated This method is misleading, as it does not get this element as a char but rather as\n    *     a string's first character.\n",
+    "changed_files": [
+      "gson/src/main/java/com/google/gson/JsonArray.java"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/a74d6725b30c42ffda858599b3b0d38597c35bc86138124cc6975edf470c4285.json"
+}

@@ -1,0 +1,40 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "go",
+  "source": {
+    "repo": "cli/cli",
+    "number": 13488,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-cli-cli-13488",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "cli",
+      "name": "cli",
+      "default_branch": "trunk",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 13488,
+    "title": "Add 3 day dependabot cooldown period",
+    "body": "Adds a 3 day cooldown period to dependabot updates for both gomod and github-actions ecosystems, mirroring the pattern used in [cli/go-gh](https://github.com/cli/go-gh/blob/trunk/.github/dependabot.yml) (with a shorter cooldown).\n\nThis reduces churn from rapidly-superseded releases by giving new versions time to settle before dependabot proposes them.",
+    "author": {
+      "login": "williammartin",
+      "account_age_days": 5174,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/.github/dependabot.yml b/.github/dependabot.yml\nindex 4c08abeabef..3d974364d2e 100644\n--- a/.github/dependabot.yml\n+++ b/.github/dependabot.yml\n@@ -4,6 +4,8 @@ updates:\n   directory: \"/\"\n   schedule:\n     interval: \"daily\"\n+  cooldown:\n+    default-days: 3\n   ignore:\n     - dependency-name: \"*\"\n       update-types:\n@@ -12,3 +14,5 @@ updates:\n   directory: \"/\"\n   schedule:\n       interval: \"daily\"\n+  cooldown:\n+    default-days: 3\n",
+    "changed_files": [
+      ".github/dependabot.yml"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/7840c589458dc662f22478d608d238f9362aca7f3e294d6788f498ade693ad38.json"
+}

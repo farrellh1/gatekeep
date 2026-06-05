@@ -1,0 +1,41 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "javascript",
+  "source": {
+    "repo": "expressjs/express",
+    "number": 7224,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-expressjs-express-7224",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "expressjs",
+      "name": "express",
+      "default_branch": "master",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 7224,
+    "title": "`4.x` update qs to 6.15.1, body-parser 1.20.5",
+    "body": "Prepping a 4.x release, want to land the qs bump in its own commit before I open the release PR\r\n\r\nThe qs bump is a follow on from #6972, since it was not released yet and we can take a higher minor w/o impact. ([qs changelog](https://github.com/ljharb/qs/blob/a0a81ea2071acce3eff41a040f719ac8f5c4f64c/CHANGELOG.md#6151))\r\n\r\nEdit: checked the dep tree and realized we can bump to body-parser@~1.20.5 to ensure express 4.x only pulls in one copy of qs\r\n\r\n",
+    "author": {
+      "login": "jonchurch",
+      "account_age_days": 4006,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/History.md b/History.md\nindex f27f4d73643..2567fea9074 100644\n--- a/History.md\n+++ b/History.md\n@@ -1,3 +1,11 @@\n+unreleased\n+==========\n+\n+* fix: restore >20 array parsing for req.query repeated keys (8d09bfe6)\n+  * This also unifies array-cap behavior across notations. Indexed notation (`a[0]=...`) was historically capped at qs's default `arrayLimit` of 20 even in older qs versions; after this change it also allows up to 1000 items.\n+* deps: qs@~6.15.1\n+* deps: body-parser@~1.20.5\n+\n 4.22.1 / 2025-12-01\n ==========\n \ndiff --git a/package.json b/package.json\nindex a6819557aaf..fab5f2484cf 100644\n--- a/package.json\n+++ b/package.json\n@@ -34,7 +34,7 @@\n   \"dependencies\": {\n     \"accepts\": \"~1.3.8\",\n     \"array-flatten\": \"1.1.1\",\n-    \"body-parser\": \"~1.20.4\",\n+    \"body-parser\": \"~1.20.5\",\n     \"content-disposition\": \"~0.5.4\",\n     \"content-type\": \"~1.0.4\",\n     \"cookie\": \"~0.7.1\",\n@@ -53,7 +53,7 @@\n     \"parseurl\": \"~1.3.3\",\n     \"path-to-regexp\": \"~0.1.12\",\n     \"proxy-addr\": \"~2.0.7\",\n-    \"qs\": \"~6.14.1\",\n+    \"qs\": \"~6.15.1\",\n     \"range-parser\": \"~1.2.1\",\n     \"safe-buffer\": \"5.2.1\",\n     \"send\": \"~0.19.0\",\n",
+    "changed_files": [
+      "History.md",
+      "package.json"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/5ab03e3dd8fdbf4b263559d69b6d42e465321c2fe3e7889859ca2fde699b60a1.json"
+}

@@ -1,0 +1,40 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "go",
+  "source": {
+    "repo": "cli/cli",
+    "number": 13487,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-cli-cli-13487",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "cli",
+      "name": "cli",
+      "default_branch": "trunk",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 13487,
+    "title": "Run govulncheck daily instead of weekly",
+    "body": "## Description\r\n\r\nUpdates the `govulncheck` workflow cron schedule from weekly (Mondays at midnight UTC) to daily at midnight UTC, so vulnerability reports surface more promptly. Dunno why it didn't ran so infrequently, seems like a 6 day lag is unreasonably long.",
+    "author": {
+      "login": "williammartin",
+      "account_age_days": 5174,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/.github/workflows/govulncheck.yml b/.github/workflows/govulncheck.yml\nindex 530e7f4c97b..ae05aeca8d0 100644\n--- a/.github/workflows/govulncheck.yml\n+++ b/.github/workflows/govulncheck.yml\n@@ -1,7 +1,7 @@\n name: Go Vulnerability Check\n on:\n   schedule:\n-    - cron: \"0 0 * * 1\" # Every Monday at midnight UTC\n+    - cron: \"0 0 * * *\" # Every day at midnight UTC\n   workflow_dispatch:\n \n jobs:\n",
+    "changed_files": [
+      ".github/workflows/govulncheck.yml"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/7840c589458dc662f22478d608d238f9362aca7f3e294d6788f498ade693ad38.json"
+}

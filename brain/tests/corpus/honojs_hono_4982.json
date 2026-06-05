@@ -1,0 +1,41 @@
+{
+  "config_yaml": null,
+  "label": "legit",
+  "verified": true,
+  "slop_kind": null,
+  "language": "typescript",
+  "source": {
+    "repo": "honojs/hono",
+    "number": 4982,
+    "origin": "harvested",
+    "signal": "merged"
+  },
+  "event": {
+    "delivery_id": "harvest-honojs-hono-4982",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "honojs",
+      "name": "hono",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 4982,
+    "title": "fix: clean up config files trailing comma, stale excludes, typesVersions gaps, jsr paths",
+    "body": "Went through the configs and found a bunch of small issues that needed fixing:\r\n\r\n\r\n- tsconfig.build.json - trailing comma in the exclude array (invalid JSON), plus 5 entries that pointed to files/dirs that don't even exist anymore (src/mod.ts, src/helper.ts, src/middleware.ts, src/deno, src/test-utils). Cleaned those out.\r\n\r\n- package.json typesVersions - was missing entries for jwk, netlify, jsx/dom/jsx-dev-runtime and jsx/dom/jsx-runtime even though the exports for those are all there. Also had a stray nextjs entry pointing to a directory that doesn't exist (orphan). The 5 router paths were pointing at router.d.ts directly instead of the directory (would miss extra exports like PreparedRegExpRouter on older TS resolutions).\r\n\r\n- jsr.json - 6 middleware paths were pointing at the implementation files (jwt.ts, jwk.ts, etc.) instead of index.ts. The index files have the declare module augmentations for ContextVariableMap, without those, JSR users would lose type safety on c.get() for those middlewares.\r\n\r\n\r\nRan tsc --noEmit after everything, zero errors. Nothing breaking, just cleaning up config debt.",
+    "author": {
+      "login": "Mohammad-Faiz-Cloud-Engineer",
+      "account_age_days": 434,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/package.json b/package.json\nindex 660403b2b..885234eec 100644\n--- a/package.json\n+++ b/package.json\n@@ -506,9 +506,18 @@\n       \"jsx/dom/server\": [\n         \"./dist/types/jsx/dom/server.d.ts\"\n       ],\n+      \"jsx/dom/jsx-dev-runtime\": [\n+        \"./dist/types/jsx/dom/jsx-dev-runtime.d.ts\"\n+      ],\n+      \"jsx/dom/jsx-runtime\": [\n+        \"./dist/types/jsx/dom/jsx-runtime.d.ts\"\n+      ],\n       \"jwt\": [\n         \"./dist/types/middleware/jwt\"\n       ],\n+      \"jwk\": [\n+        \"./dist/types/middleware/jwk\"\n+      ],\n       \"timeout\": [\n         \"./dist/types/middleware/timeout\"\n       ],\n@@ -552,19 +561,19 @@\n         \"./dist/types/router.d.ts\"\n       ],\n       \"router/reg-exp-router\": [\n-        \"./dist/types/router/reg-exp-router/router.d.ts\"\n+        \"./dist/types/router/reg-exp-router\"\n       ],\n       \"router/smart-router\": [\n-        \"./dist/types/router/smart-router/router.d.ts\"\n+        \"./dist/types/router/smart-router\"\n       ],\n       \"router/trie-router\": [\n-        \"./dist/types/router/trie-router/router.d.ts\"\n+        \"./dist/types/router/trie-router\"\n       ],\n       \"router/pattern-router\": [\n-        \"./dist/types/router/pattern-router/router.d.ts\"\n+        \"./dist/types/router/pattern-router\"\n       ],\n       \"router/linear-router\": [\n-        \"./dist/types/router/linear-router/router.d.ts\"\n+        \"./dist/types/router/linear-router\"\n       ],\n       \"utils/jwt\": [\n         \"./dist/types/utils/jwt/index.d.ts\"\n@@ -596,15 +605,15 @@\n       \"bun\": [\n         \"./dist/types/adapter/bun\"\n       ],\n-      \"nextjs\": [\n-        \"./dist/types/adapter/nextjs\"\n-      ],\n       \"aws-lambda\": [\n         \"./dist/types/adapter/aws-lambda\"\n       ],\n       \"vercel\": [\n         \"./dist/types/adapter/vercel\"\n       ],\n+      \"netlify\": [\n+        \"./dist/types/adapter/netlify\"\n+      ],\n       \"lambda-edge\": [\n         \"./dist/types/adapter/lambda-edge\"\n       ],\ndiff --git a/tsconfig.build.json b/tsconfig.build.json\nindex 7843b827c..f64fb981b 100644\n--- a/tsconfig.build.json\n+++ b/tsconfig.build.json\n@@ -12,12 +12,7 @@\n     \"src/**/*.mts\"\n   ],\n   \"exclude\": [\n-    \"src/mod.ts\",\n-    \"src/helper.ts\",\n-    \"src/middleware.ts\",\n-    \"src/deno/**/*.ts\",\n-    \"src/test-utils/*.ts\",\n     \"src/**/*.test.ts\",\n-    \"src/**/*.test.tsx\",\n+    \"src/**/*.test.tsx\"\n   ]\n }\n",
+    "changed_files": [
+      "package.json",
+      "tsconfig.build.json"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/24fe8d201003a171727a73bd7a755daa6d81aee7e008db7f561f6e254afa1d89.json"
+}
