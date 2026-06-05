@@ -1,0 +1,41 @@
+{
+  "config_yaml": null,
+  "label": "slop",
+  "verified": true,
+  "slop_kind": "obvious",
+  "language": "typescript",
+  "source": {
+    "repo": "openclaw/openclaw",
+    "number": 83534,
+    "origin": "harvested",
+    "signal": "rejection_label"
+  },
+  "event": {
+    "delivery_id": "harvest-openclaw-openclaw-83534",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "openclaw",
+      "name": "openclaw",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 83534,
+    "title": "docs: replace British 'behaviour' with American 'behavior'",
+    "body": "## Summary\r\n\r\nProblem: Three remaining instances of British \"behaviour\" in the docs violate the project's American English requirement.\r\nWhy it matters: `CONTRIBUTING.md` explicitly states \"Use American English spelling and grammar in code, comments, docs, and UI strings.\"\r\nWhat changed: Replaced \"behaviour\" with \"behavior\" in 3 prose locations across 2 files.\r\nWhat did NOT change: No code, no tests, no runtime paths, no API string literals (e.g. the `\"cancelled\"` status enum, which appears 32 times and is intentionally kept British because it matches API contract values, is untouched).\r\n\r\n## Change Type\r\n\r\n- [x] Docs\r\n\r\n## Scope\r\n\r\n- [x] UI / DX\r\n\r\n## Linked Issue/PR\r\n\r\nN/A\r\n\r\n## Real behavior proof\r\n\r\nBehavior or issue addressed: Three docs strings used British \"behaviour\" instead of the project's standard American \"behavior\" (845 occurrences of \"behavior\" vs 3 of \"behaviour\" in `docs/` before this patch).\r\n\r\nReal environment tested: Local clone of `openclaw/openclaw` at current `main`, on macOS (zsh terminal).\r\n\r\nExact steps or command run after this patch: Ran `grep -rn \"behaviour\" docs/` in the repo root after applying the patch, then ran `git diff main --stat` to confirm exactly 3 line changes across 2 files.\r\n\r\nEvidence after fix: Terminal capture below shows the live console output after the patch. The `grep` returns zero matches, and `git diff --stat` confirms the scope: 2 files changed, 3 insertions, 3 deletions. Screenshot of the terminal session attached.\r\n\r\n<img width=\"1708\" height=\"418\" alt=\"image\" src=\"https://github.com/user-attachments/assets/cb2d4a12-751b-4a5b-a236-9c114d272caf\" />\r\n\r\n\r\nObserved result after fix: `grep -rn \"behaviour\" docs/` returns no matches. `git diff main --stat` reports `2 files changed, 3 insertions(+), 3 deletions(-)`. All three outliers replaced; both affected files already use \"behavior\" elsewhere, confirming internal consistency.\r\n\r\nWhat was not tested: None. This is a markdown text-only change with no runtime, build, rendering, or API surface impact, so there is no behavioral path to exercise.\r\n\r\nBefore evidence: Before the patch, `grep -rn \"behaviour\" docs/` returned three matches: `docs/tools/acp-agents.md:530`, `docs/plugins/voice-call.md:178`, and `docs/plugins/voice-call.md:225`, all in prose (not code, not API literals).\r\n\r\n## Root Cause\r\n\r\nN/A (docs-only spelling fix, not a regression).\r\n\r\n## Regression Test Plan\r\n\r\nN/A.\r\n\r\n## User-visible / Behavior Changes\r\n\r\nNone.\r\n\r\n## Diagram\r\n\r\nN/A\r\n\r\n## Security Impact\r\n\r\n- New permissions/capabilities? No\r\n- Secrets/tokens handling changed? No\r\n- New/changed network calls? No\r\n- Command/tool execution surface changed? No\r\n- Data access scope changed? No\r\n\r\n## Repro + Verification\r\n\r\nEnvironment:\r\n- OS: macOS\r\n- Runtime/container: N/A\r\n- Model/provider: N/A\r\n- Integration/channel: N/A\r\n\r\nSteps: Apply patch, run `grep -rn \"behaviour\" docs/` from repo root.\r\nExpected: Zero matches.\r\nActual: Zero matches.\r\n\r\n## Human Verification\r\n\r\nVerified scenarios: Manually inspected each of the 3 modified locations in context via `git diff`. Confirmed each occurrence is in prose (not code blocks, not API string literals, not status enum values). Confirmed both affected files already use \"behavior\" elsewhere.\r\n\r\nEdge cases checked: Verified that `\"cancelled\"` (which appears 32 times in docs) is intentionally kept British because it matches API status enum literals. Those were left untouched. Confirmed no other British English outliers exist in `docs/`, README, CONTRIBUTING, AGENTS, VISION, SECURITY, CLAUDE, skills/, extensions/, packages/, apps/ via a comprehensive scan.\r\n\r\nWhat was not verified: N/A for a text-only docs change.\r\n\r\n## Review Conversations\r\n\r\n- [x] I replied to or resolved every bot review conversation I addressed in this PR.\r\n- [x] I left unresolved only the conversations that still need reviewer or maintainer judgment.\r\n\r\n## Compatibility / Migration\r\n\r\n- Backward compatible? Yes\r\n- Config/env changes? No\r\n- Migration needed? No\r\n\r\n## Risks and Mitigations\r\n\r\nNone.\r\n\r\nAI-assisted: yes. I reviewed and verified the change manually.\r\n\r\nLocal Codex review:\r\n- Command: `codex review --base origin/main`\r\n- Result: no actionable regressions.\r\n- Summary: The diff only updates British spellings to American English in documentation and does not alter documented behavior, links, or code paths.\r\n",
+    "author": {
+      "login": "spacegeologist",
+      "account_age_days": 286,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/docs/plugins/voice-call.md b/docs/plugins/voice-call.md\nindex eaeceebea2f20..bd728ca046a9b 100644\n--- a/docs/plugins/voice-call.md\n+++ b/docs/plugins/voice-call.md\n@@ -175,7 +175,7 @@ Voice-call credentials accept SecretRefs. `plugins.entries.voice-call.config.twi\n     - `skipSignatureVerification` is for local testing only.\n     - On ngrok free tier, set `publicUrl` to the exact ngrok URL; signature verification is always enforced.\n     - `tunnel.allowNgrokFreeTierLoopbackBypass: true` allows Twilio webhooks with invalid signatures **only** when `tunnel.provider=\"ngrok\"` and `serve.bind` is loopback (ngrok local agent). Local dev only.\n-    - Ngrok free-tier URLs can change or add interstitial behaviour; if `publicUrl` drifts, Twilio signatures fail. Production: prefer a stable domain or a Tailscale funnel.\n+    - Ngrok free-tier URLs can change or add interstitial behavior; if `publicUrl` drifts, Twilio signatures fail. Production: prefer a stable domain or a Tailscale funnel.\n \n   </Accordion>\n   <Accordion title=\"Streaming connection caps\">\n@@ -222,7 +222,7 @@ realtime transcription providers.\n audio mode per call.\n </Warning>\n \n-Current runtime behaviour:\n+Current runtime behavior:\n \n - `realtime.enabled` is supported for Twilio Media Streams.\n - `realtime.provider` is optional. If unset, Voice Call uses the first registered realtime voice provider.\ndiff --git a/docs/tools/acp-agents.md b/docs/tools/acp-agents.md\nindex a6da96113f20c..f7e5df282cb1b 100644\n--- a/docs/tools/acp-agents.md\n+++ b/docs/tools/acp-agents.md\n@@ -527,7 +527,7 @@ Two ways to start an ACP session:\n </ParamField>\n <ParamField path=\"mode\" type='\"run\" | \"session\"' default=\"run\">\n   `\"run\"` is one-shot; `\"session\"` is persistent. If `thread: true` and\n-  `mode` is omitted, OpenClaw may default to persistent behaviour per\n+  `mode` is omitted, OpenClaw may default to persistent behavior per\n   runtime path. `mode: \"session\"` requires `thread: true`.\n </ParamField>\n <ParamField path=\"cwd\" type=\"string\">\n",
+    "changed_files": [
+      "docs/plugins/voice-call.md",
+      "docs/tools/acp-agents.md"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/e8ca70bcf96917ec9f3e2e76ef9c796ad788cff48121b3c1218fe20363bf76c5.json"
+}

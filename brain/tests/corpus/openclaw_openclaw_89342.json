@@ -1,0 +1,46 @@
+{
+  "config_yaml": null,
+  "label": "slop",
+  "verified": true,
+  "slop_kind": "subtle",
+  "language": "typescript",
+  "source": {
+    "repo": "openclaw/openclaw",
+    "number": 89342,
+    "origin": "harvested",
+    "signal": "rejection_label"
+  },
+  "event": {
+    "delivery_id": "harvest-openclaw-openclaw-89342",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "openclaw",
+      "name": "openclaw",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 89342,
+    "title": "fix(gateway): check pending timeout snapshot in waitForAgentJob timer",
+    "body": "When a sub-agent run is force-killed by its run timeout, the wait timer callback in waitForAgentJob only consulted getPendingAgentRunError and ignored getPendingAgentRunTimeout. If the timeout snapshot arrived near-simultaneously with the wait timer expiry, the pending timeout was discarded and waiters resolved to \null - so the parent session never received a completion event.\n\nCheck pending timeout first in the wait timer callback so timeout-terminated sub-agent runs correctly notify the parent session.\n\n## Verification\n- Existing tests pass (server-methods: 117/117)\n- Lint clean\n\nCloses #89095\n\n@clawsweeper re-review\n\n## Real behavior proof\n\n**Behavior or issue addressed:** When a sub-agent run has both a pending timeout and a pending error, the previous code checked the error first, causing premature error reporting. The fix calls `getPendingAgentRunTimeout` to check for a pending timeout before any error path, so sub-agent runs still within their timeout window are not falsely reported as failed.\n\n**Real environment tested:** Gateway running live with configured providers; Node.js v22.17.1 on Windows x64; OpenClaw 2026.6.2 (commit f1892a3b7e).\n\n**Exact steps or command run after this patch:**\n```sh\nnode --import tsx -e \"\nimport { readFileSync } from 'fs';\nimport { globSync } from 'glob';\nconst f = globSync('dist/agent-*.js')[0];\nconst c = readFileSync(f, 'utf8');\nconst t = c.indexOf('getPendingAgentRunTimeout');\nconst e = c.indexOf('error');\nconsole.log('timeout called BEFORE error:', t < e);\n\"\n```\n\n**Evidence after fix:**\n```\ntimeout called BEFORE error: true\n```\nDist build (`dist/agent-BGIMYGFg.js`): L166-173 `getPendingAgentRunTimeout` function defined; L334-335 `getPendingAgentRunTimeout(runId)` called before any error path in `waitForAgentJob`.\n\n**Observed result after fix:** `getPendingAgentRunTimeout` is invoked before any error check in `waitForAgentJob`. Sub-agent runs within their timeout window are not prematurely reported as errors.\n\n**What was not tested:** Live sub-agent timeout scenario (requires configured provider + multi-agent setup). Race condition reproduction (requires concurrent sub-agent runs approaching timeout).",
+    "author": {
+      "login": "chengzhichao-xydt",
+      "account_age_days": 98,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/src/gateway/server-methods/agent-job.ts b/src/gateway/server-methods/agent-job.ts\nindex 4154a8ba78191..55037472366fb 100644\n--- a/src/gateway/server-methods/agent-job.ts\n+++ b/src/gateway/server-methods/agent-job.ts\n@@ -468,6 +468,11 @@ export async function waitForAgentJob(params: {\n     removeWaiter = addAgentRunWaiter(runId);\n \n     const timer = setSafeTimeout(() => {\n+      const pendingTimeout = getPendingAgentRunTimeout(runId);\n+      if (pendingTimeout) {\n+        finish(pendingTimeout.snapshot);\n+        return;\n+      }\n       const pendingError = getPendingAgentRunError(runId);\n       finish(pendingError ? createPendingErrorTimeoutSnapshot(pendingError.snapshot) : null);\n     }, timeoutMs);\n",
+    "changed_files": [
+      "src/gateway/server-methods/agent-job.ts"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": [
+      {
+        "number": 89095,
+        "title": "Sub-agent run timeout does not notify parent session (completion event silently dropped)",
+        "body": "## Summary\n\nWhen a sub-agent run is force-killed by its **run timeout** (`runTimeoutSeconds` / `subagents.runTimeoutSeconds`), the parent session receives **no completion/timeout event**. The sub-agent registry correctly records `status: \"timeout\"` with an `endedAt`, but the parent agent is never notified \u2014 it waits indefinitely and only discovers the death by actively polling `subagents(action=list)`.\n\nNormal completions (and graceful exits that still produce output) notify the parent reliably. The gap is specific to the **timeout/force-kill** termination path.\n\nVersion: `2026.5.28 (e932160)`.\n\n## Reproduction\n\n1. From a parent agent, spawn a sub-agent with a short run timeout and a blocking task, e.g. `runTimeoutSeconds: 30` and a task that runs `sleep 600`.\n2. The runtime force-kills the child at 30s; `subagents(action=list)` shows `status: \"timeout\"`, `endedAt` set.\n3. The parent session receives **no** completion event \u2014 no auto-announce message arrives. Contrast with a normally-finishing sub-agent, whose completion arrives as a parent message within seconds.\n\n## Root cause\n\nIn the wait-timer fallback inside `waitForAgentJob` (`dist/agent-D5XvMyya.js`, ~line 339), the timeout callback only consults `getPendingAgentRunError` and ignores `getPendingAgentRunTimeout`:\n\n```js\nconst timer = setSafeTimeout(() => {\n    const pendingError = getPendingAgentRunError(runId);\n    finish(pendingError ? createPendingErrorTimeoutSnapshot(pendingError.snapshot) : null);\n}, timeoutMs);\n```\n\nWhen the run timeout fires, the gateway force-kills the child and a pending **timeout** snapshot (carrying `endedAt`) is registered. But the wait timer fires near-simultaneously and calls `finish(null)` because there is no pending *error* \u2014 discarding the timeout snapshot and cancelling the grace timer. The resolved wait result then lacks `endedAt`/`stopReason`, so `isTerminalWaitTimeout` is `false` downstream and the announce/notify path never delivers a parent event.\n\nThe normal scheduled timeout path already resolves `pendingTimeout.snapshot` directly, so the wait-timer fallback is simply asymmetric \u2014 it handles pending errors but not pending timeouts.\n\n## Suggested fix\n\nMake the wait-timer fallback symmetric \u2014 fall back to the pending timeout snapshot when there is no pending error:\n\n```js\nconst timer = setSafeTimeout(() => {\n    const pendingError = getPendingAgentRunError(runId);\n    if (pendingError) {\n        finish(createPendingErrorTimeoutSnapshot(pendingError.snapshot));\n        return;\n    }\n    const pendingTimeout = getPendingAgentRunTimeout(runId);\n    finish(pendingTimeout ? pendingTimeout.snapshot : null);\n}, timeoutMs);\n```\n\n`getPendingAgentRunTimeout(runId)` already exists with a signature matching `getPendingAgentRunError` (both return `{ snapshot, dueAt }` or `undefined`). This preserves error precedence and keeps the timeout snapshot's `endedAt`, so `isTerminalWaitTimeout` becomes true and the parent receives the timeout completion.\n\n## Possibly related (not fixed here)\n\nThere is a secondary \"no-output\" case in the announce **delivery** layer (`subagent-announce-delivery-*.js`, `hasFailedSubagentNoOutputCompletion`): a timed-out sub-agent that produced literally `(no output)` is marked `delivered:false` and dropped after retry. This is plausibly intentional (don't push an empty message), but worth confirming it doesn't compound the silent-timeout symptom for the parent-session event specifically.\n\nThis was found via adversarial testing of the sub-agent comm path; the wait-timer fix above resolved the core \"silent timeout\" symptom locally. Filing for an upstream fix.\n"
+      }
+    ]
+  },
+  "snapshot": "snapshots/e8ca70bcf96917ec9f3e2e76ef9c796ad788cff48121b3c1218fe20363bf76c5.json"
+}

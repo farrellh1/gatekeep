@@ -124,16 +124,17 @@ def test_every_case_passes_the_eval_corpus_loader_contract():
 # ---------------------------------------------------------------------------
 
 
-def test_corpus_holds_the_frozen_slop_set_and_a_grown_legit_set():
-    """Premise: this slice scales the legit population only; the 4 verified slop
-    cases are the frozen slop set (a later slice scales slop). So slop is pinned
-    at 4 while legit is free to grow above the original 12.
-    References: eval_corpus.CorpusCase.label, eval_corpus.CorpusCase.verified.
+def test_corpus_holds_a_scaled_slop_set_and_a_grown_legit_set():
+    """Premise: this slice scales the slop population toward its sizing target
+    (~50, split obvious/subtle). Both populations are pinned by invariant — slop
+    at or above the sizing floor, legit at or above the original 12 — so
+    harvesting more of either does not require editing a count.
+    References: eval_corpus.CorpusCase.label, eval_replay.MIN_SLOP_STRATUM_N.
     """
     cases = load_corpus(CORPUS)
     legit = [c for c in cases if c.label == "legit"]
     slop = [c for c in cases if c.label == "slop"]
-    assert len(slop) == 4, f"Expected the frozen 4 slop, got {len(slop)}"
+    assert len(slop) >= 50, f"Expected the scaled slop set (>=50), got {len(slop)}"
     assert len(legit) >= 12, f"Expected at least the original 12 legit, got {len(legit)}"
     assert len(legit) + len(slop) == len(cases)
 
@@ -150,16 +151,19 @@ def test_all_committed_cases_are_verified():
     )
 
 
-def test_slop_cases_have_correct_slop_kind_distribution():
-    """Premise: the backup shows 1 obvious and 3 subtle slop cases.
-    References: eval_corpus.CorpusCase.slop_kind.
+def test_slop_cases_have_both_strata_at_substantial_n():
+    """Premise: the gate reads a blended TPR and a separate subtle-stratum TPR,
+    so both strata must carry enough verified cases to measure a rate. The
+    subtle stratum (guarded by the subtle TPR floor) is the larger one, because
+    distinct obvious slop is scarcer in the source than coherent-but-broken slop.
+    References: eval_corpus.CorpusCase.slop_kind, eval_replay.tpr_strata.
     """
     cases = load_corpus(CORPUS)
     slop = [c for c in cases if c.label == "slop"]
     obvious = [c for c in slop if c.slop_kind == "obvious"]
     subtle = [c for c in slop if c.slop_kind == "subtle"]
-    assert len(obvious) == 1, f"Expected 1 obvious slop, got {len(obvious)}"
-    assert len(subtle) == 3, f"Expected 3 subtle slop, got {len(subtle)}"
+    assert len(obvious) >= 20, f"Expected a substantial obvious stratum, got {len(obvious)}"
+    assert len(subtle) >= 25, f"Expected the subtle stratum at its floor, got {len(subtle)}"
 
 
 # ---------------------------------------------------------------------------
@@ -343,10 +347,10 @@ def test_load_corpus_does_not_load_dropped_cases():
 # ---------------------------------------------------------------------------
 
 
-def test_slice_equals_full_corpus_with_the_frozen_slop_count():
+def test_slice_equals_full_corpus_with_a_scaled_slop_count():
     """Premise: every committed case carries verified=true, so the verified
-    Slice equals the full corpus. The slop count is the frozen 4; the rest is
-    the grown legit population.
+    Slice equals the full corpus. Slop is the scaled population (>=50); the rest
+    is the grown legit population.
     References: eval_replay.slice_verified, eval_corpus.load_corpus.
     """
     from eval_replay import slice_verified
@@ -368,5 +372,5 @@ def test_slice_equals_full_corpus_with_the_frozen_slop_count():
 
     legit_in_slice = [r for r in sl if not r["expected_positive"]]
     slop_in_slice = [r for r in sl if r["expected_positive"]]
-    assert len(slop_in_slice) == 4
-    assert len(legit_in_slice) == len(sl) - 4
+    assert len(slop_in_slice) >= 50
+    assert len(legit_in_slice) == len(sl) - len(slop_in_slice)

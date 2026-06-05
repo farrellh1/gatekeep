@@ -1,0 +1,42 @@
+{
+  "config_yaml": null,
+  "label": "slop",
+  "verified": true,
+  "slop_kind": "subtle",
+  "language": "typescript",
+  "source": {
+    "repo": "openclaw/openclaw",
+    "number": 90544,
+    "origin": "harvested",
+    "signal": "rejection_label"
+  },
+  "event": {
+    "delivery_id": "harvest-openclaw-openclaw-90544",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "openclaw",
+      "name": "openclaw",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 90544,
+    "title": "Enable session pruning by default for all providers",
+    "body": "## Summary\n\nEnables session pruning (`contextPruning`) by default for **all providers**, not just Anthropic.\n\n## Problem\n\nCurrently, `contextPruning` (cache-TTL based tool result trimming) is only auto-enabled when Anthropic auth is detected. Non-Anthropic providers have pruning off by default, requiring explicit opt-in:\n\n```json5\n{\n  agents: {\n    defaults: {\n      contextPruning: { mode: \"cache-ttl\", ttl: \"5m\" },\n    },\n  },\n}\n```\n\nThis means most OpenClaw deployments are running without pruning, accumulating unnecessary tool output in context and driving up costs.\n\n## Solution\n\nThe `applyContextPruningDefaults` function now:\n\n1. Still applies Anthropic-specific defaults (1h TTL, heartbeat) when Anthropic auth is detected\n2. **Additionally** enables `cache-ttl` pruning with `ttl: \"5m\"` for all providers when the user hasn't explicitly configured `contextPruning.mode`\n\n## User impact\n\n- **If you haven't set `contextPruning`**: pruning is now on by default (5min TTL). This reduces context bloat from accumulated tool outputs between compaction cycles.\n- **If you've explicitly set `contextPruning.mode`** (including `\"off\"`): no change \u2014 your explicit setting is preserved.\n- **Anthropic users**: no change \u2014 the 1h TTL and heartbeat configuration continue to apply.\n\nTo disable: `contextPruning: { mode: \"off\" }`\n\n## Files changed\n\n- `src/config/defaults.ts` \u2014 Always enable default pruning when not explicitly configured\n- `src/config/defaults.test.ts` \u2014 Updated test to reflect new default behavior\n- `docs/concepts/session-pruning.md` \u2014 Updated docs to reflect all-provider defaults\n",
+    "author": {
+      "login": "crabman1600",
+      "account_age_days": 5,
+      "is_first_time_contributor": true
+    },
+    "diff": "diff --git a/docs/concepts/session-pruning.md b/docs/concepts/session-pruning.md\nindex 6232a867222d..69160f8e0e6c 100644\n--- a/docs/concepts/session-pruning.md\n+++ b/docs/concepts/session-pruning.md\n@@ -55,30 +55,42 @@ persist raw image blocks or prompt-hydration media markers in history.\n \n ## Smart defaults\n \n-OpenClaw auto-enables pruning for Anthropic profiles:\n+OpenClaw enables pruning by default for all providers with a 5-minute cache TTL.\n+Anthropic profiles get an extended 1-hour TTL and automatic heartbeat configuration:\n \n-| Profile type                                            | Pruning enabled | Heartbeat |\n-| ------------------------------------------------------- | --------------- | --------- |\n-| Anthropic OAuth/token auth (including Claude CLI reuse) | Yes             | 1 hour    |\n-| API key                                                 | Yes             | 30 min    |\n+| Profile type                                            | Pruning enabled | TTL    | Heartbeat |\n+| ------------------------------------------------------- | --------------- | ------ | --------- |\n+| All providers (default)                                 | Yes             | 5 min  | \u2014         |\n+| Anthropic OAuth/token auth (including Claude CLI reuse) | Yes             | 1 hour | 1 hour    |\n+| Anthropic API key                                       | Yes             | 1 hour | 30 min    |\n \n If you set explicit values, OpenClaw does not override them.\n \n ## Enable or disable\n \n-Pruning is off by default for non-Anthropic providers. To enable:\n+Pruning is on by default. To disable:\n \n ```json5\n {\n   agents: {\n     defaults: {\n-      contextPruning: { mode: \"cache-ttl\", ttl: \"5m\" },\n+      contextPruning: { mode: \"off\" },\n     },\n   },\n }\n ```\n \n-To disable: set `mode: \"off\"`.\n+To customize the TTL or other settings:\n+\n+```json5\n+{\n+  agents: {\n+    defaults: {\n+      contextPruning: { mode: \"cache-ttl\", ttl: \"10m\" },\n+    },\n+  },\n+}\n+```\n \n ## Pruning vs compaction\n \ndiff --git a/src/config/defaults.test.ts b/src/config/defaults.test.ts\nindex ffa9e8aebb4a..939239475d1a 100644\n--- a/src/config/defaults.test.ts\n+++ b/src/config/defaults.test.ts\n@@ -51,14 +51,19 @@ describe(\"config defaults\", () => {\n     expect(mocks.applyProviderConfigDefaultsForConfig).not.toHaveBeenCalled();\n   });\n \n-  it(\"skips provider defaults when agent defaults have no Anthropic auth signal\", () => {\n+  it(\"enables cache-ttl pruning by default when agent defaults have no Anthropic auth signal\", () => {\n     const cfg = {\n       agents: {\n         defaults: {},\n       },\n     };\n \n-    expect(applyContextPruningDefaults(cfg as never)).toBe(cfg);\n+    const next = applyContextPruningDefaults(cfg as never);\n+    expect(next).not.toBe(cfg);\n+    expect(next.agents?.defaults?.contextPruning).toEqual({\n+      mode: \"cache-ttl\",\n+      ttl: \"5m\",\n+    });\n     expect(mocks.applyProviderConfigDefaultsForConfig).not.toHaveBeenCalled();\n   });\n \ndiff --git a/src/config/defaults.ts b/src/config/defaults.ts\nindex 60a0f98544ad..b615e1a4f373 100644\n--- a/src/config/defaults.ts\n+++ b/src/config/defaults.ts\n@@ -513,17 +513,39 @@ export function applyContextPruningDefaults(\n   if (!cfg.agents?.defaults) {\n     return cfg;\n   }\n-  if (!hasAnthropicDefaultSignal(cfg, process.env)) {\n-    return cfg;\n+\n+  let next = cfg;\n+\n+  // Apply Anthropic-specific defaults (1h TTL, heartbeat) if Anthropic auth is present.\n+  if (hasAnthropicDefaultSignal(cfg, process.env)) {\n+    next =\n+      applyProviderConfigDefaultsForConfig({\n+        provider: \"anthropic\",\n+        config: cfg,\n+        env: process.env,\n+        manifestRegistry: options.manifestRegistry,\n+      }) ?? cfg;\n   }\n-  return (\n-    applyProviderConfigDefaultsForConfig({\n-      provider: \"anthropic\",\n-      config: cfg,\n-      env: process.env,\n-      manifestRegistry: options.manifestRegistry,\n-    }) ?? cfg\n-  );\n+\n+  // Enable cache-TTL pruning by default for all providers when not explicitly configured.\n+  if (next.agents?.defaults?.contextPruning?.mode === undefined) {\n+    const nextDefaults = { ...next.agents.defaults };\n+    const contextPruning = nextDefaults.contextPruning ?? {};\n+    nextDefaults.contextPruning = {\n+      ...contextPruning,\n+      mode: \"cache-ttl\",\n+      ttl: contextPruning.ttl ?? \"5m\",\n+    };\n+    next = {\n+      ...next,\n+      agents: {\n+        ...next.agents,\n+        defaults: nextDefaults,\n+      },\n+    };\n+  }\n+\n+  return next;\n }\n \n export function applyCompactionDefaults(cfg: OpenClawConfig): OpenClawConfig {\n",
+    "changed_files": [
+      "docs/concepts/session-pruning.md",
+      "src/config/defaults.test.ts",
+      "src/config/defaults.ts"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/e8ca70bcf96917ec9f3e2e76ef9c796ad788cff48121b3c1218fe20363bf76c5.json"
+}

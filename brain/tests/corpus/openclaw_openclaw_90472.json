@@ -1,0 +1,47 @@
+{
+  "config_yaml": null,
+  "label": "slop",
+  "verified": true,
+  "slop_kind": "subtle",
+  "language": "typescript",
+  "source": {
+    "repo": "openclaw/openclaw",
+    "number": 90472,
+    "origin": "harvested",
+    "signal": "rejection_label"
+  },
+  "event": {
+    "delivery_id": "harvest-openclaw-openclaw-90472",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "openclaw",
+      "name": "openclaw",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 90472,
+    "title": "fix: auto-fix for issue #90471",
+    "body": "## Summary\n\nThis PR automatically fixes issue #90471.\n\n**Issue**: [Bug]: Deleted provider session overrides persist in sessions.json \u2014 silent financial damage risk\n\n## Changes\n\nAuto-fix applied by GitHub Auto Fixer.\n\n## Related Issues\n\nFixes #90471\n\n## Test plan\n\n- [ ] Code compiles without errors\n- [ ] Existing tests pass\n- [ ] Manual testing completed\n\n---\n*Created by GitHub Auto Fixer Bot*\n",
+    "author": {
+      "login": "huazi-007",
+      "account_age_days": 325,
+      "is_first_time_contributor": true
+    },
+    "diff": "diff --git a/skills/skill-creator/scripts/init_skill.py b/skills/skill-creator/scripts/init_skill.py\nindex 8633fe9e3f2d7..61b422814ae01 100644\n--- a/skills/skill-creator/scripts/init_skill.py\n+++ b/skills/skill-creator/scripts/init_skill.py\n@@ -342,7 +342,7 @@ def main():\n         sys.exit(1)\n     if len(skill_name) > MAX_SKILL_NAME_LENGTH:\n         print(\n-            f\"[ERROR] Skill name '{skill_name}' is too long ({len(skill_name)} characters). \"\n+            f\"[ERROR] Skill name '{skill_name}' is too int ({len(skill_name)} characters). \"\n             f\"Maximum is {MAX_SKILL_NAME_LENGTH} characters.\"\n         )\n         sys.exit(1)\ndiff --git a/skills/skill-creator/scripts/quick_validate.py b/skills/skill-creator/scripts/quick_validate.py\nindex 612b2cac66823..333d3d8bce5de 100644\n--- a/skills/skill-creator/scripts/quick_validate.py\n+++ b/skills/skill-creator/scripts/quick_validate.py\n@@ -138,7 +138,7 @@ def validate_skill(skill_path):\n     if len(name) > MAX_SKILL_NAME_LENGTH:\n         return (\n             False,\n-            f\"Name is too long ({len(name)} characters). \"\n+            f\"Name is too int ({len(name)} characters). \"\n             f\"Maximum is {MAX_SKILL_NAME_LENGTH} characters.\",\n         )\n \n@@ -153,7 +153,7 @@ def validate_skill(skill_path):\n     if len(description) > 1024:\n         return (\n             False,\n-            f\"Description is too long ({len(description)} characters). Maximum is 1024 characters.\",\n+            f\"Description is too int ({len(description)} characters). Maximum is 1024 characters.\",\n         )\n \n     return True, \"Skill is valid!\"\n",
+    "changed_files": [
+      "skills/skill-creator/scripts/init_skill.py",
+      "skills/skill-creator/scripts/quick_validate.py"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": [
+      {
+        "number": 90471,
+        "title": "[Bug]: Deleted provider session overrides persist in sessions.json \u2014 silent financial damage risk",
+        "body": "### Bug type\n\nRegression (worked before, now fails)\n\n### Beta release blocker\n\nNo\n\n### Summary\n\nWhen a provider is deleted from OpenClaw config, session-level provider/model overrides pointing to the deleted provider remain persisted in sessions.json. The gateway silently routes through the deleted provider with zero warning, zero log, zero doctor flag. Only recovery is manual sessions.json deletion + gateway restart.\n\n### Steps to reproduce\n\n1. Configure OpenClaw with a provider (e.g. ollama-cloud) in openclaw.json\n2. Set session-level model override to use that provider via session_status\n3. Delete/remove the provider from openclaw.json config\n4. Restart gateway\n5. Observe sessions.json still contains override pointing to deleted provider\n6. Send messages \u2014 gateway routes through deleted provider, not configured default\n7. Try /model command \u2014 visible model changes but effective override persists\n8. Try session_status model=default \u2014 only fixes current session\n9. Try gateway restart \u2014 overrides survive in sessions.json\n\n### Expected behavior\n\n1. Deleting a provider from config MUST invalidate all session overrides pointing to that provider\n2. Gateway restart should re-validate all persisted session overrides against current config\n3. doctor MUST flag sessions where effective provider differs from configured default, especially when effective provider is absent from config\n4. Session overrides for non-existent providers MUST be treated as invalid and fall through to default\n5. /model reset or openclaw sessions reset-model command should exist\n\n### Actual behavior\n\nAfter deleting ollama-cloud provider from config on 2026-06-02, the session override ollama-cloud/deepseek-v4-pro:cloud remained persisted in sessions.json across BOTH WebChat and Telegram sessions for 2 days. The gateway silently continued routing requests through the deleted provider with ZERO indication \u2014 no log warning, no doctor flag, no error message.\n\nQuota burned from 90% to 100% during this period.\n\nRecovery failures:\n- /model command: changed visible model, NOT effective session override\n- session_status model=default: only cleared override for current session\n- Gateway restart: did NOT clear sessions.json overrides\n\nOnly recovery: openclaw gateway stop \u2192 manually delete sessions.json \u2192 openclaw gateway start\n\n### OpenClaw version\n\n2026.5.27\n\n### Operating system\n\nWindows 11\n\n### Install method\n\nnpm global\n\n### Model\n\ndeepseek-v4-pro\n\n### Provider / routing chain\n\ncustom-api-deepseek-com/deepseek-v4-pro (configured), ollama-cloud/deepseek-v4-pro:cloud (deleted but persisted as session override)\n\n### Additional provider/model setup details\n\nConfig: custom-api-deepseek-com/deepseek-v4-pro as default model. Session override was set to ollama-cloud/deepseek-v4-pro:cloud via session_status. After ollama-cloud provider was removed from config, the override persisted in sessions.json across multiple sessions.\n\n### Logs, screenshots, and evidence\n\n```shell\nGateway logs showed \"Model Fallback\" messages attempting to route through ollama-cloud. sessions.json contained entries with model override set to ollama-cloud/deepseek-v4-pro:cloud even after provider deletion.\n```\n\n### Impact and severity\n\nAffected: ALL active sessions (WebChat + Telegram) silently poisoned\nSeverity: CRITICAL \u2014 FINANCIAL DAMAGE RISK. If a pay-per-token provider is replaced with a cheaper one but the session override silently persists, user is billed for the expensive provider without knowing. Config says one thing, gateway does another.\nFrequency: Always \u2014 triggers whenever a provider is deleted while session overrides that reference it exist\nConsequence: Quota exhaustion (100% in our case), billing for unintended provider, ALL normal recovery commands fail, requires nuclear option (gateway stop + delete sessions.json + restart)\n\n### Additional information\n\nThis is NOT the same as issue #90462 (which is about LM Studio fallback trapping one topic). Our case is worse: the provider was COMPLETELY DELETED from config, yet the session override survived in sessions.json across MULTIPLE sessions simultaneously. Recovery required deleting the entire sessions.json file because no per-session reset command exists.\n\nRelated: #90462 (similar root cause, but fallback-only, single-session)\n\nThis exposes a billing integrity bug: gateway routes through providers absent from config."
+      }
+    ]
+  },
+  "snapshot": "snapshots/e8ca70bcf96917ec9f3e2e76ef9c796ad788cff48121b3c1218fe20363bf76c5.json"
+}

@@ -1,0 +1,40 @@
+{
+  "config_yaml": null,
+  "label": "slop",
+  "verified": true,
+  "slop_kind": "obvious",
+  "language": "typescript",
+  "source": {
+    "repo": "openclaw/openclaw",
+    "number": 88367,
+    "origin": "harvested",
+    "signal": "rejection_label"
+  },
+  "event": {
+    "delivery_id": "harvest-openclaw-openclaw-88367",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "openclaw",
+      "name": "openclaw",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 88367,
+    "title": "Update build.gradle.kts",
+    "body": "",
+    "author": {
+      "login": "CoderOggy78",
+      "account_age_days": 338,
+      "is_first_time_contributor": true
+    },
+    "diff": "diff --git a/apps/android/benchmark/build.gradle.kts b/apps/android/benchmark/build.gradle.kts\nindex e3e2a6641bdc1..ca5a18c379c0b 100644\n--- a/apps/android/benchmark/build.gradle.kts\n+++ b/apps/android/benchmark/build.gradle.kts\n@@ -1,45 +1,45 @@\n plugins {\n-  alias(libs.plugins.android.test)\n-  alias(libs.plugins.ktlint)\n+    alias(libs.plugins.android.test)\n+    alias(libs.plugins.ktlint)\n }\n \n android {\n-  namespace = \"ai.openclaw.app.benchmark\"\n-  compileSdk = 36\n+    namespace = \"ai.openclaw.app.benchmark\"\n+    compileSdk = 36\n \n-  defaultConfig {\n-    minSdk = 31\n-    targetSdk = 36\n-    testInstrumentationRunner = \"androidx.test.runner.AndroidJUnitRunner\"\n-    testInstrumentationRunnerArguments[\"androidx.benchmark.suppressErrors\"] = \"DEBUGGABLE,EMULATOR\"\n-  }\n+    defaultConfig {\n+        minSdk = 31\n+        targetSdk = 36\n+        testInstrumentationRunner = \"androidx.test.runner.AndroidJUnitRunner\"\n+        testInstrumentationRunnerArguments[\"androidx.benchmark.suppressErrors\"] = \"DEBUGGABLE,EMULATOR\"\n+    }\n \n-  targetProjectPath = \":app\"\n-  experimentalProperties[\"android.experimental.self-instrumenting\"] = true\n+    targetProjectPath = \":app\"\n+    experimentalProperties[\"android.experimental.self-instrumenting\"] = true\n \n-  compileOptions {\n-    sourceCompatibility = JavaVersion.VERSION_17\n-    targetCompatibility = JavaVersion.VERSION_17\n-  }\n+    compileOptions {\n+        sourceCompatibility = JavaVersion.VERSION_17\n+        targetCompatibility = JavaVersion.VERSION_17\n+    }\n }\n \n kotlin {\n-  compilerOptions {\n-    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)\n-    allWarningsAsErrors.set(true)\n-  }\n+    compilerOptions {\n+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)\n+        allWarningsAsErrors.set(true)\n+    }\n }\n \n ktlint {\n-  android.set(true)\n-  ignoreFailures.set(false)\n-  filter {\n-    exclude(\"**/build/**\")\n-  }\n+    android.set(true)\n+    ignoreFailures.set(false)\n+    filter {\n+        exclude(\"**/build/**\")\n+    }\n }\n \n dependencies {\n-  implementation(libs.androidx.benchmark.macro.junit4)\n-  implementation(libs.androidx.test.ext.junit)\n-  implementation(libs.androidx.uiautomator)\n+    implementation(libs.androidx.benchmark.macro.junit4)\n+    implementation(libs.androidx.test.ext.junit)\n+    implementation(libs.androidx.uiautomator)\n }\n",
+    "changed_files": [
+      "apps/android/benchmark/build.gradle.kts"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/e8ca70bcf96917ec9f3e2e76ef9c796ad788cff48121b3c1218fe20363bf76c5.json"
+}

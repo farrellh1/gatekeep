@@ -1,0 +1,42 @@
+{
+  "config_yaml": null,
+  "label": "slop",
+  "verified": true,
+  "slop_kind": "subtle",
+  "language": "typescript",
+  "source": {
+    "repo": "openclaw/openclaw",
+    "number": 90527,
+    "origin": "harvested",
+    "signal": "rejection_label"
+  },
+  "event": {
+    "delivery_id": "harvest-openclaw-openclaw-90527",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "openclaw",
+      "name": "openclaw",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 90527,
+    "title": "feat(reply-payload): tag cron-driven payloads with origin metadata",
+    "body": "## Summary\n\nAdds an optional `ReplyPayload.origin` discriminated union and populates it\nfrom cron announce/failure delivery, so channel outbound adapters and the\n`message_sending` plugin hook can tell scheduler-driven sends apart from\nregular assistant replies.\n\n### Why\n\nToday there is no field on `ReplyPayload`, `ChannelOutboundContext`, or\n`PluginHookMessageSendingEvent` that lets a channel implementation\ndistinguish a cron-triggered message from a normal one. The only available\nsignal is the bespoke `cron:<jobId>:failure` sessionKey shape resolved by\n`resolveCronNotificationSessionKey` (see `src/cron/session-target.ts`), which\nis unstable across cron jobs that bind to a real persistent session \u2014 in\nthat case the sessionKey looks identical to a normal user-driven turn.\n\n`PluginHookMessageContext` (`src/plugins/hook-message.types.ts`) already\nacknowledges this gap: its `runId` doc explicitly notes that\n\\\"cron/heartbeat/followup-triggered run\\\" ids are **not yet** plumbed through\nthe outbound delivery path, so plugins observing `message_sending` /\n`message_sent` cannot use `runId` to correlate against `agent_end`.\n\n### Change\n\n- `src/auto-reply/reply-payload.ts`: new `ReplyPayloadOrigin` discriminated\n  union (`{ kind: \\\"cron\\\"; jobId: string }`) and an optional `origin?` field\n  on `ReplyPayload`.\n- `src/cron/delivery.ts`: cron `deliverCronAnnouncePayload` writes\n  `origin: { kind: \\\"cron\\\", jobId }` onto the announce payload it hands to\n  `sendDurableMessageBatch`. Both `sendCronAnnouncePayloadStrict` and\n  `sendFailureNotificationAnnounce` now flow `jobId` through.\n- `src/cron/delivery.failure-notify.test.ts`: existing payload-shape\n  assertion updated to require origin propagation; this also covers the\n  full `cron \u2192 sendDurableMessageBatch \u2192 deliverOutboundPayloads` chain.\n\nThe shape is intentionally additive and extensible: existing callers do\nnot set `origin`, existing consumers ignore the field, and the union can\nlater grow `kind: \\\"heartbeat\\\"` / `\\\"followup\\\"` / etc. without breaking\nconsumers.\n\n### Scope / follow-up\n\nChannel adapters that need this signal today can read `ctx.payload.origin`\nfrom `ChannelOutboundAdapter.sendPayload`. Reading `origin` from `sendText`\nor the `message_sending` hook still requires propagating it into\n`ChannelOutboundContext` and the `PluginHookMessageSendingEvent.metadata`\nrespectively. That's intentionally **left out of this PR** to keep the\npublic-contract change minimal and easier to review. Happy to follow up\nwith a second PR for those two surfaces if maintainers approve the\ndirection.\n\n### Compatibility\n\nPer \\`AGENTS.md\\` (Plugin SDK additive-first rule): this is purely additive\non a shipped public type. No removals, renames, or semantic changes; no\nmigration needed.\n\n## Verification\n\n- \\`node scripts/run-vitest.mjs src/cron/delivery.test.ts src/cron/delivery.failure-notify.test.ts\\` \u2014 22/22 pass\n- \\`pnpm tsgo:core --noEmit\\` \u2014 clean\n- \\`git diff --numstat\\` \u2014 \\`+30 / -2\\` across 3 files\n\nOwner review explicitly requested for the new public field on \\`ReplyPayload\\`.",
+    "author": {
+      "login": "wonfong",
+      "account_age_days": 472,
+      "is_first_time_contributor": true
+    },
+    "diff": "diff --git a/src/auto-reply/reply-payload.ts b/src/auto-reply/reply-payload.ts\nindex 0507958e7c62..76dbb71d4a8d 100644\n--- a/src/auto-reply/reply-payload.ts\n+++ b/src/auto-reply/reply-payload.ts\n@@ -59,8 +59,23 @@ export type ReplyPayload = {\n   isStatusNotice?: boolean;\n   /** Channel-specific payload data (per-channel envelope). */\n   channelData?: Record<string, unknown>;\n+  /**\n+   * Identifies the runtime that produced this payload, so channel adapters and\n+   * `message_sending` plugin hooks can distinguish scheduler-driven sends from\n+   * normal assistant replies. Optional and additive \u2014 older callers never set\n+   * it; consumers should treat absence as \"unknown / regular reply\".\n+   */\n+  origin?: ReplyPayloadOrigin;\n };\n \n+/**\n+ * Discriminated union describing what triggered an outbound payload. Currently\n+ * only cron is named, but the shape is intentionally open so heartbeat,\n+ * follow-up, and other scheduler-style runtimes can extend it without breaking\n+ * existing consumers.\n+ */\n+export type ReplyPayloadOrigin = { kind: \"cron\"; jobId: string };\n+\n /** Metadata for audio-only media that supplements already-visible assistant text. */\n export type ReplyPayloadTtsSupplement = {\n   spokenText: string;\ndiff --git a/src/cron/delivery.failure-notify.test.ts b/src/cron/delivery.failure-notify.test.ts\nindex a98172e9572a..be90a8e2de94 100644\n--- a/src/cron/delivery.failure-notify.test.ts\n+++ b/src/cron/delivery.failure-notify.test.ts\n@@ -112,7 +112,9 @@ describe(\"sendFailureNotificationAnnounce\", () => {\n     expect(deliveryRequest.to).toBe(\"123\");\n     expect(deliveryRequest.accountId).toBe(\"bot-a\");\n     expect(deliveryRequest.threadId).toBe(42);\n-    expect(deliveryRequest.payloads).toEqual([{ text: \"Cron failed\" }]);\n+    expect(deliveryRequest.payloads).toEqual([\n+      { text: \"Cron failed\", origin: { kind: \"cron\", jobId: \"job-1\" } },\n+    ]);\n     expect(deliveryRequest.session).toEqual({ kind: \"session\" });\n     expect(deliveryRequest.identity).toEqual({ kind: \"identity\" });\n     expect(deliveryRequest.bestEffort).toBe(false);\ndiff --git a/src/cron/delivery.ts b/src/cron/delivery.ts\nindex 0abee5cd33bc..598613837fb3 100644\n--- a/src/cron/delivery.ts\n+++ b/src/cron/delivery.ts\n@@ -90,6 +90,7 @@ async function resolveCronAnnounceDelivery(params: {\n async function deliverCronAnnouncePayload(params: {\n   deps: CliDeps;\n   cfg: OpenClawConfig;\n+  jobId: string;\n   delivery: {\n     resolvedTarget: SuccessfulDeliveryTarget;\n     session: ReturnType<typeof buildOutboundSessionContext>;\n@@ -106,7 +107,15 @@ async function deliverCronAnnouncePayload(params: {\n     to: params.delivery.resolvedTarget.to,\n     accountId: params.delivery.resolvedTarget.accountId,\n     threadId: params.delivery.resolvedTarget.threadId,\n-    payloads: [{ text: params.message }],\n+    payloads: [\n+      {\n+        text: params.message,\n+        // Tag the payload so channel outbound adapters and message_sending\n+        // plugin hooks can tell scheduler-driven sends apart from regular\n+        // assistant replies. See ReplyPayload.origin docstring.\n+        origin: { kind: \"cron\", jobId: params.jobId },\n+      },\n+    ],\n     session: params.delivery.session,\n     identity: params.delivery.identity,\n     bestEffort: false,\n@@ -135,6 +144,7 @@ export async function sendCronAnnouncePayloadStrict(params: {\n   await deliverCronAnnouncePayload({\n     deps: params.deps,\n     cfg: params.cfg,\n+    jobId: params.jobId,\n     delivery,\n     message: params.message,\n     abortSignal: params.abortSignal,\n@@ -172,6 +182,7 @@ export async function sendFailureNotificationAnnounce(\n     await deliverCronAnnouncePayload({\n       deps,\n       cfg,\n+      jobId,\n       delivery,\n       message,\n       abortSignal: abortController.signal,\n",
+    "changed_files": [
+      "src/auto-reply/reply-payload.ts",
+      "src/cron/delivery.failure-notify.test.ts",
+      "src/cron/delivery.ts"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/e8ca70bcf96917ec9f3e2e76ef9c796ad788cff48121b3c1218fe20363bf76c5.json"
+}
