@@ -1,0 +1,49 @@
+{
+  "config_yaml": null,
+  "label": "slop",
+  "verified": true,
+  "slop_kind": "subtle",
+  "language": "typescript",
+  "source": {
+    "repo": "openclaw/openclaw",
+    "number": 89862,
+    "origin": "harvested",
+    "signal": "rejection_label"
+  },
+  "event": {
+    "delivery_id": "harvest-openclaw-openclaw-89862",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "openclaw",
+      "name": "openclaw",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 89862,
+    "title": "feat(status): add session cost to /status output",
+    "body": "**What it does**\nSurfaces the existing session-level `estimatedCostUsd` in the CLI `/status` table so users can see per-session cost at a glance.\n\n**Issue**\nFixes #64334\n\n---\n\n**Real behavior proof**\n\n**Before (main branch)**\n```\n$ openclaw status\n...\nKey              Kind   Age      Model        Runtime   Tokens\nmain             direct 2m ago  kimi/k2p6    acp       45K \u00b7 12%\n```\nNo cost column. Users must inspect `sessions.json` or gateway logs to know session spend.\n\n**After (this branch)**\n```\n$ openclaw status\n...\nKey              Kind   Age      Model        Runtime   Tokens        Cost\nmain             direct 2m ago  kimi/k2p6    acp       45K \u00b7 12%     $0.42\n```\nCost is shown when `estimatedCostUsd` is populated by the LLM runtime (already stored in `SessionEntry`). Falls back to muted `\u2014` when unavailable.\n\n---\n\n**How to verify**\n\n1. Run any session that produces a cost (e.g., a short turn with a priced model).\n2. Execute `openclaw status`.\n3. Confirm the **Cost** column appears with a `$X.XX` value.\n\n---\n\n**Implementation**\n- `status.types.ts`: add `estimatedCostUsd: number | null` to `SessionStatus`\n- `status.summary.ts`: extract `estimatedCostUsd` from `SessionEntry` when building session rows\n- `status.command-report-data.ts`: add `Cost` column to the sessions table\n- `status.command-sections.ts`: format as `$12.34` or muted `\u2014` when null\n\n**Regression risk**\nMinimal. The field already exists in `SessionEntry`; this only surfaces it in the display layer. No runtime logic is changed.",
+    "author": {
+      "login": "XuZehan-iCenter",
+      "account_age_days": 41,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/src/commands/status.command-report-data.ts b/src/commands/status.command-report-data.ts\nindex 437847ac7f80d..76d8bd666b462 100644\n--- a/src/commands/status.command-report-data.ts\n+++ b/src/commands/status.command-report-data.ts\n@@ -124,6 +124,7 @@ export async function buildStatusCommandReportData(\n     { key: \"Model\", header: \"Model\", minWidth: 14 },\n     { key: \"Runtime\", header: \"Runtime\", minWidth: 14 },\n     { key: \"Tokens\", header: \"Tokens\", minWidth: 16 },\n+    { key: \"Cost\", header: \"Cost\", minWidth: 10 },\n     ...(params.opts.verbose ? [{ key: \"Cache\", header: \"Cache\", minWidth: 16, flex: true }] : []),\n   ] satisfies TableColumn[];\n   const securityAuditLines = params.securityAudit\ndiff --git a/src/commands/status.command-sections.ts b/src/commands/status.command-sections.ts\nindex 868e627a1a65b..34c60ca9476da 100644\n--- a/src/commands/status.command-sections.ts\n+++ b/src/commands/status.command-sections.ts\n@@ -339,6 +339,7 @@ export function buildStatusSessionsRows(params: {\n     Model: sess.model ?? \"unknown\",\n     Runtime: sess.runtime ?? \"unknown\",\n     Tokens: params.formatTokensCompact(sess),\n+    Cost: sess.estimatedCostUsd != null ? `$${sess.estimatedCostUsd.toFixed(2)}` : params.muted(\"\u2014\"),\n     ...(params.verbose\n       ? { Cache: params.formatPromptCacheCompact(sess) || params.muted(\"\u2014\") }\n       : {}),\ndiff --git a/src/commands/status.summary.ts b/src/commands/status.summary.ts\nindex 5528efeb94376..653503529d05c 100644\n--- a/src/commands/status.summary.ts\n+++ b/src/commands/status.summary.ts\n@@ -312,37 +312,38 @@ export async function getStatusSummary(\n         sessionKey: key,\n       });\n \n-      return {\n-        agentId,\n-        key,\n-        kind: classifySessionKey(key, entry),\n-        sessionId: entry?.sessionId,\n-        updatedAt,\n-        age,\n-        thinkingLevel: entry?.thinkingLevel,\n-        fastMode: entry?.fastMode,\n-        verboseLevel: entry?.verboseLevel,\n-        traceLevel: entry?.traceLevel,\n-        reasoningLevel: entry?.reasoningLevel,\n-        elevatedLevel: entry?.elevatedLevel,\n-        systemSent: entry?.systemSent,\n-        abortedLastRun: entry?.abortedLastRun,\n-        inputTokens: entry?.inputTokens,\n-        outputTokens: entry?.outputTokens,\n-        cacheRead: entry?.cacheRead,\n-        cacheWrite: entry?.cacheWrite,\n-        totalTokens: total ?? null,\n-        totalTokensFresh,\n-        remainingTokens: remaining,\n-        percentUsed: pct,\n-        model,\n-        configuredModel: configuredSessionModelLabel,\n-        selectedModel: selectedModelLabel,\n-        modelSelectionReason: modelSelectionDiffers ? \"session override\" : null,\n-        runtime,\n-        contextTokens,\n-        flags: buildFlags(entry),\n-      } satisfies SessionStatus;\n+return {\n+      agentId,\n+      key,\n+      kind: classifySessionKey(key, entry),\n+      sessionId: entry?.sessionId,\n+      updatedAt,\n+      age,\n+      thinkingLevel: entry?.thinkingLevel,\n+      fastMode: entry?.fastMode,\n+      verboseLevel: entry?.verboseLevel,\n+      traceLevel: entry?.traceLevel,\n+      reasoningLevel: entry?.reasoningLevel,\n+      elevatedLevel: entry?.elevatedLevel,\n+      systemSent: entry?.systemSent,\n+      abortedLastRun: entry?.abortedLastRun,\n+      inputTokens: entry?.inputTokens,\n+      outputTokens: entry?.outputTokens,\n+      cacheRead: entry?.cacheRead,\n+      cacheWrite: entry?.cacheWrite,\n+      totalTokens: total ?? null,\n+      totalTokensFresh,\n+      remainingTokens: remaining,\n+      percentUsed: pct,\n+      model,\n+      configuredModel: configuredSessionModelLabel,\n+      selectedModel: selectedModelLabel,\n+      modelSelectionReason: modelSelectionDiffers ? \"session override\" : null,\n+      runtime,\n+      contextTokens,\n+      flags: buildFlags(entry),\n+      estimatedCostUsd: entry?.estimatedCostUsd ?? null,\n+    } satisfies SessionStatus;\n     });\n \n   const paths = new Set<string>();\ndiff --git a/src/commands/status.types.ts b/src/commands/status.types.ts\nindex 550ce0fac5611..29f49d37c9afd 100644\n--- a/src/commands/status.types.ts\n+++ b/src/commands/status.types.ts\n@@ -35,6 +35,7 @@ export type SessionStatus = {\n   modelSelectionReason: string | null;\n   runtime?: string | null;\n   contextTokens: number | null;\n+  estimatedCostUsd: number | null;\n   flags: string[];\n };\n \n",
+    "changed_files": [
+      "src/commands/status.command-report-data.ts",
+      "src/commands/status.command-sections.ts",
+      "src/commands/status.summary.ts",
+      "src/commands/status.types.ts"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": [
+      {
+        "number": 64334,
+        "title": "Add session cost to /status output",
+        "body": "## Feature Request\n\n**Current behavior:** `/status` shows tokens, context usage, model, compactions, etc. \u2014 but no cost.\n\n**Requested behavior:** Add a line showing cumulative session cost, e.g.:\n```\n\ud83d\udcb0 Session cost: $22.15\n```\n\n**Why:** The data is already there \u2014 each turn in the session transcript has `usage.cost.total`. It just needs to be summed across all turns and displayed in the status card.\n\n**Workaround:** Currently doing this via an LLM-driven python one-liner that reads the JSONL transcript and sums `cost.total`, but it wastes tokens and isn't reliable across compactions. A native implementation would be trivial and much better.\n\n**Implementation hint:**\n```python\n# Pseudocode \u2014 sum cost.total from each turn's usage\ntotal = sum(turn.usage.cost.total for turn in session.history if turn.usage?.cost?.total)\n```\n\nThis would help users understand and manage API spend per session."
+      }
+    ]
+  },
+  "snapshot": "snapshots/e8ca70bcf96917ec9f3e2e76ef9c796ad788cff48121b3c1218fe20363bf76c5.json"
+}

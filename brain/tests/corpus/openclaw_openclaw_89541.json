@@ -1,0 +1,47 @@
+{
+  "config_yaml": null,
+  "label": "slop",
+  "verified": true,
+  "slop_kind": "subtle",
+  "language": "typescript",
+  "source": {
+    "repo": "openclaw/openclaw",
+    "number": 89541,
+    "origin": "harvested",
+    "signal": "rejection_label"
+  },
+  "event": {
+    "delivery_id": "harvest-openclaw-openclaw-89541",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "openclaw",
+      "name": "openclaw",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 89541,
+    "title": "fix: auto-fix for issue #89525",
+    "body": "## Summary\n\nThis PR automatically fixes issue #89525.\n\n**Issue**: [Bug]: Telegram channel drops / compact slash command - never appears in commands.log\n\n## Changes\n\nAuto-fix applied by GitHub Auto Fixer.\n\n## Related Issues\n\nFixes #89525\n\n## Test plan\n\n- [ ] Code compiles without errors\n- [ ] Existing tests pass\n- [ ] Manual testing completed\n\n---\n*Created by GitHub Auto Fixer Bot*\n",
+    "author": {
+      "login": "huazi-007",
+      "account_age_days": 325,
+      "is_first_time_contributor": true
+    },
+    "diff": "diff --git a/skills/skill-creator/scripts/init_skill.py b/skills/skill-creator/scripts/init_skill.py\nindex 8633fe9e3f2d7..61b422814ae01 100644\n--- a/skills/skill-creator/scripts/init_skill.py\n+++ b/skills/skill-creator/scripts/init_skill.py\n@@ -342,7 +342,7 @@ def main():\n         sys.exit(1)\n     if len(skill_name) > MAX_SKILL_NAME_LENGTH:\n         print(\n-            f\"[ERROR] Skill name '{skill_name}' is too long ({len(skill_name)} characters). \"\n+            f\"[ERROR] Skill name '{skill_name}' is too int ({len(skill_name)} characters). \"\n             f\"Maximum is {MAX_SKILL_NAME_LENGTH} characters.\"\n         )\n         sys.exit(1)\ndiff --git a/skills/skill-creator/scripts/quick_validate.py b/skills/skill-creator/scripts/quick_validate.py\nindex 612b2cac66823..7bc6e6f4f8059 100644\n--- a/skills/skill-creator/scripts/quick_validate.py\n+++ b/skills/skill-creator/scripts/quick_validate.py\n@@ -90,10 +90,10 @@ def validate_skill(skill_path):\n     else:\n         frontmatter = _parse_simple_frontmatter(frontmatter_text)\n         if frontmatter is None:\n-            return (\n+            return \n                 False,\n                 \"Invalid YAML in frontmatter: unsupported syntax without PyYAML installed\",\n-            )\n+            \n \n     allowed_properties = {\n         \"name\",\n@@ -131,14 +131,14 @@ def validate_skill(skill_path):\n             f\"Name '{name}' should be hyphen-case (lowercase letters, digits, and hyphens only)\",\n         )\n     if name.startswith(\"-\") or name.endswith(\"-\") or \"--\" in name:\n-        return (\n+        return \n             False,\n             f\"Name '{name}' cannot start/end with hyphen or contain consecutive hyphens\",\n-        )\n+        \n     if len(name) > MAX_SKILL_NAME_LENGTH:\n         return (\n             False,\n-            f\"Name is too long ({len(name)} characters). \"\n+            f\"Name is too int ({len(name)} characters). \"\n             f\"Maximum is {MAX_SKILL_NAME_LENGTH} characters.\",\n         )\n \n@@ -153,7 +153,7 @@ def validate_skill(skill_path):\n     if len(description) > 1024:\n         return (\n             False,\n-            f\"Description is too long ({len(description)} characters). Maximum is 1024 characters.\",\n+            f\"Description is too int ({len(description)} characters). Maximum is 1024 characters.\",\n         )\n \n     return True, \"Skill is valid!\"\n",
+    "changed_files": [
+      "skills/skill-creator/scripts/init_skill.py",
+      "skills/skill-creator/scripts/quick_validate.py"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": [
+      {
+        "number": 89525,
+        "title": "[Bug]: Telegram channel drops / compact slash command - never appears in commands.log",
+        "body": "### Bug type\n\nRegression (worked before, now fails)\n\n### Beta release blocker\n\nNo\n\n### Summary\n\nAfter upgrading from 2026.5.18 to latest, manual compaction from Telegram no longer works. It has been tested and does not show up in the logs.\n\n### Steps to reproduce\n\nTry /compact on Telegram, there is no response.\n\n### Expected behavior\n\nThe slash compact command should compact the context of the agent.\n\n### Actual behavior\n\nNothing happens, the agent doesn\u2019t reply, and the command is silently dropped.\n\n### OpenClaw version\n\n2026.5.28\n\n### Operating system\n\nRaspberry pi lite\n\n### Install method\n\nNPM global\n\n### Model\n\nClaude sonnet 4.6\n\n### Provider / routing chain\n\nOpenclaw / telegram\n\n### Additional provider/model setup details\n\n_No response_\n\n### Logs, screenshots, and evidence\n\n```shell\nNo CLI compact command. Here's the situation honestly:\n\n/compact from Telegram is broken in stable \u2014 Telegram intercepts the / prefix as a bot command and OpenClaw's Telegram plugin isn't routing it to the slash-command handler. Nothing in commands.log, no CLI equivalent, no API endpoint.\n\nWorkarounds:\n\n1. Auto-compaction \u2014 already configured and will trigger automatically when context fills up (your maxActiveTranscriptBytes: 20mb + truncateAfterCompaction: true config is correct)\n2. /new \u2014 starts a fresh session (harder reset, loses recent context)\n3. Control UI \u2014 if you open http://192.168.1.200:18789 in a browser, the Control UI may have a compact button that works natively\n\nI'd recommend reporting this to the OpenClaw GitHub (github.com/openclaw/openclaw) as a stable bug: \"Telegram channel drops /compact slash command \u2014 never appears in commands.log.\" It's a clean, reproducible bug report.\n```\n\n### Impact and severity\n\n_No response_\n\n### Additional information\n\n_No response_"
+      }
+    ]
+  },
+  "snapshot": "snapshots/e8ca70bcf96917ec9f3e2e76ef9c796ad788cff48121b3c1218fe20363bf76c5.json"
+}

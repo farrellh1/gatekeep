@@ -1,0 +1,49 @@
+{
+  "config_yaml": null,
+  "label": "slop",
+  "verified": true,
+  "slop_kind": "subtle",
+  "language": "typescript",
+  "source": {
+    "repo": "openclaw/openclaw",
+    "number": 89427,
+    "origin": "harvested",
+    "signal": "rejection_label"
+  },
+  "event": {
+    "delivery_id": "harvest-openclaw-openclaw-89427",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "openclaw",
+      "name": "openclaw",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 89427,
+    "title": "fix: add missing extensions/speech-core/ source files for npm tarball",
+    "body": "## Summary\n\n\u4fee\u590d npm tarball \u6253\u5305\u65f6\u7f3a\u5c11 `dist/extensions/speech-core/` \u76ee\u5f55\u7684\u95ee\u9898\u3002\n\n### Changes\n\n- \u6dfb\u52a0 `extensions/speech-core/package.json`\n- \u6dfb\u52a0 `extensions/speech-core/runtime-api.ts`\n- \u6dfb\u52a0 `extensions/speech-core/src/runtime.ts`\n- \u6dfb\u52a0 `extensions/speech-core/tsconfig.json`\n\n\u7ed3\u6784\u4e0e\u5176\u4ed6 core \u6269\u5c55\u4fdd\u6301\u4e00\u81f4\uff08`image-generation-core`\u3001`media-understanding-core`\uff09\u3002\n\n## Real behavior proof\n\n**\u4fee\u590d\u524d\uff1a**\n```bash\nnpm install -g openclaw@2026.5.28\nopenclaw gateway run\n# Error: Unable to resolve bundled plugin public surface speech-core/runtime-api.js\n```\n\n**\u4fee\u590d\u540e\uff1a**\n- `extensions/speech-core/` \u76ee\u5f55\u73b0\u5728\u5305\u542b\u5fc5\u8981\u7684\u6e90\u4ee3\u7801\u6587\u4ef6\n- \u6784\u5efa\u540e\u5c06\u751f\u6210 `dist/extensions/speech-core/` \u76ee\u5f55\n- npm tarball \u5c06\u6b63\u786e\u5305\u542b\u8be5\u76ee\u5f55\n\n**\u9a8c\u8bc1\u6b65\u9aa4\uff1a**\n```bash\n# 1. \u6784\u5efa\u9879\u76ee\npnpm install && pnpm build\n\n# 2. \u68c0\u67e5 dist \u8f93\u51fa\nls -la dist/extensions/speech-core/\n# \u5e94\u8be5\u5305\u542b runtime-api.js \u548c\u5176\u4ed6\u6784\u5efa\u4ea7\u7269\n\n# 3. \u6253\u5305\u9a8c\u8bc1\nnpm pack\ntar -tzf openclaw-*.tgz | grep \"dist/extensions/speech-core\"\n# \u5e94\u8be5\u663e\u793a dist/extensions/speech-core/ \u4e0b\u7684\u6587\u4ef6\n```\n\n## Verification\n\n- [x] \u6587\u4ef6\u7ed3\u6784\u4e0e\u5176\u4ed6 core \u6269\u5c55\u4e00\u81f4\n- [x] \u5bfc\u51fa\u8def\u5f84\u4e0e `facade-activation-check.runtime.ts:27-31` \u4e2d\u7684 `ALWAYS_ALLOWED_RUNTIME_DIR_NAMES` \u5339\u914d\n- [x] \u683c\u5f0f\u5316\u68c0\u67e5\u901a\u8fc7 (`pnpm format`)\n- [ ] \u6784\u5efa\u9a8c\u8bc1\uff08\u9700\u8981 maintainer \u8fd0\u884c\uff09\n- [ ] npm pack \u9a8c\u8bc1\uff08\u9700\u8981 maintainer \u8fd0\u884c\uff09\n\n---\n\nFixes #89425\n",
+    "author": {
+      "login": "clhey",
+      "account_age_days": 4397,
+      "is_first_time_contributor": true
+    },
+    "diff": "diff --git a/extensions/speech-core/package.json b/extensions/speech-core/package.json\nnew file mode 100644\nindex 0000000000000..9df9afbfc4137\n--- /dev/null\n+++ b/extensions/speech-core/package.json\n@@ -0,0 +1,10 @@\n+{\n+  \"name\": \"@openclaw/speech-core\",\n+  \"version\": \"2026.6.2\",\n+  \"private\": true,\n+  \"description\": \"OpenClaw speech runtime package\",\n+  \"type\": \"module\",\n+  \"devDependencies\": {\n+    \"@openclaw/plugin-sdk\": \"workspace:*\"\n+  }\n+}\ndiff --git a/extensions/speech-core/runtime-api.ts b/extensions/speech-core/runtime-api.ts\nnew file mode 100644\nindex 0000000000000..883bbe05712cb\n--- /dev/null\n+++ b/extensions/speech-core/runtime-api.ts\n@@ -0,0 +1,41 @@\n+export {\n+  buildTtsSystemPromptHint,\n+  getLastTtsAttempt,\n+  getResolvedSpeechProviderConfig,\n+  getTtsMaxLength,\n+  getTtsPersona,\n+  getTtsProvider,\n+  isSummarizationEnabled,\n+  isTtsEnabled,\n+  isTtsProviderConfigured,\n+  listSpeechVoices,\n+  listTtsPersonas,\n+  maybeApplyTtsToPayload,\n+  resolveExplicitTtsOverrides,\n+  resolveTtsAutoMode,\n+  resolveTtsConfig,\n+  resolveTtsPrefsPath,\n+  resolveTtsProviderOrder,\n+  setLastTtsAttempt,\n+  setSummarizationEnabled,\n+  setTtsEnabled,\n+  setTtsMaxLength,\n+  setTtsPersona,\n+  setTtsProvider,\n+  synthesizeSpeech,\n+  streamSpeech,\n+  textToSpeech,\n+  textToSpeechStream,\n+  textToSpeechTelephony,\n+  testApi as _test,\n+  testApi,\n+  type ResolvedTtsConfig,\n+  type ResolvedTtsModelOverrides,\n+  type TtsDirectiveOverrides,\n+  type TtsDirectiveParseResult,\n+  type TtsResult,\n+  type TtsSynthesisResult,\n+  type TtsSynthesisStreamResult,\n+  type TtsStreamResult,\n+  type TtsTelephonyResult,\n+} from \"openclaw/plugin-sdk/tts-runtime\";\ndiff --git a/extensions/speech-core/src/runtime.ts b/extensions/speech-core/src/runtime.ts\nnew file mode 100644\nindex 0000000000000..883bbe05712cb\n--- /dev/null\n+++ b/extensions/speech-core/src/runtime.ts\n@@ -0,0 +1,41 @@\n+export {\n+  buildTtsSystemPromptHint,\n+  getLastTtsAttempt,\n+  getResolvedSpeechProviderConfig,\n+  getTtsMaxLength,\n+  getTtsPersona,\n+  getTtsProvider,\n+  isSummarizationEnabled,\n+  isTtsEnabled,\n+  isTtsProviderConfigured,\n+  listSpeechVoices,\n+  listTtsPersonas,\n+  maybeApplyTtsToPayload,\n+  resolveExplicitTtsOverrides,\n+  resolveTtsAutoMode,\n+  resolveTtsConfig,\n+  resolveTtsPrefsPath,\n+  resolveTtsProviderOrder,\n+  setLastTtsAttempt,\n+  setSummarizationEnabled,\n+  setTtsEnabled,\n+  setTtsMaxLength,\n+  setTtsPersona,\n+  setTtsProvider,\n+  synthesizeSpeech,\n+  streamSpeech,\n+  textToSpeech,\n+  textToSpeechStream,\n+  textToSpeechTelephony,\n+  testApi as _test,\n+  testApi,\n+  type ResolvedTtsConfig,\n+  type ResolvedTtsModelOverrides,\n+  type TtsDirectiveOverrides,\n+  type TtsDirectiveParseResult,\n+  type TtsResult,\n+  type TtsSynthesisResult,\n+  type TtsSynthesisStreamResult,\n+  type TtsStreamResult,\n+  type TtsTelephonyResult,\n+} from \"openclaw/plugin-sdk/tts-runtime\";\ndiff --git a/extensions/speech-core/tsconfig.json b/extensions/speech-core/tsconfig.json\nnew file mode 100644\nindex 0000000000000..213b587ba9608\n--- /dev/null\n+++ b/extensions/speech-core/tsconfig.json\n@@ -0,0 +1,10 @@\n+{\n+  \"extends\": \"../../tsconfig.base.json\",\n+  \"compilerOptions\": {\n+    \"outDir\": \"./dist\",\n+    \"rootDir\": \"./\",\n+    \"composite\": true\n+  },\n+  \"include\": [\"*.ts\", \"src/**/*.ts\"],\n+  \"exclude\": [\"node_modules\", \"dist\"]\n+}\n",
+    "changed_files": [
+      "extensions/speech-core/package.json",
+      "extensions/speech-core/runtime-api.ts",
+      "extensions/speech-core/src/runtime.ts",
+      "extensions/speech-core/tsconfig.json"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": [
+      {
+        "number": 89425,
+        "title": "[Bug]: Missing extensions/speech-core/ in npm tarball (v2026.5.28) \u2014 \"Unable to resolve bundled plugin public surface speech-core/runtime-api.js\"",
+        "body": "### Bug type\n\nRegression (worked before, now fails)\n\n### Beta release blocker\n\nNo\n\n### Summary\n\n   ### Version\n\n   openclaw@2026.5.28 (e932160)\n\n   ### Description\n\n   After upgrading to 2026.5.28, the gateway silently fails to reply to *any* message. Every incoming message hits:\n\n     Error: Unable to resolve bundled plugin public surface speech-core/runtime-api.js\n     Embedded agent failed before reply: ...\n\n   ### Root cause\n\n   `dist/extensions/speech-core/` is **missing from the npm tarball**.\n\n   - `image-generation-core` and `media-understanding-core` are present \u2014 `speech-core` is absent.\n   - `facade-activation-check.runtime.js` lists `speech-core` in `ALWAYS_ALLOWED_RUNTIME_DIR_NAMES`.\n   - The compiled modules (`speech-core-CNZzyLuY.js`, `tts-runtime-K2ac55wV.js`) exist \u2014 only the extension dir is missing.\n\n   This is the same class of packaging bug as the earlier \"missing `dist/tts/tts.js`\" fix.\n\n### Steps to reproduce\n\n   1. `npm install -g openclaw@2026.5.28`\n   2. `openclaw gateway run`\n   3. Send any message \u2192 `Unable to resolve bundled plugin public surface speech-core/runtime-api.js`\n\n### Expected behavior\n\n   `dist/extensions/speech-core/` should be included in the npm tarball, or the runtime should gracefully handle its absence (like it does for other missing public surface artifacts via the\n `MISSING_PUBLIC_SURFACE_PREFIX` catch pattern).\n\n### Actual behavior\n\nEvery incoming message fails with:\n\n     Error: Unable to resolve bundled plugin public surface speech-core/runtime-api.js\n     Embedded agent failed before reply: Unable to resolve bundled plugin public surface speech-core/runtime-api.js\n\n   Direct chats get an error reply. Group chats stay completely silent (silent-reply dispatcher suppresses the empty response).\n\n### OpenClaw version\n\nopenclaw@2026.5.28 (e932160)\n\n### Operating system\n\n   Ubuntu 24.04.3 LTS, Node.js v22.22.1\n\n### Install method\n\n_No response_\n\n### Model\n\nAny. The error occurs *before* the provider is called \u2014 during bundled plugin public surface resolution. Tested with:     - `openai-codex/gpt-5.5` \u2192 fails \u2192 fallback to `opencode-go/deepseek-v4-flash` \u2192 same error    - `fireworks/accounts/fireworks/models/deepseek-v4-pro` \u2192 same error\n\n### Provider / routing chain\n\n Telegram message \u2192 agent:main routing \u2192 embedded agent run  \u2192 loadBundledPluginPublicArtifactModuleSync(\"speech-core\", \"runtime-api.js\")  \u2192 resolveBundledPluginPublicSurfacePath() \u2192 NOT FOUND  \u2192 Embedded agent failed before reply\n\n### Additional provider/model setup details\n\n_No response_\n\n### Logs, screenshots, and evidence\n\n```shell\n\n```\n\n### Impact and severity\n\n_No response_\n\n### Additional information\n\n_No response_"
+      }
+    ]
+  },
+  "snapshot": "snapshots/e8ca70bcf96917ec9f3e2e76ef9c796ad788cff48121b3c1218fe20363bf76c5.json"
+}

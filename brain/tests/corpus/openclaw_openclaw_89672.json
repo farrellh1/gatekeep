@@ -1,0 +1,47 @@
+{
+  "config_yaml": null,
+  "label": "slop",
+  "verified": true,
+  "slop_kind": "subtle",
+  "language": "typescript",
+  "source": {
+    "repo": "openclaw/openclaw",
+    "number": 89672,
+    "origin": "harvested",
+    "signal": "rejection_label"
+  },
+  "event": {
+    "delivery_id": "harvest-openclaw-openclaw-89672",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "openclaw",
+      "name": "openclaw",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 89672,
+    "title": "fix(ui/skills): prevent skill toggle state transfer on list mutation (#89661)",
+    "body": "## Summary\n\nFixes #89661.\n\nWhen a skill toggle was flipped and the skill moved to another tab (e.g., from Disabled to Ready), the checkbox UI state was incorrectly transferred to the next skill in the list. This happened because the skill list in `renderSkills` used a plain `.map()` without keys, causing lit-html to reuse DOM nodes by position rather than by identity.\n\n## Changes\n\n- `ui/src/ui/views/skills.ts`: Replaced plain `.map()` with lit's `repeat` directive, using `skill.skillKey` as the unique key. This ensures each skill gets its own stable DOM node, preventing state leakage between list items.\n- `ui/src/ui/views/skills.test.ts`: Added a regression test that renders two disabled skills, simulates one being enabled (removed from the disabled tab), and asserts that the remaining skill's toggle stays unchecked.\n\n## Verification\n\n- `pnpm test ui/src/ui/views/skills.test.ts` \u2014 all 5 tests pass (including the new regression test).\n",
+    "author": {
+      "login": "wangmiao0668000666",
+      "account_age_days": 2,
+      "is_first_time_contributor": true
+    },
+    "diff": "diff --git a/ui/src/ui/views/skills.test.ts b/ui/src/ui/views/skills.test.ts\nindex 8105a3c675b81..0b3622ce8c99a 100644\n--- a/ui/src/ui/views/skills.test.ts\n+++ b/ui/src/ui/views/skills.test.ts\n@@ -415,6 +415,60 @@ describe(\"renderSkills\", () => {\n     expect(chips.some((chip) => normalizeText(chip) === \"Clean\")).toBe(false);\n     expect(verdictChip?.classList.contains(\"chip-ok\")).toBe(false);\n   });\n+\n+  it(\"does not transfer toggle UI state when a skill is removed from the list\", async () => {\n+    const container = document.createElement(\"div\");\n+    document.body.append(container);\n+    dialogRestores.push(() => container.remove());\n+\n+    const skillA = createSkill({ skillKey: \"skill-a\", name: \"Skill A\", disabled: true });\n+    const skillB = createSkill({ skillKey: \"skill-b\", name: \"Skill B\", disabled: true });\n+\n+    const report: SkillStatusReport = {\n+      workspaceDir: \"/tmp/workspace\",\n+      managedSkillsDir: \"/tmp/skills\",\n+      skills: [skillA, skillB],\n+    };\n+\n+    // Render with both skills in the disabled tab\n+    render(\n+      renderSkills(\n+        createProps({\n+          report,\n+          statusFilter: \"disabled\",\n+        }),\n+      ),\n+      container,\n+    );\n+    await Promise.resolve();\n+\n+    let toggles = container.querySelectorAll<HTMLInputElement>(\".skill-toggle\");\n+    expect(toggles.length).toBe(2);\n+    expect(toggles[0]!.checked).toBe(false);\n+    expect(toggles[1]!.checked).toBe(false);\n+\n+    // Simulate skill-a being enabled (removed from disabled tab)\n+    const updatedReport: SkillStatusReport = {\n+      ...report,\n+      skills: [{ ...skillA, disabled: false }, skillB],\n+    };\n+\n+    render(\n+      renderSkills(\n+        createProps({\n+          report: updatedReport,\n+          statusFilter: \"disabled\",\n+        }),\n+      ),\n+      container,\n+    );\n+    await Promise.resolve();\n+\n+    toggles = container.querySelectorAll<HTMLInputElement>(\".skill-toggle\");\n+    expect(toggles.length).toBe(1);\n+    // The remaining skill-b should still be unchecked (disabled)\n+    expect(toggles[0]!.checked).toBe(false);\n+  });\n });\n \n function installDialogMethod(\ndiff --git a/ui/src/ui/views/skills.ts b/ui/src/ui/views/skills.ts\nindex c50c31ca50baa..49ca3bb8a9299 100644\n--- a/ui/src/ui/views/skills.ts\n+++ b/ui/src/ui/views/skills.ts\n@@ -1,5 +1,6 @@\n import { html, nothing } from \"lit\";\n import { ref } from \"lit/directives/ref.js\";\n+import { repeat } from \"lit/directives/repeat.js\";\n import { unsafeHTML } from \"lit/directives/unsafe-html.js\";\n import { t } from \"../../i18n/index.ts\";\n import type {\n@@ -307,7 +308,11 @@ export function renderSkills(props: SkillsProps) {\n                       <span class=\"muted\">${group.skills.length}</span>\n                     </summary>\n                     <div class=\"list skills-grid\">\n-                      ${group.skills.map((skill) => renderSkill(skill, props))}\n+                      ${repeat(\n+                        group.skills,\n+                        (skill) => skill.skillKey,\n+                        (skill) => renderSkill(skill, props),\n+                      )}\n                     </div>\n                   </details>\n                 `;\n",
+    "changed_files": [
+      "ui/src/ui/views/skills.test.ts",
+      "ui/src/ui/views/skills.ts"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": [
+      {
+        "number": 89661,
+        "title": "[Bug]: skill toggle incorrectly transfers UI state after interaction",
+        "body": "### Bug type\n\nBehavior bug (incorrect output/state without crash)\n\n### Beta release blocker\n\nNo\n\n### Summary\n\nWhen a skill toggle is flipped and the skill is removed from the current tab (Ready, Disabled, etc), the toggle remains in that status for the skill that takes its place.\n\nSee the video in the \"Expected behavior\" section.\n\n### Steps to reproduce\n\n1. Start OpenClaw 2026.6.2.\n2. Open the Control dashboard and navigate to Skills.\n3. Navigate to any Skills tab with skills in it (for example, Disabled).\n4. Click the toggle to enable/disable the first skill in the list.\n\n### Expected behavior\n\nNo prior observed behavior, but I think any normal would recognize this behavior as unwanted. When a skill is enabled/disabled, the next skill in the list should not be affected.\n\nThe attached video shows behavior after the fix, which I believe displays the expected behavior.\n\nhttps://github.com/user-attachments/assets/e948dfd9-2fb9-4569-a5c8-88b159e9cd51\n\n### Actual behavior\n\nThe skill is removed from the tab as expected (for example, from Disabled to Ready). However the next skill in the list now has a toggle that appears to be enabled.\n\nhttps://github.com/user-attachments/assets/7246125f-ea45-4974-809b-41de248962e6\n\n### OpenClaw version\n\n2026.6.2\n\n### Operating system\n\nUbuntu 24.04.4\n\n### Install method\n\npnpm install\n\n### Model\n\nanthropic/claude-sonnet-4-6\n\n### Provider / routing chain\n\nopenclaw -> anthropic\n\n### Additional provider/model setup details\n\n_No response_\n\n### Logs, screenshots, and evidence\n\n```shell\n\n```\n\n### Impact and severity\n\nAffected: all users\nSeverity: annoying\n\n### Additional information\n\nReproducible on Chrome and Firefox."
+      }
+    ]
+  },
+  "snapshot": "snapshots/e8ca70bcf96917ec9f3e2e76ef9c796ad788cff48121b3c1218fe20363bf76c5.json"
+}

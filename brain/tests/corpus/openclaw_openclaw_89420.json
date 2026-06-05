@@ -1,0 +1,40 @@
+{
+  "config_yaml": null,
+  "label": "slop",
+  "verified": true,
+  "slop_kind": "subtle",
+  "language": "typescript",
+  "source": {
+    "repo": "openclaw/openclaw",
+    "number": 89420,
+    "origin": "harvested",
+    "signal": "rejection_label"
+  },
+  "event": {
+    "delivery_id": "harvest-openclaw-openclaw-89420",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "openclaw",
+      "name": "openclaw",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 89420,
+    "title": "fix(llm): filter out reasoning_content from streaming output when reasoning is disabled",
+    "body": "## Real behavior proof\r\n\r\n**\u95ee\u9898\u63cf\u8ff0**\uff1a\r\n\u5728 OpenClaw \u4e2d\u914d\u7f6e `reasoning: false` \u540e\uff0c\u67d0\u4e9b\u6a21\u578b\uff08\u5982 MiMo\uff09\u4ecd\u7136\u5728\u6d41\u5f0f\u54cd\u5e94\u4e2d\u8fd4\u56de `reasoning_content` \u5b57\u6bb5\uff0c\u5bfc\u81f4\u601d\u8003\u8fc7\u7a0b\u6cc4\u6f0f\u5230\u6700\u7ec8\u8f93\u51fa\u4e2d\u3002\r\n\r\n**\u73af\u5883\u4fe1\u606f**\uff1a\r\n- OpenClaw \u7248\u672c\uff1a[\u4f60\u6d4b\u8bd5\u7684\u7248\u672c\u6216 commit]\r\n- \u64cd\u4f5c\u7cfb\u7edf\uff1a[Ubuntu 22.04 / \u4f60\u7684\u7cfb\u7edf]\r\n- \u6d4b\u8bd5\u6a21\u578b\uff1aMiMo / Qwen\uff08\u4efb\u610f\u80fd\u590d\u73b0\u95ee\u9898\u7684\u6a21\u578b\uff09\r\n\r\n**\u4fee\u590d\u524d**\uff1a\r\n\u6267\u884c\u4ee5\u4e0b\u8bf7\u6c42\uff1a\r\n```bash\r\ncurl -X POST http://localhost:38817/v1/chat/completions \\\r\n  -H \"Content-Type: application/json\" \\\r\n  -d '{\"model\":\"qwen3\",\"messages\":[{\"role\":\"user\",\"content\":\"hi\"}],\"stream\":true}'\r\n\u8bc1\u636e\uff1a\r\n   \uff08\r\n<img width=\"1440\" height=\"3200\" alt=\"Screenshot_2026-06-02-19-22-20-667_com tencent mobileqq\" src=\"https://github.com/user-attachments/assets/2965344f-77a7-4120-b74b-d01271b65309\" />\r\n<img width=\"1440\" height=\"3200\" alt=\"Screenshot_2026-06-02-19-22-14-198_com tencent mobileqq\" src=\"https://github.com/user-attachments/assets/b1c3ec00-0cae-4aa3-9890-bfd6b32baf80\" />\r\n\uff09\r\n   \u4fee\u590d\u65b9\u5f0f\uff1a\r\n   \u5728 src/agents/openai-transport-stream.ts \u4e2d\uff0c\u53d1\u9001\u54cd\u5e94\u7ed9\u5ba2\u6237\u7aef\u4e4b\u524d\uff0c\u589e\u52a0\u4e86\u4e00\u5c42\u8fc7\u6ee4\uff1a\u5f53 model.reasoning === false \u65f6\uff0c\u5220\u9664 delta.reasoning_content \u5b57\u6bb5\u3002\u4e0d\u4fee\u6539\u5176\u4ed6\u4efb\u4f55\u5185\u90e8\u903b\u8f91\u3002\r\n   \u6539\u52a8\u8303\u56f4\uff1a\r\n   \u00b7 \u6587\u4ef6\uff1asrc/agents/openai-transport-stream.ts\r\n   \u00b7 \u6539\u52a8\uff1a+4 \u884c",
+    "author": {
+      "login": "zz327455573",
+      "account_age_days": 97,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/src/agents/openai-transport-stream.ts b/src/agents/openai-transport-stream.ts\nindex f4302a5db5926..713d92f7beb7f 100644\n--- a/src/agents/openai-transport-stream.ts\n+++ b/src/agents/openai-transport-stream.ts\n@@ -2887,6 +2887,10 @@ async function processOpenAICompletionsStream(\n       await cooperativeScheduler.afterEvent();\n       continue;\n     }\n+    // Strip reasoning_content when model does not support reasoning\n+    if (model.reasoning != null && !model.reasoning) {\n+      delete (choiceDelta as Record<string, unknown>).reasoning_content;\n+    }\n     const reasoningDeltas = getCompletionsReasoningDeltas(\n       choiceDelta as Record<string, unknown>,\n       compat.visibleReasoningDetailTypes,\n",
+    "changed_files": [
+      "src/agents/openai-transport-stream.ts"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/e8ca70bcf96917ec9f3e2e76ef9c796ad788cff48121b3c1218fe20363bf76c5.json"
+}

@@ -1,0 +1,40 @@
+{
+  "config_yaml": null,
+  "label": "slop",
+  "verified": true,
+  "slop_kind": "obvious",
+  "language": "typescript",
+  "source": {
+    "repo": "openclaw/openclaw",
+    "number": 83838,
+    "origin": "harvested",
+    "signal": "rejection_label"
+  },
+  "event": {
+    "delivery_id": "harvest-openclaw-openclaw-83838",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "openclaw",
+      "name": "openclaw",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 83838,
+    "title": "fix: macOS auto-scroll assistant reply",
+    "body": "# \u95ee\u9898\u63cf\u8ff0\n\n\u5728 OpenClaw macOS \u5e94\u7528\u7684\u5bf9\u8bdd\u4e2d\uff0c\u5f53 OpenClaw \u56de\u590d\u6d88\u606f\u540e\uff0c\u6d88\u606f\u4f1a\u6eda\u52a8\u5230\u4e2d\u95f4\u4f4d\u7f6e\uff0c\u800c\u4e0d\u662f\u5230\u5e95\u90e8\u3002\u6bcf\u6b21\u9700\u8981\u624b\u52a8\u62c9\u5230\u5e95\u90e8\u624d\u80fd\u770b\u5230\u6700\u65b0\u56de\u590d\u3002\n\n# \u4fee\u590d\u5185\u5bb9\n\n\u81ea\u52a8\u6eda\u52a8\u5230\u5e95\u90e8\uff0c\u786e\u4fdd\u5bf9\u8bdd\u59cb\u7ec8\u663e\u793a\u6700\u65b0\u6d88\u606f\u3002",
+    "author": {
+      "login": "yakold",
+      "account_age_days": 2175,
+      "is_first_time_contributor": true
+    },
+    "diff": "diff --git a/apps/shared/OpenClawKit/Sources/OpenClawChatUI/ChatView.swift b/apps/shared/OpenClawKit/Sources/OpenClawChatUI/ChatView.swift\nindex 6008229fd0afe..ffb33ef2ce568 100644\n--- a/apps/shared/OpenClawKit/Sources/OpenClawChatUI/ChatView.swift\n+++ b/apps/shared/OpenClawKit/Sources/OpenClawChatUI/ChatView.swift\n@@ -17,6 +17,7 @@ public struct OpenClawChatView: View {\n     @State private var hasPerformedInitialScroll = false\n     @State private var isPinnedToBottom = true\n     @State private var lastUserMessageID: UUID?\n+    @State private var hasPendingAssistantReply = false\n     private let showsSessionSwitcher: Bool\n     private let style: Style\n     private let markdownVariant: ChatMarkdownVariant\n@@ -148,6 +149,7 @@ public struct OpenClawChatView: View {\n             // Scroll to bottom when user sends a message, even if scrolled up.\n             guard isSending, self.hasPerformedInitialScroll else { return }\n             self.isPinnedToBottom = true\n+            self.hasPendingAssistantReply = true\n             withAnimation(.snappy(duration: 0.22)) {\n                 self.scrollPosition = self.scrollerBottomID\n             }\n@@ -160,25 +162,67 @@ public struct OpenClawChatView: View {\n             {\n                 self.lastUserMessageID = lastMessage.id\n                 self.isPinnedToBottom = true\n+                self.hasPendingAssistantReply = true\n                 withAnimation(.snappy(duration: 0.22)) {\n                     self.scrollPosition = self.scrollerBottomID\n                 }\n                 return\n             }\n \n+            #if os(macOS)\n+            if self.hasPendingAssistantReply {\n+                withAnimation(.snappy(duration: 0.22)) {\n+                    self.scrollPosition = self.scrollerBottomID\n+                }\n+                return\n+            }\n+            #endif\n+\n             guard self.isPinnedToBottom else { return }\n             withAnimation(.snappy(duration: 0.22)) {\n                 self.scrollPosition = self.scrollerBottomID\n             }\n         }\n-        .onChange(of: self.viewModel.pendingRunCount) { _, _ in\n+        .onChange(of: self.viewModel.pendingRunCount) { _, newCount in\n+            #if os(macOS)\n+            guard self.hasPerformedInitialScroll else { return }\n+            if newCount > 0 {\n+                self.hasPendingAssistantReply = true\n+            }\n+            if newCount == 0, self.hasPendingAssistantReply {\n+                self.hasPendingAssistantReply = false\n+                withAnimation(.snappy(duration: 0.22)) {\n+                    self.scrollPosition = self.scrollerBottomID\n+                }\n+                return\n+            }\n+            if self.hasPendingAssistantReply {\n+                withAnimation(.snappy(duration: 0.22)) {\n+                    self.scrollPosition = self.scrollerBottomID\n+                }\n+                return\n+            }\n+            guard self.isPinnedToBottom else { return }\n+            #else\n             guard self.hasPerformedInitialScroll, self.isPinnedToBottom else { return }\n+            #endif\n             withAnimation(.snappy(duration: 0.22)) {\n                 self.scrollPosition = self.scrollerBottomID\n             }\n         }\n         .onChange(of: self.viewModel.streamingAssistantText) { _, _ in\n+            #if os(macOS)\n+            guard self.hasPerformedInitialScroll else { return }\n+            if self.hasPendingAssistantReply {\n+                withAnimation(.snappy(duration: 0.22)) {\n+                    self.scrollPosition = self.scrollerBottomID\n+                }\n+                return\n+            }\n+            guard self.isPinnedToBottom else { return }\n+            #else\n             guard self.hasPerformedInitialScroll, self.isPinnedToBottom else { return }\n+            #endif\n             withAnimation(.snappy(duration: 0.22)) {\n                 self.scrollPosition = self.scrollerBottomID\n             }\n",
+    "changed_files": [
+      "apps/shared/OpenClawKit/Sources/OpenClawChatUI/ChatView.swift"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/e8ca70bcf96917ec9f3e2e76ef9c796ad788cff48121b3c1218fe20363bf76c5.json"
+}

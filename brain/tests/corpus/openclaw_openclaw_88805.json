@@ -1,0 +1,41 @@
+{
+  "config_yaml": null,
+  "label": "slop",
+  "verified": true,
+  "slop_kind": "obvious",
+  "language": "typescript",
+  "source": {
+    "repo": "openclaw/openclaw",
+    "number": 88805,
+    "origin": "harvested",
+    "signal": "rejection_label"
+  },
+  "event": {
+    "delivery_id": "harvest-openclaw-openclaw-88805",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "openclaw",
+      "name": "openclaw",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 88805,
+    "title": "fix(ui)",
+    "body": "",
+    "author": {
+      "login": "vyctorbrzezowski",
+      "account_age_days": 2553,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/ui/src/ui/app-render.helpers.browser.test.ts b/ui/src/ui/app-render.helpers.browser.test.ts\nindex bd3549ae3fe1c..864143c9b35b5 100644\n--- a/ui/src/ui/app-render.helpers.browser.test.ts\n+++ b/ui/src/ui/app-render.helpers.browser.test.ts\n@@ -172,6 +172,10 @@ describe(\"chat header controls (browser)\", () => {\n       expect(button.getAttribute(\"aria-label\")).toBe(button.getAttribute(\"data-tooltip\"));\n     }\n     expect(buttons[0]?.classList.contains(\"topbar-theme-mode__btn--active\")).toBe(true);\n+    expect(buttons[1]?.querySelector(\"circle\")?.getAttribute(\"r\")).toBe(\"4\");\n+    expect(buttons[2]?.querySelector(\"path\")?.getAttribute(\"d\")).toBe(\n+      \"M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401\",\n+    );\n   });\n \n   it.each([\ndiff --git a/ui/src/ui/icons.ts b/ui/src/ui/icons.ts\nindex ff1a13b2829a5..d3a35530acc43 100644\n--- a/ui/src/ui/icons.ts\n+++ b/ui/src/ui/icons.ts\n@@ -70,7 +70,9 @@ export const icons = {\n   `,\n   moon: html`\n     <svg viewBox=\"0 0 24 24\">\n-      <path d=\"M12 3a6.5 6.5 0 0 0 9 9 9 9 0 1 1-9-9Z\" />\n+      <path\n+        d=\"M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401\"\n+      />\n     </svg>\n   `,\n   settings: html`\n",
+    "changed_files": [
+      "ui/src/ui/app-render.helpers.browser.test.ts",
+      "ui/src/ui/icons.ts"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/e8ca70bcf96917ec9f3e2e76ef9c796ad788cff48121b3c1218fe20363bf76c5.json"
+}

@@ -1,0 +1,40 @@
+{
+  "config_yaml": null,
+  "label": "slop",
+  "verified": true,
+  "slop_kind": "subtle",
+  "language": "typescript",
+  "source": {
+    "repo": "openclaw/openclaw",
+    "number": 89631,
+    "origin": "harvested",
+    "signal": "rejection_label"
+  },
+  "event": {
+    "delivery_id": "harvest-openclaw-openclaw-89631",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {
+      "owner": "openclaw",
+      "name": "openclaw",
+      "default_branch": "main",
+      "clone_path": "SNAPSHOT"
+    },
+    "number": 89631,
+    "title": "feat(plugin-sdk): provider usage-limits read accessor for plugins",
+    "body": "## What\n\nExposes a provider usage-limits read accessor on the existing `openclaw/plugin-sdk/provider-usage` subpath (no exports-map change):\n\n- `getProviderUsageLimits(provider, opts?)` \u2014 awaitable, 60s cached.\n- `getProviderUsageLimitsCached(provider, opts?)` \u2014 **non-blocking** stale-while-revalidate: returns the last value instantly and defers refresh to `setTimeout(0).unref()`, so a plugin reading limits at reply-delivery time never adds network latency to the reply path.\n\nBoth wrap the existing `loadProviderUsageSummary` + `resolveUsageProviderId` and map `UsageWindow` \u2192 `{ label, used_pct, pct_left, resets_in_s }`. Returns `undefined` for api-key / unmapped providers, leaving renderers free to self-source.\n\n## Why\n\nPlugins that render usage information (e.g. a per-response usage footer) currently have no supported way to read a provider's usage windows. This adds a narrow, cache-friendly read accessor for exactly that.\n\nMotivating consumer reads `provider` from the `usageState` added in #89629 , then resolves the provider's usage windows for the footer's limits segment.\n\n## Notes\n\n- No new exports-map entry \u2014 adds to the existing `provider-usage` subpath.\n- No code dependency on #89629 (neither imports the other); independently reviewable/mergeable. The pairing is only in the consuming plugin.\n- Developed and running live on `v2026.6.1-beta.1`; cleanly cherry-picked onto current `main`. CI to confirm.\n\n\ud83e\udd16 Generated with [Claude Code](https://claude.com/claude-code)\n",
+    "author": {
+      "login": "Marvinthebored",
+      "account_age_days": 105,
+      "is_first_time_contributor": false
+    },
+    "diff": "diff --git a/src/plugin-sdk/provider-usage.ts b/src/plugin-sdk/provider-usage.ts\nindex ba0cc966c02ce..3e5982617b342 100644\n--- a/src/plugin-sdk/provider-usage.ts\n+++ b/src/plugin-sdk/provider-usage.ts\n@@ -20,3 +20,136 @@ export {\n   buildUsageHttpErrorSnapshot,\n   fetchJson,\n } from \"../infra/provider-usage.fetch.shared.js\";\n+\n+import { loadProviderUsageSummary } from \"../infra/provider-usage.load.js\";\n+import { resolveUsageProviderId } from \"../infra/provider-usage.shared.js\";\n+\n+// Read-only subscription/limit windows for a provider, shaped for footer/readout\n+// plugins. A narrow wrapper over loadProviderUsageSummary + resolveUsageProviderId\n+// so plugins never reach into core infra directly.\n+export type PluginProviderUsageWindow = {\n+  label: string;\n+  used_pct: number;\n+  pct_left: number;\n+  resets_in_s?: number;\n+};\n+export type PluginProviderUsageLimits = {\n+  available: boolean;\n+  source: string;\n+  display_name?: string;\n+  windows: PluginProviderUsageWindow[];\n+};\n+\n+const LIMITS_TTL_MS = 60_000;\n+type LimitsCacheEntry = {\n+  value: PluginProviderUsageLimits | undefined;\n+  expiresAt: number;\n+  inFlight?: Promise<PluginProviderUsageLimits | undefined>;\n+};\n+const limitsCache = new Map<string, LimitsCacheEntry>();\n+\n+// Resolve the active provider to a usage-capable id and load its windows. Returns\n+// undefined when the provider has no core-known usage (e.g. api-key-only or an\n+// unmapped provider) \u2014 callers should treat that as \"no limits available\" and may\n+// fall back to their own source. Result is cached per usage-provider for 60s so a\n+// per-reply footer does not hit the provider's usage endpoint on every message.\n+export async function getProviderUsageLimits(\n+  provider: string | undefined | null,\n+  options?: { credentialType?: string | null; timeoutMs?: number; now?: number },\n+): Promise<PluginProviderUsageLimits | undefined> {\n+  const usageId = resolveUsageProviderId(provider, {\n+    credentialType: options?.credentialType ?? \"oauth\",\n+  });\n+  if (!usageId) {\n+    return undefined;\n+  }\n+  const now = options?.now ?? Date.now();\n+  const cached = limitsCache.get(usageId);\n+  if (cached && cached.expiresAt >= now) {\n+    return cached.inFlight ? await cached.inFlight : cached.value;\n+  }\n+\n+  const work = (async (): Promise<PluginProviderUsageLimits | undefined> => {\n+    try {\n+      const summary = await loadProviderUsageSummary({\n+        providers: [usageId],\n+        timeoutMs: options?.timeoutMs,\n+        now,\n+      });\n+      const snapshot = summary.providers.find((entry) => entry.provider === usageId);\n+      if (!snapshot || snapshot.error || !snapshot.windows || snapshot.windows.length === 0) {\n+        return {\n+          available: false,\n+          source: \"core\",\n+          display_name: snapshot?.displayName,\n+          windows: [],\n+        };\n+      }\n+      const windows: PluginProviderUsageWindow[] = snapshot.windows.map((entry) => {\n+        const used = Math.max(0, Math.min(100, entry.usedPercent));\n+        const resetsInS =\n+          typeof entry.resetAt === \"number\" && Number.isFinite(entry.resetAt)\n+            ? Math.max(0, Math.round((entry.resetAt - now) / 1000))\n+            : undefined;\n+        return {\n+          label: entry.label,\n+          used_pct: used,\n+          pct_left: Math.max(0, 100 - used),\n+          resets_in_s: resetsInS,\n+        };\n+      });\n+      return {\n+        available: true,\n+        source: \"core\",\n+        display_name: snapshot.displayName,\n+        windows,\n+      };\n+    } catch {\n+      return undefined;\n+    }\n+  })();\n+\n+  // Preserve the last-known value while refreshing (stale-while-revalidate).\n+  limitsCache.set(usageId, {\n+    value: cached?.value,\n+    expiresAt: now + LIMITS_TTL_MS,\n+    inFlight: work,\n+  });\n+  const value = await work;\n+  const previous = limitsCache.get(usageId)?.value;\n+  const resolved = value !== undefined ? value : previous;\n+  // On a transient failure keep the prior value but retry sooner than the full TTL.\n+  limitsCache.set(usageId, {\n+    value: resolved,\n+    expiresAt: Date.now() + (value !== undefined ? LIMITS_TTL_MS : 15_000),\n+  });\n+  return resolved;\n+}\n+\n+// Non-blocking accessor for per-reply hot paths (e.g. a reply footer): returns the\n+// cached value immediately (possibly stale, or undefined on the first call) and\n+// triggers a background refresh when stale. Never awaits a network fetch, so it\n+// cannot add latency to reply delivery.\n+export function getProviderUsageLimitsCached(\n+  provider: string | undefined | null,\n+  options?: { credentialType?: string | null; timeoutMs?: number },\n+): PluginProviderUsageLimits | undefined {\n+  const usageId = resolveUsageProviderId(provider, {\n+    credentialType: options?.credentialType ?? \"oauth\",\n+  });\n+  if (!usageId) {\n+    return undefined;\n+  }\n+  const cached = limitsCache.get(usageId);\n+  const isFresh = Boolean(cached && cached.expiresAt >= Date.now());\n+  const isRefreshing = Boolean(cached?.inFlight);\n+  if (!isFresh && !isRefreshing) {\n+    // Defer to a macrotask: the refresh's synchronous prefix (config/auth\n+    // resolution) must not run on the caller's hot path (reply delivery).\n+    const timer = setTimeout(() => {\n+      void getProviderUsageLimits(provider, options).catch(() => undefined);\n+    }, 0);\n+    timer.unref?.();\n+  }\n+  return cached?.value;\n+}\n",
+    "changed_files": [
+      "src/plugin-sdk/provider-usage.ts"
+    ],
+    "ci_status": null,
+    "existing_issues": null,
+    "linked_issues": []
+  },
+  "snapshot": "snapshots/e8ca70bcf96917ec9f3e2e76ef9c796ad788cff48121b3c1218fe20363bf76c5.json"
+}
