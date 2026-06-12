@@ -51,6 +51,12 @@ REGISTRY: list[Check] = [
     _check("fix_addresses_issue", ("pull_request",), checks.fix_addresses_issue),
     _check("has_repro", ("issue",), checks.has_repro),
     _check("is_duplicate", ("issue",), checks.is_duplicate),
+    _check("template_untouched", ("pull_request",), checks.template_untouched),
+    _check(
+        "verification_claims_unsupported", ("pull_request",), checks.verification_claims_unsupported
+    ),
+    _check("claimed_bug_exists", ("pull_request",), checks.claimed_bug_exists),
+    _check("first_contribution", ("pull_request",), checks.first_contribution),
 ]
 
 

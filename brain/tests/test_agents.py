@@ -115,3 +115,78 @@ def test_judge_reads_findings_only(monkeypatch):
     out = judge_mod.run(st)
     assert out.verdict.label == "slop"
     assert "missing foo()" in captured["prompt"]  # judge saw the evidence, nothing else
+
+
+# --- deterministic legit floor ---
+
+
+def _verdict_state(findings, label):
+    from core.schemas import BrainState, Finding, Verdict
+
+    state = BrainState(
+        event={
+            "delivery_id": "d",
+            "kind": "pull_request",
+            "action": "opened",
+            "repo": {"owner": "o", "name": "r", "default_branch": "main", "clone_path": "/tmp"},
+            "number": 1,
+            "title": "t",
+            "body": "b",
+            "author": {"login": "a", "account_age_days": 10, "is_first_time_contributor": True},
+        },
+        findings=[Finding(**f) for f in findings],
+        verdict=Verdict(label=label, confidence=0.9),
+    )
+    return state
+
+
+def test_legit_floor_demotes_on_deterministic_fail():
+    from core.agents.judge import _apply_legit_floor
+
+    state = _verdict_state(
+        [
+            {
+                "check": "template_untouched",
+                "result": "fail",
+                "evidence": "e",
+                "confidence": "LOW",
+                "engine": "DETERMINISTIC",
+            }
+        ],
+        "legit",
+    )
+    _apply_legit_floor(state)
+    assert state.verdict.label == "needs-info"
+    assert any("template_untouched" in r for r in state.verdict.reasons)
+
+
+def test_legit_floor_ignores_llm_fail():
+    # an LLM fail is one model's reading, not concrete evidence; the floor only
+    # acts on deterministic findings
+    from core.agents.judge import _apply_legit_floor
+
+    state = _verdict_state(
+        [{"check": "diff_matches_description", "result": "fail", "evidence": "e", "engine": "LLM"}],
+        "legit",
+    )
+    _apply_legit_floor(state)
+    assert state.verdict.label == "legit"
+
+
+def test_legit_floor_never_touches_slop_or_needs_info():
+    from core.agents.judge import _apply_legit_floor
+
+    for label in ("slop", "needs-info"):
+        state = _verdict_state(
+            [
+                {
+                    "check": "template_untouched",
+                    "result": "fail",
+                    "evidence": "e",
+                    "engine": "DETERMINISTIC",
+                }
+            ],
+            label,
+        )
+        _apply_legit_floor(state)
+        assert state.verdict.label == label
