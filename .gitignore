@@ -14,4 +14,8 @@ brain/tests/golden/traces/
 brain/tests/golden/results.json
 brain/tests/corpus/traces/
 brain/tests/corpus/results.json
+
+# stream pilot: third-party PR content and its readout, never committed
+# (the fabricated fixtures under brain/tests/stream/ are safe and stay tracked)
+brain/stream/
 *.log
