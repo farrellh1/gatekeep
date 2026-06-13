@@ -1,0 +1,25 @@
+{
+  "config_yaml": null,
+  "event": {
+    "delivery_id": "stream-acme-widgets-7",
+    "kind": "pull_request",
+    "action": "opened",
+    "repo": {"owner": "acme", "name": "widget", "default_branch": "main", "clone_path": "FIXTURE_CLONE"},
+    "number": 7,
+    "title": "Reject empty passwords in login()",
+    "body": "`login()` currently accepts empty passwords. This adds a guard that returns False when the password is blank, plus a regression test.",
+    "author": {"login": "alice", "account_age_days": 5, "is_first_time_contributor": true},
+    "diff": "--- a/src/auth.py\n+++ b/src/auth.py\n@@\n def login(user, pw):\n+    if not pw:\n+        return False\n     return True\n--- /dev/null\n+++ b/tests/test_auth.py\n@@\n+def test_login_rejects_empty_password():\n+    assert login(\"alice\", \"\") is False\n",
+    "changed_files": ["src/auth.py", "tests/test_auth.py"],
+    "ci_status": "pending",
+    "existing_issues": [],
+    "linked_issues": []
+  },
+  "provenance": {
+    "repo": "acme/widget",
+    "number": 7,
+    "url": "https://github.com/acme/widget/pull/7",
+    "author": "alice",
+    "ci_forced_pending": true
+  }
+}
